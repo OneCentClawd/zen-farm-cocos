@@ -45,31 +45,41 @@ export class ZenFarmGame extends Component {
    * 确保在 Canvas 下运行
    */
   ensureCanvas() {
-    // 检查是否已在 Canvas 下
+    // 查找 Canvas
+    let canvasNode: Node | null = null;
     let canvas = this.node.getComponent(Canvas);
-    if (!canvas) {
+    
+    if (canvas) {
+      canvasNode = this.node;
+    } else {
       canvas = this.node.getComponentInParent(Canvas);
+      if (canvas) {
+        canvasNode = canvas.node;
+      }
     }
     
-    if (!canvas) {
-      // 没有 Canvas，需要创建
-      console.log('⚠️ 未找到 Canvas，尝试查找场景中的 Canvas...');
+    if (!canvasNode) {
+      // 场景中查找 Canvas
+      console.log('⚠️ 未找到 Canvas，尝试查找...');
       const scene = director.getScene();
       if (scene) {
-        const canvasNode = scene.getChildByName('Canvas');
+        canvasNode = scene.getChildByName('Canvas');
         if (canvasNode) {
           // 把自己移到 Canvas 下
           this.node.setParent(canvasNode);
-          this.node.layer = canvasNode.layer;
           console.log('✅ 已移动到 Canvas 下');
         } else {
-          console.error('❌ 场景中没有 Canvas！请先创建 Canvas');
+          console.error('❌ 场景中没有 Canvas！');
+          return;
         }
       }
     }
     
-    // 设置正确的 layer
-    this.node.layer = 1 << 25; // UI_2D
+    // 从 Canvas 获取正确的 layer
+    if (canvasNode) {
+      this.node.layer = canvasNode.layer;
+      console.log(`📺 使用 Canvas layer: ${canvasNode.layer}`);
+    }
   }
   
   /**
@@ -79,8 +89,7 @@ export class ZenFarmGame extends Component {
     const screenSize = view.getVisibleSize();
     const halfH = screenSize.height / 2;
     
-    // 设置 layer
-    this.node.layer = 1 << 25;
+    console.log(`📐 屏幕尺寸: ${screenSize.width} x ${screenSize.height}`);
     
     // 天气信息（顶部）
     this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
@@ -121,7 +130,8 @@ export class ZenFarmGame extends Component {
    */
   private createLabel(name: string, text: string, fontSize: number): Label {
     const node = new Node(name);
-    node.layer = 1 << 25;
+    // 继承父节点的 layer
+    node.layer = this.node.layer;
     node.setParent(this.node);
     
     const transform = node.addComponent(UITransform);
