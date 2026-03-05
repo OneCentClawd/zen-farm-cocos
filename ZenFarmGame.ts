@@ -111,8 +111,45 @@ export class ZenFarmGame extends Component {
    */
   async initGame() {
     // 加载存档
-    this.gameData = loadOrCreateGame(31.23, 121.47);
-    console.log(`📂 地块数: ${this.gameData.plots.length}`);
+    try {
+      this.gameData = loadOrCreateGame(31.23, 121.47);
+      
+      // 防御性检查
+      if (!this.gameData || !this.gameData.plots || this.gameData.plots.length === 0) {
+        console.log('⚠️ 存档无效，创建新游戏');
+        this.gameData = {
+          version: 1,
+          plots: [{
+            id: 0,
+            plant: null,
+            soilMoisture: 50,
+            lastUpdatedAt: Date.now(),
+          }],
+          unlockedPlots: 1,
+          lastOnlineAt: Date.now(),
+          location: { lat: 31.23, lon: 121.47 },
+          totalHarvests: 0,
+        };
+      }
+      
+      console.log(`📂 地块数: ${this.gameData.plots.length}`);
+    } catch (e) {
+      console.error('加载存档失败:', e);
+      // 创建默认游戏数据
+      this.gameData = {
+        version: 1,
+        plots: [{
+          id: 0,
+          plant: null,
+          soilMoisture: 50,
+          lastUpdatedAt: Date.now(),
+        }],
+        unlockedPlots: 1,
+        lastOnlineAt: Date.now(),
+        location: { lat: 31.23, lon: 121.47 },
+        totalHarvests: 0,
+      };
+    }
     
     // 获取天气
     await this.updateWeather();
