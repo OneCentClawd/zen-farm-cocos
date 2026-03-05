@@ -26,6 +26,11 @@ export class ZenFarmGame extends Component {
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;
   
+  // 选择界面
+  private selectPanel: Node | null = null;
+  private confirmPanel: Node | null = null;
+  private pendingPlantType: PlantType | null = null;
+  
   // 游戏数据
   private gameData: GameSaveData | null = null;
   private weather: WeatherData | null = null;
@@ -316,12 +321,208 @@ export class ZenFarmGame extends Component {
     if (!plot) return;
     
     if (plot.plant) {
-      // 有植物 - 浇水
-      this.doWater();
+      if (plot.plant.healthState === HealthState.DEAD) {
+        // 清除死亡植物
+        this.gameData.plots[this.selectedPlot] = {
+          ...plot,
+          plant: null,
+          lastUpdatedAt: Date.now(),
+        };
+        saveGame(this.gameData);
+        this.updateUI();
+      } else if (plot.plant.growthProgress >= 1.0) {
+        // 收获
+        this.doHarvest();
+      } else {
+        // 浇水
+        this.doWater();
+      }
     } else {
-      // 空地 - 种植幸运草（简化版）
-      this.doPlant(PlantType.CLOVER);
+      // 空地 - 显示种植选择
+      this.showPlantSelect();
     }
+  }
+  
+  /**
+   * 显示种植选择界面
+   */
+  showPlantSelect() {
+    if (this.selectPanel) {
+      this.selectPanel.active = true;
+      return;
+    }
+    
+    const screenSize = view.getVisibleSize();
+    
+    // 创建选择面板
+    this.selectPanel = new Node('SelectPanel');
+    this.selectPanel.layer = this.node.layer;
+    this.selectPanel.setParent(this.node);
+    this.selectPanel.setPosition(0, 0, 0);
+    
+    const panelTransform = this.selectPanel.addComponent(UITransform);
+    panelTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    // 标题
+    const titleLabel = this.createLabelOn(this.selectPanel, 'Title', '🌱 选择要种植的植物', 40);
+    titleLabel.node.setPosition(0, 300, 0);
+    
+    // 植物选项
+    const plants = [
+      { type: PlantType.CLOVER, emoji: '🍀', name: '幸运草', y: 150 },
+      { type: PlantType.SUNFLOWER, emoji: '🌻', name: '向日葵', y: 50 },
+      { type: PlantType.STRAWBERRY, emoji: '🍓', name: '草莓', y: -50 },
+      { type: PlantType.SAKURA, emoji: '🌸', name: '樱花', y: -150 },
+    ];
+    
+    for (const p of plants) {
+      const config = PLANT_CONFIGS[p.type];
+      const btn = this.createLabelOn(this.selectPanel, p.name, 
+        `${p.emoji} ${p.name}  ⭐${config.difficulty}  📅${config.growthDays}天`, 36);
+      btn.node.setPosition(0, p.y, 0);
+      
+      const btnTransform = btn.node.getComponent(UITransform);
+      if (btnTransform) btnTransform.setContentSize(500, 60);
+      
+      btn.node.on(Node.EventType.TOUCH_END, () => {
+        this.showPlantConfirm(p.type);
+      }, this);
+    }
+    
+    // 取消按钮
+    const cancelBtn = this.createLabelOn(this.selectPanel, 'Cancel', '❌ 取消', 36);
+    cancelBtn.node.setPosition(0, -280, 0);
+    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
+      if (this.selectPanel) this.selectPanel.active = false;
+    }, this);
+  }
+  
+  /**
+   * 显示种植确认界面
+   */
+  showPlantConfirm(type: PlantType) {
+    const config = PLANT_CONFIGS[type];
+    this.pendingPlantType = type;
+    
+    // 隐藏选择面板
+    if (this.selectPanel) this.selectPanel.active = false;
+    
+    if (this.confirmPanel) {
+      this.confirmPanel.active = true;
+      this.updateConfirmPanel(config);
+      return;
+    }
+    
+    const screenSize = view.getVisibleSize();
+    
+    // 创建确认面板
+    this.confirmPanel = new Node('ConfirmPanel');
+    this.confirmPanel.layer = this.node.layer;
+    this.confirmPanel.setParent(this.node);
+    this.confirmPanel.setPosition(0, 0, 0);
+    
+    const panelTransform = this.confirmPanel.addComponent(UITransform);
+    panelTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    this.updateConfirmPanel(config);
+  }
+  
+  /**
+   * 更新确认面板内容
+   */
+  updateConfirmPanel(config: any) {
+    if (!this.confirmPanel) return;
+    
+    // 清空旧内容
+    this.confirmPanel.removeAllChildren();
+    
+    // 植物名称
+    const titleLabel = this.createLabelOn(this.confirmPanel, 'Title', 
+      `${config.emoji} ${config.name}`, 56);
+    titleLabel.node.setPosition(0, 300, 0);
+    
+    // 难度
+    const diffLabel = this.createLabelOn(this.confirmPanel, 'Diff',
+      `难度: ${'⭐'.repeat(config.difficulty)}`, 32);
+    diffLabel.node.setPosition(0, 200, 0);
+    
+    // 生长周期
+    const growthLabel = this.createLabelOn(this.confirmPanel, 'Growth',
+      `📅 成熟周期: ${config.growthDays} 天`, 32);
+    growthLabel.node.setPosition(0, 140, 0);
+    
+    // 温度要求
+    const tempLabel = this.createLabelOn(this.confirmPanel, 'Temp',
+      `🌡️ 适宜温度: ${config.tempMin}°C ~ ${config.tempMax}°C`, 28);
+    tempLabel.node.setPosition(0, 80, 0);
+    
+    // 水分要求
+    const waterLabel = this.createLabelOn(this.confirmPanel, 'Water',
+      `💧 适宜湿度: ${config.moistureMin}% ~ ${config.moistureMax}%`, 28);
+    waterLabel.node.setPosition(0, 30, 0);
+    
+    // 特性
+    let traits = [];
+    if (config.droughtTolerance >= 0.7) traits.push('耐旱');
+    if (config.coldTolerance >= 0.7) traits.push('耐寒');
+    if (config.heatTolerance >= 0.7) traits.push('耐热');
+    if (config.needsVernalization) traits.push('需要春化');
+    if (config.isAnnual) traits.push('一年生');
+    
+    const traitText = traits.length > 0 ? `🏷️ 特性: ${traits.join('、')}` : '🏷️ 无特殊特性';
+    const traitLabel = this.createLabelOn(this.confirmPanel, 'Traits', traitText, 28);
+    traitLabel.node.setPosition(0, -30, 0);
+    
+    // 规则提示
+    const ruleLabel = this.createLabelOn(this.confirmPanel, 'Rule',
+      '📜 需要每天关注天气，按时浇水\n极端天气可能导致植物死亡！', 24);
+    ruleLabel.node.setPosition(0, -120, 0);
+    
+    // 确认按钮
+    const confirmBtn = this.createLabelOn(this.confirmPanel, 'Confirm', '✅ 确认种植', 40);
+    confirmBtn.node.setPosition(0, -230, 0);
+    const confirmTransform = confirmBtn.node.getComponent(UITransform);
+    if (confirmTransform) confirmTransform.setContentSize(300, 70);
+    confirmBtn.node.on(Node.EventType.TOUCH_END, () => {
+      if (this.pendingPlantType !== null) {
+        this.doPlant(this.pendingPlantType);
+        this.pendingPlantType = null;
+      }
+      if (this.confirmPanel) this.confirmPanel.active = false;
+    }, this);
+    
+    // 取消按钮
+    const cancelBtn = this.createLabelOn(this.confirmPanel, 'Cancel', '❌ 返回', 36);
+    cancelBtn.node.setPosition(0, -310, 0);
+    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
+      if (this.confirmPanel) this.confirmPanel.active = false;
+      if (this.selectPanel) this.selectPanel.active = true;
+    }, this);
+  }
+  
+  /**
+   * 在指定节点下创建 Label
+   */
+  private createLabelOn(parent: Node, name: string, text: string, fontSize: number): Label {
+    const node = new Node(name);
+    node.layer = this.node.layer;
+    node.setParent(parent);
+    
+    const transform = node.addComponent(UITransform);
+    transform.setContentSize(600, fontSize + 40);
+    transform.anchorX = 0.5;
+    transform.anchorY = 0.5;
+    
+    const label = node.addComponent(Label);
+    label.string = text;
+    label.fontSize = fontSize;
+    label.lineHeight = fontSize + 10;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
+    label.verticalAlign = Label.VerticalAlign.CENTER;
+    label.color = new Color(255, 255, 255, 255);
+    label.overflow = Label.Overflow.NONE;
+    
+    return label;
   }
   
   /**
