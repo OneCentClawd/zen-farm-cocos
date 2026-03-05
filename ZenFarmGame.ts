@@ -375,11 +375,11 @@ export class ZenFarmGame extends Component {
         saveGame(this.gameData);
         this.updateUI();
       } else if (plot.plant.growthProgress >= 1.0) {
-        // 成熟了 - 显示浇水/收获选择
-        this.showHarvestMenu();
+        // 成熟了 - 显示浇水/收获/挖除选择
+        this.showPlantMenu(true);
       } else {
-        // 浇水
-        this.doWater();
+        // 生长中 - 显示浇水/挖除选择
+        this.showPlantMenu(false);
       }
     } else {
       // 空地 - 显示种植选择
@@ -388,13 +388,13 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 显示收获菜单
+   * 显示植物操作菜单
    */
-  showHarvestMenu() {
+  showPlantMenu(canHarvest: boolean) {
     const screenSize = view.getVisibleSize();
     
     // 创建临时菜单
-    const menuNode = new Node('HarvestMenu');
+    const menuNode = new Node('PlantMenu');
     menuNode.layer = this.node.layer;
     menuNode.setParent(this.node);
     menuNode.setPosition(0, 0, 0);
@@ -402,32 +402,98 @@ export class ZenFarmGame extends Component {
     const menuTransform = menuNode.addComponent(UITransform);
     menuTransform.setContentSize(screenSize.width, screenSize.height);
     
+    let yPos = 100;
+    
     // 浇水按钮
     const waterBtn = this.createLabelOn(menuNode, 'Water', '💧 浇水', 48);
-    waterBtn.node.setPosition(0, 50, 0);
+    waterBtn.node.setPosition(0, yPos, 0);
     const waterTransform = waterBtn.node.getComponent(UITransform);
     if (waterTransform) waterTransform.setContentSize(300, 80);
     waterBtn.node.on(Node.EventType.TOUCH_END, () => {
       this.doWater();
       menuNode.destroy();
     }, this);
+    yPos -= 100;
     
-    // 收获按钮
-    const harvestBtn = this.createLabelOn(menuNode, 'Harvest', '🌾 收获', 48);
-    harvestBtn.node.setPosition(0, -50, 0);
-    const harvestTransform = harvestBtn.node.getComponent(UITransform);
-    if (harvestTransform) harvestTransform.setContentSize(300, 80);
-    harvestBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.doHarvest();
-      menuNode.destroy();
+    // 收获按钮（仅成熟时显示）
+    if (canHarvest) {
+      const harvestBtn = this.createLabelOn(menuNode, 'Harvest', '🌾 收获', 48);
+      harvestBtn.node.setPosition(0, yPos, 0);
+      const harvestTransform = harvestBtn.node.getComponent(UITransform);
+      if (harvestTransform) harvestTransform.setContentSize(300, 80);
+      harvestBtn.node.on(Node.EventType.TOUCH_END, () => {
+        this.doHarvest();
+        menuNode.destroy();
+      }, this);
+      yPos -= 100;
+    }
+    
+    // 挖除按钮
+    const removeBtn = this.createLabelOn(menuNode, 'Remove', '🗑️ 挖除', 48);
+    removeBtn.node.setPosition(0, yPos, 0);
+    const removeTransform = removeBtn.node.getComponent(UITransform);
+    if (removeTransform) removeTransform.setContentSize(300, 80);
+    removeBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.showRemoveConfirm(menuNode);
     }, this);
+    yPos -= 100;
     
     // 取消按钮
     const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 取消', 36);
-    cancelBtn.node.setPosition(0, -150, 0);
+    cancelBtn.node.setPosition(0, yPos, 0);
     cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
       menuNode.destroy();
     }, this);
+  }
+  
+  /**
+   * 显示挖除确认
+   */
+  showRemoveConfirm(parentMenu: Node) {
+    // 清除父菜单内容
+    parentMenu.removeAllChildren();
+    
+    const warnLabel = this.createLabelOn(parentMenu, 'Warn', '⚠️ 确定要挖除这棵植物吗？', 36);
+    warnLabel.node.setPosition(0, 50, 0);
+    
+    const hintLabel = this.createLabelOn(parentMenu, 'Hint', '挖除后无法恢复！', 28);
+    hintLabel.node.setPosition(0, 0, 0);
+    
+    // 确认按钮
+    const confirmBtn = this.createLabelOn(parentMenu, 'Confirm', '✅ 确认挖除', 40);
+    confirmBtn.node.setPosition(0, -80, 0);
+    const confirmTransform = confirmBtn.node.getComponent(UITransform);
+    if (confirmTransform) confirmTransform.setContentSize(300, 70);
+    confirmBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.doRemovePlant();
+      parentMenu.destroy();
+    }, this);
+    
+    // 取消按钮
+    const cancelBtn = this.createLabelOn(parentMenu, 'Cancel', '❌ 取消', 36);
+    cancelBtn.node.setPosition(0, -160, 0);
+    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
+      parentMenu.destroy();
+    }, this);
+  }
+  
+  /**
+   * 挖除植物
+   */
+  doRemovePlant() {
+    if (!this.gameData) return;
+    
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (!plot.plant) return;
+    
+    console.log('🗑️ 挖除了植物');
+    this.gameData.plots[this.selectedPlot] = {
+      ...plot,
+      plant: null,
+      lastUpdatedAt: Date.now(),
+    };
+    this.updateUI();
+    saveGame(this.gameData);
   }
   
   /**
