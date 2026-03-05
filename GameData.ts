@@ -14,6 +14,8 @@ export interface PlotData {
   plant: PlantData | null;
   soilMoisture: number;
   lastUpdatedAt: number;
+  hasShelter: boolean;          // 是否有遮雨棚
+  hasDehumidifier: boolean;     // 是否有除湿器
 }
 
 /**
@@ -37,6 +39,8 @@ export function createPlot(id: number): PlotData {
     plant: null,
     soilMoisture: 50,
     lastUpdatedAt: Date.now(),
+    hasShelter: false,
+    hasDehumidifier: false,
   };
 }
 
@@ -125,8 +129,21 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   // 不足 1 小时不更新
   if (hours < 1) return plot;
   
-  // 更新土壤湿度（即使没有植物也受天气影响）
-  let newMoisture = updateSoilMoisture(plot.soilMoisture, weather, hours, false);
+  // 调整天气效果（遮雨棚/除湿器）
+  let effectiveWeather = { ...weather };
+  
+  // 遮雨棚：阻挡降雨
+  if (plot.hasShelter) {
+    effectiveWeather.precipitation = 0;
+  }
+  
+  // 更新土壤湿度
+  let newMoisture = updateSoilMoisture(plot.soilMoisture, effectiveWeather, hours, false);
+  
+  // 除湿器：每小时降低 2% 湿度
+  if (plot.hasDehumidifier) {
+    newMoisture = Math.max(0, newMoisture - hours * 2);
+  }
   
   // 没有植物，只更新土壤
   if (!plot.plant) {
@@ -140,7 +157,7 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   // 按天模拟植物
   const days = Math.floor(hours / 24);
   if (days >= 1) {
-    const result = simulateDay(plot.plant, plot.soilMoisture, weather, false);
+    const result = simulateDay(plot.plant, plot.soilMoisture, effectiveWeather, false);
     return {
       ...plot,
       plant: result.plant,
@@ -155,6 +172,34 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
     soilMoisture: newMoisture,
     lastUpdatedAt: now,
   };
+}
+
+/**
+ * 安装遮雨棚
+ */
+export function installShelter(plot: PlotData): PlotData {
+  return { ...plot, hasShelter: true };
+}
+
+/**
+ * 移除遮雨棚
+ */
+export function removeShelter(plot: PlotData): PlotData {
+  return { ...plot, hasShelter: false };
+}
+
+/**
+ * 安装除湿器
+ */
+export function installDehumidifier(plot: PlotData): PlotData {
+  return { ...plot, hasDehumidifier: true };
+}
+
+/**
+ * 移除除湿器
+ */
+export function removeDehumidifier(plot: PlotData): PlotData {
+  return { ...plot, hasDehumidifier: false };
 }
 
 /**

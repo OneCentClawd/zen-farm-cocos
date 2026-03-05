@@ -9,7 +9,7 @@ import {
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
-import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot } from './GameData';
+import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot, installShelter, removeShelter, installDehumidifier, removeDehumidifier } from './GameData';
 import { saveGame, loadOrCreateGame } from './Storage';
 import { getGrowthStage, getPlantEmoji, getHealthEmoji } from './Plant';
 
@@ -25,6 +25,7 @@ export class ZenFarmGame extends Component {
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;
+  private facilityLabel: Label | null = null;  // 设施状态
   
   // 选择界面
   private selectPanel: Node | null = null;
@@ -147,13 +148,22 @@ export class ZenFarmGame extends Component {
     
     // 操作提示
     this.actionLabel = this.createLabel('Action', '👆 点击种植', 48);
-    this.actionLabel.node.setPosition(0, -halfH + 150, 0);
+    this.actionLabel.node.setPosition(0, -halfH + 200, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     
     // 增加点击区域
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
       actionTransform.setContentSize(screenSize.width, 100);
+    }
+    
+    // 设施按钮
+    this.facilityLabel = this.createLabel('Facility', '🏠 设施管理', 32);
+    this.facilityLabel.node.setPosition(0, -halfH + 80, 0);
+    this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
+    const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
+    if (facilityTransform) {
+      facilityTransform.setContentSize(300, 60);
     }
     
     console.log('✅ UI 创建完成');
@@ -325,6 +335,16 @@ export class ZenFarmGame extends Component {
         this.soilLabel.string = `💧 土壤: ${bar} ${plot.soilMoisture.toFixed(0)}%`;
       }
     }
+    
+    // 设施状态
+    if (this.facilityLabel) {
+      const facilities = [];
+      if (plot.hasShelter) facilities.push('🏠遮雨');
+      if (plot.hasDehumidifier) facilities.push('💨除湿');
+      this.facilityLabel.string = facilities.length > 0 
+        ? `设施: ${facilities.join(' ')}` 
+        : '🏠 设施管理';
+    }
   }
   
   /**
@@ -408,6 +428,102 @@ export class ZenFarmGame extends Component {
     cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
       menuNode.destroy();
     }, this);
+  }
+  
+  /**
+   * 显示设施管理菜单
+   */
+  showFacilityMenu() {
+    if (!this.gameData) return;
+    
+    const plot = this.gameData.plots[this.selectedPlot];
+    const screenSize = view.getVisibleSize();
+    
+    // 创建菜单
+    const menuNode = new Node('FacilityMenu');
+    menuNode.layer = this.node.layer;
+    menuNode.setParent(this.node);
+    menuNode.setPosition(0, 0, 0);
+    
+    const menuTransform = menuNode.addComponent(UITransform);
+    menuTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    // 标题
+    const title = this.createLabelOn(menuNode, 'Title', '🏠 设施管理', 48);
+    title.node.setPosition(0, 200, 0);
+    
+    // 遮雨棚
+    const shelterText = plot.hasShelter ? '🏠 遮雨棚 ✅ (点击移除)' : '🏠 遮雨棚 (点击安装)';
+    const shelterBtn = this.createLabelOn(menuNode, 'Shelter', shelterText, 36);
+    shelterBtn.node.setPosition(0, 80, 0);
+    const shelterTransform = shelterBtn.node.getComponent(UITransform);
+    if (shelterTransform) shelterTransform.setContentSize(500, 70);
+    shelterBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.toggleShelter();
+      menuNode.destroy();
+    }, this);
+    
+    // 遮雨棚说明
+    const shelterHint = this.createLabelOn(menuNode, 'ShelterHint', '阻挡降雨，防止积涝', 24);
+    shelterHint.node.setPosition(0, 30, 0);
+    
+    // 除湿器
+    const dehumText = plot.hasDehumidifier ? '💨 除湿器 ✅ (点击移除)' : '💨 除湿器 (点击安装)';
+    const dehumBtn = this.createLabelOn(menuNode, 'Dehum', dehumText, 36);
+    dehumBtn.node.setPosition(0, -50, 0);
+    const dehumTransform = dehumBtn.node.getComponent(UITransform);
+    if (dehumTransform) dehumTransform.setContentSize(500, 70);
+    dehumBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.toggleDehumidifier();
+      menuNode.destroy();
+    }, this);
+    
+    // 除湿器说明
+    const dehumHint = this.createLabelOn(menuNode, 'DehumHint', '每小时降低 2% 土壤湿度', 24);
+    dehumHint.node.setPosition(0, -100, 0);
+    
+    // 取消按钮
+    const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 关闭', 36);
+    cancelBtn.node.setPosition(0, -200, 0);
+    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
+      menuNode.destroy();
+    }, this);
+  }
+  
+  /**
+   * 切换遮雨棚
+   */
+  toggleShelter() {
+    if (!this.gameData) return;
+    
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (plot.hasShelter) {
+      this.gameData.plots[this.selectedPlot] = removeShelter(plot);
+      console.log('🏠 移除遮雨棚');
+    } else {
+      this.gameData.plots[this.selectedPlot] = installShelter(plot);
+      console.log('🏠 安装遮雨棚');
+    }
+    this.updateUI();
+    saveGame(this.gameData);
+  }
+  
+  /**
+   * 切换除湿器
+   */
+  toggleDehumidifier() {
+    if (!this.gameData) return;
+    
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (plot.hasDehumidifier) {
+      this.gameData.plots[this.selectedPlot] = removeDehumidifier(plot);
+      console.log('💨 移除除湿器');
+    } else {
+      this.gameData.plots[this.selectedPlot] = installDehumidifier(plot);
+      console.log('💨 安装除湿器');
+    }
+    this.updateUI();
+    saveGame(this.gameData);
   }
   
   /**
