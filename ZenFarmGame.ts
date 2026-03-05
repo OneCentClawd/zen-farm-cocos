@@ -103,38 +103,46 @@ export class ZenFarmGame extends Component {
   createUI() {
     const screenSize = view.getVisibleSize();
     const halfH = screenSize.height / 2;
+    const halfW = screenSize.width / 2;
     
     console.log(`📐 屏幕尺寸: ${screenSize.width} x ${screenSize.height}`);
     
+    // 给父节点添加 UITransform（必须）
+    let parentTransform = this.node.getComponent(UITransform);
+    if (!parentTransform) {
+      parentTransform = this.node.addComponent(UITransform);
+    }
+    parentTransform.setContentSize(screenSize.width, screenSize.height);
+    
     // 天气信息（顶部）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
-    this.weatherLabel.node.setPosition(0, halfH - 50, 0);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 32);
+    this.weatherLabel.node.setPosition(0, halfH - 80, 0);
     
     // 植物 emoji（中心大图）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 120);
-    this.plantEmoji.node.setPosition(0, halfH * 0.25, 0);
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 150);
+    this.plantEmoji.node.setPosition(0, 100, 0);
     
     // 植物状态
-    this.statusLabel = this.createLabel('Status', '选择种子开始种植', 28);
-    this.statusLabel.node.setPosition(0, halfH * 0.25 - 100, 0);
+    this.statusLabel = this.createLabel('Status', '选择种子开始种植', 36);
+    this.statusLabel.node.setPosition(0, -50, 0);
     
     // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 22);
-    this.soilLabel.node.setPosition(0, -halfH * 0.1, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 28);
+    this.soilLabel.node.setPosition(0, -150, 0);
     
     // 地块选择
-    this.plotLabel = this.createLabel('Plot', '🌾 地块 1', 20);
-    this.plotLabel.node.setPosition(0, -halfH * 0.25, 0);
+    this.plotLabel = this.createLabel('Plot', '🌾 地块 1', 24);
+    this.plotLabel.node.setPosition(0, -230, 0);
     
     // 操作提示
-    this.actionLabel = this.createLabel('Action', '💧浇水    🌱种植    🌾收获', 20);
-    this.actionLabel.node.setPosition(0, -halfH + 80, 0);
+    this.actionLabel = this.createLabel('Action', '👆 点击种植', 32);
+    this.actionLabel.node.setPosition(0, -halfH + 120, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     
     // 增加点击区域
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(400, 60);
+      actionTransform.setContentSize(screenSize.width, 80);
     }
     
     console.log('✅ UI 创建完成');
