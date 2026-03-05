@@ -286,21 +286,21 @@ export class ZenFarmGame extends Component {
       
       if (this.plantEmoji) this.plantEmoji.string = emoji;
       
-      // 状态显示 - 困难模式隐藏详细信息
+      // 状态显示 - 硬核模式隐藏详细信息
       if (this.statusLabel) {
         if (isHardMode) {
-          // 困难模式：只显示植物名和模式
+          // 硬核模式：只显示植物名和模式
           const modeIcon = '🔥';
           this.statusLabel.string = `${config.name} ${modeIcon}`;
         } else {
-          // 普通模式：显示完整信息
+          // 佛系模式：显示完整信息
           const healthEmoji = getHealthEmoji(plot.plant.healthState);
           const progress = (plot.plant.growthProgress * 100).toFixed(0);
           this.statusLabel.string = `${config.name} ${healthEmoji} ${plot.plant.healthValue.toFixed(0)}%\n生长: ${progress}%`;
         }
       }
       
-      // 土壤 - 困难模式隐藏
+      // 土壤 - 硬核模式隐藏
       if (this.soilLabel) {
         if (isHardMode) {
           this.soilLabel.string = '💧 土壤: ???';
@@ -310,7 +310,7 @@ export class ZenFarmGame extends Component {
         }
       }
       
-      // 天气 - 困难模式隐藏适宜范围
+      // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
       // 操作按钮
@@ -635,9 +635,9 @@ export class ZenFarmGame extends Component {
       '选择游戏难度', 36);
     hintLabel.node.setPosition(0, 200, 0);
     
-    // 普通模式
+    // 佛系模式
     const normalBtn = this.createLabelOn(this.difficultyPanel, 'Normal',
-      '🌿 普通模式\n显示适宜温度、湿度等提示', 32);
+      '🧘 佛系模式\n显示适宜温度、湿度等提示', 32);
     normalBtn.node.setPosition(0, 80, 0);
     const normalTransform = normalBtn.node.getComponent(UITransform);
     if (normalTransform) normalTransform.setContentSize(500, 100);
@@ -646,9 +646,9 @@ export class ZenFarmGame extends Component {
       this.showConfirmPanel(config);
     }, this);
     
-    // 困难模式
+    // 硬核模式
     const hardBtn = this.createLabelOn(this.difficultyPanel, 'Hard',
-      '🔥 困难模式\n无任何提示，全靠经验！', 32);
+      '💪 硬核模式\n无任何提示，全靠经验！', 32);
     hardBtn.node.setPosition(0, -60, 0);
     const hardTransform = hardBtn.node.getComponent(UITransform);
     if (hardTransform) hardTransform.setContentSize(500, 100);
@@ -709,7 +709,7 @@ export class ZenFarmGame extends Component {
     
     // 难度模式
     const modeLabel = this.createLabelOn(this.confirmPanel, 'Mode',
-      this.pendingHardMode ? '困难模式 - 无提示' : '普通模式 - 有提示', 28);
+      this.pendingHardMode ? '硬核模式 - 无提示' : '佛系模式 - 有提示', 28);
     modeLabel.node.setPosition(0, 230, 0);
     
     // 难度星级
@@ -722,7 +722,7 @@ export class ZenFarmGame extends Component {
       `📅 成熟周期: ${config.growthDays} 天`, 32);
     growthLabel.node.setPosition(0, 110, 0);
     
-    // 以下只在普通模式显示
+    // 以下只在佛系模式显示
     if (!this.pendingHardMode) {
       // 温度要求
       const tempLabel = this.createLabelOn(this.confirmPanel, 'Temp',
@@ -751,9 +751,9 @@ export class ZenFarmGame extends Component {
         '📜 需要每天关注天气，按时浇水\n极端天气可能导致植物死亡！', 24);
       ruleLabel.node.setPosition(0, -120, 0);
     } else {
-      // 困难模式只显示简单提示
+      // 硬核模式只显示简单提示
       const hardHint = this.createLabelOn(this.confirmPanel, 'HardHint',
-        '🔥 困难模式下不会显示任何提示\n你需要自己判断植物的状态！', 28);
+        '💪 硬核模式下不会显示任何提示\n你需要自己判断植物的状态！', 28);
       hardHint.node.setPosition(0, 0, 0);
     }
     
@@ -830,7 +830,7 @@ export class ZenFarmGame extends Component {
     this.gameData.plots[this.selectedPlot] = plantSeed(plot, type, hardMode);
     
     const config = PLANT_CONFIGS[type];
-    const modeText = hardMode ? '（困难模式）' : '';
+    const modeText = hardMode ? '（硬核模式）' : '';
     console.log(`🌱 种下了 ${config.name}${modeText}！`);
     this.updateUI();
     saveGame(this.gameData);
