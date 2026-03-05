@@ -1,0 +1,163 @@
+/**
+ * 环境系统 - 天气 API + 土壤湿度计算
+ */
+
+/**
+ * 天气数据
+ */
+export interface WeatherData {
+  temperature: number;      // 气温 °C
+  humidity: number;         // 空气湿度 %
+  precipitation: number;    // 降水量 mm
+  sunlight: number;         // 日照强度 0~1（根据天气状况推算）
+  weatherCode: number;      // 天气代码
+  updatedAt: number;        // 更新时间
+}
+
+/**
+ * 环境状态
+ */
+export interface EnvironmentState {
+  weather: WeatherData;
+  soilMoisture: number;     // 土壤湿度 0~100
+}
+
+/**
+ * WMO 天气代码到日照强度
+ */
+function weatherCodeToSunlight(code: number): number {
+  // 晴天
+  if (code === 0) return 1.0;
+  // 少云
+  if (code === 1) return 0.9;
+  // 多云
+  if (code === 2) return 0.7;
+  // 阴天
+  if (code === 3) return 0.4;
+  // 雾
+  if (code >= 45 && code <= 48) return 0.3;
+  // 毛毛雨
+  if (code >= 51 && code <= 55) return 0.3;
+  // 雨
+  if (code >= 61 && code <= 67) return 0.2;
+  // 雪
+  if (code >= 71 && code <= 77) return 0.3;
+  // 阵雨
+  if (code >= 80 && code <= 82) return 0.2;
+  // 雷暴
+  if (code >= 95 && code <= 99) return 0.1;
+  
+  return 0.5;
+}
+
+/**
+ * 从 Open-Meteo 获取天气
+ */
+export async function fetchWeather(lat: number, lon: number): Promise<WeatherData | null> {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&timezone=auto`;
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error('天气 API 错误:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    const current = data.current;
+    
+    return {
+      temperature: current.temperature_2m,
+      humidity: current.relative_humidity_2m,
+      precipitation: current.precipitation,
+      sunlight: weatherCodeToSunlight(current.weather_code),
+      weatherCode: current.weather_code,
+      updatedAt: Date.now(),
+    };
+  } catch (e) {
+    console.error('获取天气失败:', e);
+    return null;
+  }
+}
+
+/**
+ * 获取历史天气（用于离线补算）
+ */
+export async function fetchWeatherHistory(
+  lat: number, 
+  lon: number, 
+  startDate: string,  // YYYY-MM-DD
+  endDate: string
+): Promise<WeatherData[]> {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    const daily = data.daily;
+    
+    const result: WeatherData[] = [];
+    for (let i = 0; i < daily.time.length; i++) {
+      result.push({
+        temperature: daily.temperature_2m_mean[i],
+        humidity: 60,  // 历史数据没有湿度，用默认值
+        precipitation: daily.precipitation_sum[i],
+        sunlight: weatherCodeToSunlight(daily.weather_code[i]),
+        weatherCode: daily.weather_code[i],
+        updatedAt: new Date(daily.time[i]).getTime(),
+      });
+    }
+    
+    return result;
+  } catch (e) {
+    console.error('获取历史天气失败:', e);
+    return [];
+  }
+}
+
+/**
+ * 计算土壤湿度变化
+ * @param currentMoisture 当前湿度
+ * @param weather 天气数据
+ * @param hours 经过时间（小时）
+ * @param watered 是否浇水
+ * @returns 新的湿度值
+ */
+export function updateSoilMoisture(
+  currentMoisture: number,
+  weather: WeatherData,
+  hours: number,
+  watered: boolean = false
+): number {
+  let moisture = currentMoisture;
+  
+  // 1. 浇水增加湿度
+  if (watered) {
+    moisture += 20;
+  }
+  
+  // 2. 降水增加湿度
+  // 每 mm 降水约增加 3% 湿度
+  moisture += weather.precipitation * 3;
+  
+  // 3. 蒸发减少湿度
+  // 蒸发率受温度和日照影响
+  const baseEvaporation = 0.5;  // 基础蒸发 %/小时
+  const tempFactor = Math.max(0.5, 1 + (weather.temperature - 20) / 30);
+  const sunFactor = 0.5 + weather.sunlight * 0.5;
+  const humidityFactor = 1.5 - weather.humidity / 100;
+  
+  let evaporation = baseEvaporation * tempFactor * sunFactor * humidityFactor;
+  
+  // 下雨时蒸发很慢
+  if (weather.precipitation > 0) {
+    evaporation *= 0.1;
+  }
+  
+  moisture -= evaporation * hours;
+  
+  // 限制范围
+  return Math.max(0, Math.min(100, moisture));
+}
