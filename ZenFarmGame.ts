@@ -355,8 +355,8 @@ export class ZenFarmGame extends Component {
         saveGame(this.gameData);
         this.updateUI();
       } else if (plot.plant.growthProgress >= 1.0) {
-        // 收获
-        this.doHarvest();
+        // 成熟了 - 显示浇水/收获选择
+        this.showHarvestMenu();
       } else {
         // 浇水
         this.doWater();
@@ -365,6 +365,49 @@ export class ZenFarmGame extends Component {
       // 空地 - 显示种植选择
       this.showPlantSelect();
     }
+  }
+  
+  /**
+   * 显示收获菜单
+   */
+  showHarvestMenu() {
+    const screenSize = view.getVisibleSize();
+    
+    // 创建临时菜单
+    const menuNode = new Node('HarvestMenu');
+    menuNode.layer = this.node.layer;
+    menuNode.setParent(this.node);
+    menuNode.setPosition(0, 0, 0);
+    
+    const menuTransform = menuNode.addComponent(UITransform);
+    menuTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    // 浇水按钮
+    const waterBtn = this.createLabelOn(menuNode, 'Water', '💧 浇水', 48);
+    waterBtn.node.setPosition(0, 50, 0);
+    const waterTransform = waterBtn.node.getComponent(UITransform);
+    if (waterTransform) waterTransform.setContentSize(300, 80);
+    waterBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.doWater();
+      menuNode.destroy();
+    }, this);
+    
+    // 收获按钮
+    const harvestBtn = this.createLabelOn(menuNode, 'Harvest', '🌾 收获', 48);
+    harvestBtn.node.setPosition(0, -50, 0);
+    const harvestTransform = harvestBtn.node.getComponent(UITransform);
+    if (harvestTransform) harvestTransform.setContentSize(300, 80);
+    harvestBtn.node.on(Node.EventType.TOUCH_END, () => {
+      this.doHarvest();
+      menuNode.destroy();
+    }, this);
+    
+    // 取消按钮
+    const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 取消', 36);
+    cancelBtn.node.setPosition(0, -150, 0);
+    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
+      menuNode.destroy();
+    }, this);
   }
   
   /**
@@ -706,6 +749,9 @@ export class ZenFarmGame extends Component {
     this.updateUI();
   }
   
+  // 植物更新计时器
+  private updateTimer: number = 0;
+  
   /**
    * 每帧更新
    */
@@ -720,8 +766,28 @@ export class ZenFarmGame extends Component {
       }
     }
     
-    // 更新植物状态（每分钟）
-    // 简化：暂时只在打开游戏时更新
+    // 更新植物状态（每 60 秒检查一次）
+    this.updateTimer += dt;
+    if (this.updateTimer >= 60 && this.gameData && this.weather) {
+      this.updateTimer = 0;
+      
+      let needsUpdate = false;
+      for (let i = 0; i < this.gameData.plots.length; i++) {
+        const plot = this.gameData.plots[i];
+        if (plot.plant) {
+          const updated = updatePlot(plot, this.weather);
+          if (updated !== plot) {
+            this.gameData.plots[i] = updated;
+            needsUpdate = true;
+          }
+        }
+      }
+      
+      if (needsUpdate) {
+        this.updateUI();
+        saveGame(this.gameData);
+      }
+    }
   }
   
   onDestroy() {
