@@ -45,17 +45,17 @@ export class ZenFarmGame extends Component {
    * 确保在 Canvas 下运行
    */
   ensureCanvas() {
-    // 查找 Canvas
+    // 向上查找 Canvas
     let canvasNode: Node | null = null;
-    let canvas = this.node.getComponent(Canvas);
+    let current: Node | null = this.node;
     
-    if (canvas) {
-      canvasNode = this.node;
-    } else {
-      canvas = this.node.getComponentInParent(Canvas);
+    while (current) {
+      const canvas = current.getComponent(Canvas);
       if (canvas) {
-        canvasNode = canvas.node;
+        canvasNode = current;
+        break;
       }
+      current = current.parent;
     }
     
     if (!canvasNode) {
@@ -63,7 +63,8 @@ export class ZenFarmGame extends Component {
       console.log('⚠️ 未找到 Canvas，尝试查找...');
       const scene = director.getScene();
       if (scene) {
-        canvasNode = scene.getChildByName('Canvas');
+        // 递归查找 Canvas
+        canvasNode = this.findCanvasInNode(scene);
         if (canvasNode) {
           // 把自己移到 Canvas 下
           this.node.setParent(canvasNode);
@@ -80,6 +81,20 @@ export class ZenFarmGame extends Component {
       this.node.layer = canvasNode.layer;
       console.log(`📺 使用 Canvas layer: ${canvasNode.layer}`);
     }
+  }
+  
+  /**
+   * 递归查找 Canvas 节点
+   */
+  private findCanvasInNode(node: Node): Node | null {
+    if (node.getComponent(Canvas)) {
+      return node;
+    }
+    for (const child of node.children) {
+      const found = this.findCanvasInNode(child);
+      if (found) return found;
+    }
+    return null;
   }
   
   /**
