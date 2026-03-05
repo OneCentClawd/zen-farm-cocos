@@ -79,6 +79,8 @@ export class ZenFarmGame extends Component {
     // 从 Canvas 获取正确的 layer
     if (canvasNode) {
       this.node.layer = canvasNode.layer;
+      // 确保节点在中心位置
+      this.node.setPosition(0, 0, 0);
       console.log(`📺 使用 Canvas layer: ${canvasNode.layer}`);
     }
   }
@@ -113,36 +115,38 @@ export class ZenFarmGame extends Component {
       parentTransform = this.node.addComponent(UITransform);
     }
     parentTransform.setContentSize(screenSize.width, screenSize.height);
+    parentTransform.anchorX = 0.5;
+    parentTransform.anchorY = 0.5;
     
     // 天气信息（顶部）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 32);
-    this.weatherLabel.node.setPosition(0, halfH - 80, 0);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 48);
+    this.weatherLabel.node.setPosition(0, halfH - 100, 0);
     
     // 植物 emoji（中心大图）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 150);
-    this.plantEmoji.node.setPosition(0, 100, 0);
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 200);
+    this.plantEmoji.node.setPosition(0, 150, 0);
     
     // 植物状态
-    this.statusLabel = this.createLabel('Status', '选择种子开始种植', 36);
+    this.statusLabel = this.createLabel('Status', '选择种子开始种植', 48);
     this.statusLabel.node.setPosition(0, -50, 0);
     
     // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 28);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 40);
     this.soilLabel.node.setPosition(0, -150, 0);
     
     // 地块选择
-    this.plotLabel = this.createLabel('Plot', '🌾 地块 1', 24);
-    this.plotLabel.node.setPosition(0, -230, 0);
+    this.plotLabel = this.createLabel('Plot', '🌾 地块 1', 36);
+    this.plotLabel.node.setPosition(0, -250, 0);
     
     // 操作提示
-    this.actionLabel = this.createLabel('Action', '👆 点击种植', 32);
-    this.actionLabel.node.setPosition(0, -halfH + 120, 0);
+    this.actionLabel = this.createLabel('Action', '👆 点击种植', 48);
+    this.actionLabel.node.setPosition(0, -halfH + 150, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     
     // 增加点击区域
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(screenSize.width, 80);
+      actionTransform.setContentSize(screenSize.width, 100);
     }
     
     console.log('✅ UI 创建完成');
