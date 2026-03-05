@@ -29,6 +29,8 @@ export function createPlant(type: PlantType): PlantData {
     lastWateredAt: Date.now(),
     harvestCount: 0,
     stressDays: {},
+    vernalizationDays: 0,
+    canBloom: type !== PlantType.SAKURA,  // 樱花需要春化才能开花
   };
 }
 
@@ -104,6 +106,16 @@ function checkTemperatureStress(
   config: PlantConfig,
   temperature: number
 ): { damage: number; stressType: StressType | null } {
+  // 高温致死
+  if (temperature >= config.tempLethalHigh) {
+    return { damage: 50, stressType: StressType.HEAT };
+  }
+  
+  // 低温致死
+  if (temperature <= config.tempLethalLow) {
+    return { damage: 50, stressType: StressType.COLD };
+  }
+  
   // 热害
   if (temperature >= config.tempHeatDamage) {
     const severity = (temperature - config.tempHeatDamage) / 10;
@@ -116,11 +128,6 @@ function checkTemperatureStress(
     const severity = (config.tempColdDamage - temperature) / 10;
     const damage = severity * (1 - config.coldTolerance) * 8;
     return { damage, stressType: StressType.COLD };
-  }
-  
-  // 致死温度
-  if (config.tempLethal > 0 && temperature >= config.tempLethal) {
-    return { damage: 30, stressType: StressType.HEAT };
   }
   
   return { damage: 0, stressType: null };
@@ -246,9 +253,9 @@ export function simulateDay(
     plant.stressDays[lightStress.stressType] = (plant.stressDays[lightStress.stressType] || 0) + 1;
   }
   
-  // 3. 恢复（无胁迫时每天恢复一点）
+  // 3. 恢复（无胁迫时每天恢复 5 点）
   if (totalDamage === 0 && plant.healthValue < 100) {
-    plant.healthValue = Math.min(100, plant.healthValue + 2);
+    plant.healthValue = Math.min(100, plant.healthValue + 5);
   } else {
     plant.healthValue = Math.max(0, plant.healthValue - totalDamage);
   }
@@ -261,6 +268,14 @@ export function simulateDay(
     const growthRate = calculateGrowthRate(plant, config, weather, newSoilMoisture);
     const dailyGrowth = growthRate / config.growthDays;
     plant.growthProgress += dailyGrowth;
+    
+    // 樱花春化检测
+    if (config.needsVernalization && weather.temperature < 7) {
+      plant.vernalizationDays++;
+      if (plant.vernalizationDays >= (config.vernalizationDays || 30)) {
+        plant.canBloom = true;
+      }
+    }
     
     // 一年生植物超龄死亡
     if (config.lifespan > 0) {

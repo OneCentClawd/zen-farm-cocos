@@ -56,6 +56,8 @@ export interface PlantData {
   lastWateredAt: number;
   harvestCount: number;
   stressDays: Record<string, number>;  // 各类胁迫累计天数
+  vernalizationDays: number;      // 春化累计天数（低于7°C的天数）
+  canBloom: boolean;              // 是否可以开花（樱花用）
 }
 
 /**
@@ -72,7 +74,8 @@ export interface PlantConfig {
   tempMax: number;                // 适宜最高温
   tempHeatDamage: number;         // 热害温度
   tempColdDamage: number;         // 冻害温度
-  tempLethal: number;             // 致死温度
+  tempLethalHigh: number;         // 高温致死
+  tempLethalLow: number;          // 低温致死
   
   // 水分
   moistureMin: number;            // 最低湿度
@@ -91,6 +94,10 @@ export interface PlantConfig {
   waterlogTolerance: number;      // 耐涝 0~1
   heatTolerance: number;          // 耐热 0~1
   coldTolerance: number;          // 耐寒 0~1
+  
+  // 特殊需求
+  needsVernalization?: boolean;   // 是否需要春化（樱花）
+  vernalizationDays?: number;     // 春化需要的低温天数
 }
 
 /**
@@ -106,7 +113,8 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     tempMax: 25,
     tempHeatDamage: 30,
     tempColdDamage: -5,
-    tempLethal: 40,
+    tempLethalHigh: 45,
+    tempLethalLow: -20,
     moistureMin: 20,
     moistureMax: 70,
     moistureOptimal: 45,
@@ -128,7 +136,8 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     tempMax: 30,
     tempHeatDamage: 35,
     tempColdDamage: 10,
-    tempLethal: 0,
+    tempLethalHigh: 45,         // 高温致死
+    tempLethalLow: -5,          // 低温致死
     moistureMin: 30,
     moistureMax: 60,
     moistureOptimal: 45,
@@ -150,7 +159,8 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     tempMax: 25,
     tempHeatDamage: 28,
     tempColdDamage: -5,
-    tempLethal: 35,
+    tempLethalHigh: 38,
+    tempLethalLow: -15,
     moistureMin: 50,
     moistureMax: 70,
     moistureOptimal: 60,
@@ -172,7 +182,8 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     tempMax: 25,
     tempHeatDamage: 35,
     tempColdDamage: -15,
-    tempLethal: 40,
+    tempLethalHigh: 45,
+    tempLethalLow: -25,
     moistureMin: 30,
     moistureMax: 60,
     moistureOptimal: 45,
@@ -183,5 +194,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     waterlogTolerance: 0.2,
     heatTolerance: 0.4,
     coldTolerance: 0.8,
+    needsVernalization: true,     // 需要春化
+    vernalizationDays: 30,        // 需要低于 7°C 的天数
   },
 };
