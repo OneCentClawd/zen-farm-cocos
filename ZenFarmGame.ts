@@ -34,6 +34,9 @@ export class ZenFarmGame extends Component {
   private pendingPlantType: PlantType | null = null;
   private pendingHardMode: boolean = false;
   
+  // 临时菜单（防止重复弹出）
+  private activeMenu: Node | null = null;
+  
   // 游戏数据
   private gameData: GameSaveData | null = null;
   private weather: WeatherData | null = null;
@@ -391,6 +394,12 @@ export class ZenFarmGame extends Component {
    * 显示植物操作菜单
    */
   showPlantMenu(canHarvest: boolean) {
+    // 防止重复弹出
+    if (this.activeMenu) {
+      this.activeMenu.destroy();
+      this.activeMenu = null;
+    }
+    
     const screenSize = view.getVisibleSize();
     
     // 创建临时菜单
@@ -398,6 +407,7 @@ export class ZenFarmGame extends Component {
     menuNode.layer = this.node.layer;
     menuNode.setParent(this.node);
     menuNode.setPosition(0, 0, 0);
+    this.activeMenu = menuNode;
     
     const menuTransform = menuNode.addComponent(UITransform);
     menuTransform.setContentSize(screenSize.width, screenSize.height);
@@ -411,7 +421,7 @@ export class ZenFarmGame extends Component {
     if (waterTransform) waterTransform.setContentSize(300, 80);
     waterBtn.node.on(Node.EventType.TOUCH_END, () => {
       this.doWater();
-      menuNode.destroy();
+      this.closeActiveMenu();
     }, this);
     yPos -= 100;
     
@@ -423,7 +433,7 @@ export class ZenFarmGame extends Component {
       if (harvestTransform) harvestTransform.setContentSize(300, 80);
       harvestBtn.node.on(Node.EventType.TOUCH_END, () => {
         this.doHarvest();
-        menuNode.destroy();
+        this.closeActiveMenu();
       }, this);
       yPos -= 100;
     }
@@ -442,8 +452,18 @@ export class ZenFarmGame extends Component {
     const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 取消', 36);
     cancelBtn.node.setPosition(0, yPos, 0);
     cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      menuNode.destroy();
+      this.closeActiveMenu();
     }, this);
+  }
+  
+  /**
+   * 关闭当前活动菜单
+   */
+  closeActiveMenu() {
+    if (this.activeMenu) {
+      this.activeMenu.destroy();
+      this.activeMenu = null;
+    }
   }
   
   /**
@@ -466,14 +486,14 @@ export class ZenFarmGame extends Component {
     if (confirmTransform) confirmTransform.setContentSize(300, 70);
     confirmBtn.node.on(Node.EventType.TOUCH_END, () => {
       this.doRemovePlant();
-      parentMenu.destroy();
+      this.closeActiveMenu();
     }, this);
     
     // 取消按钮
     const cancelBtn = this.createLabelOn(parentMenu, 'Cancel', '❌ 取消', 36);
     cancelBtn.node.setPosition(0, -160, 0);
     cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      parentMenu.destroy();
+      this.closeActiveMenu();
     }, this);
   }
   
@@ -502,6 +522,12 @@ export class ZenFarmGame extends Component {
   showFacilityMenu() {
     if (!this.gameData) return;
     
+    // 防止重复弹出
+    if (this.activeMenu) {
+      this.activeMenu.destroy();
+      this.activeMenu = null;
+    }
+    
     const plot = this.gameData.plots[this.selectedPlot];
     const screenSize = view.getVisibleSize();
     
@@ -510,6 +536,7 @@ export class ZenFarmGame extends Component {
     menuNode.layer = this.node.layer;
     menuNode.setParent(this.node);
     menuNode.setPosition(0, 0, 0);
+    this.activeMenu = menuNode;
     
     const menuTransform = menuNode.addComponent(UITransform);
     menuTransform.setContentSize(screenSize.width, screenSize.height);
@@ -526,11 +553,11 @@ export class ZenFarmGame extends Component {
     if (shelterTransform) shelterTransform.setContentSize(500, 70);
     shelterBtn.node.on(Node.EventType.TOUCH_END, () => {
       this.toggleShelter();
-      menuNode.destroy();
+      this.closeActiveMenu();
     }, this);
     
     // 遮雨棚说明
-    const shelterHint = this.createLabelOn(menuNode, 'ShelterHint', '阻挡降雨，防止积涝', 24);
+    const shelterHint = this.createLabelOn(menuNode, 'ShelterHint', '阻挡降雨，防止积涝（24小时后自动移除）', 24);
     shelterHint.node.setPosition(0, 30, 0);
     
     // 除湿器
@@ -541,7 +568,7 @@ export class ZenFarmGame extends Component {
     if (dehumTransform) dehumTransform.setContentSize(500, 70);
     dehumBtn.node.on(Node.EventType.TOUCH_END, () => {
       this.toggleDehumidifier();
-      menuNode.destroy();
+      this.closeActiveMenu();
     }, this);
     
     // 除湿器说明
@@ -552,7 +579,7 @@ export class ZenFarmGame extends Component {
     const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 关闭', 36);
     cancelBtn.node.setPosition(0, -200, 0);
     cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      menuNode.destroy();
+      this.closeActiveMenu();
     }, this);
   }
   
