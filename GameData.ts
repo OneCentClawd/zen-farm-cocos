@@ -14,8 +14,9 @@ export interface PlotData {
   plant: PlantData | null;
   soilMoisture: number;
   lastUpdatedAt: number;
-  hasShelter: boolean;          // 是否有遮雨棚
+  hasShelter: boolean;          // 是否有遮雨棚（每日重置）
   hasDehumidifier: boolean;     // 是否有除湿器
+  shelterInstalledAt: number;   // 遮雨棚安装时间（用于每日重置）
 }
 
 /**
@@ -41,6 +42,7 @@ export function createPlot(id: number): PlotData {
     lastUpdatedAt: Date.now(),
     hasShelter: false,
     hasDehumidifier: false,
+    shelterInstalledAt: 0,
   };
 }
 
@@ -129,11 +131,23 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   // 不足 1 小时不更新
   if (hours < 1) return plot;
   
+  // 检查遮雨棚是否过期（24小时后自动移除）
+  let shelterActive = plot.hasShelter;
+  let shelterExpired = false;
+  if (plot.hasShelter && plot.shelterInstalledAt > 0) {
+    const shelterAge = (now - plot.shelterInstalledAt) / (1000 * 60 * 60);
+    if (shelterAge >= 24) {
+      shelterActive = false;
+      shelterExpired = true;
+      console.log('🏠 遮雨棚已过期（24小时）');
+    }
+  }
+  
   // 调整天气效果（遮雨棚/除湿器）
   let effectiveWeather = { ...weather };
   
   // 遮雨棚：阻挡降雨
-  if (plot.hasShelter) {
+  if (shelterActive) {
     effectiveWeather.precipitation = 0;
   }
   
@@ -145,13 +159,22 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
     newMoisture = Math.max(0, newMoisture - hours * 2);
   }
   
-  // 没有植物，只更新土壤
+  // 构建更新后的 plot
+  let updatedPlot: PlotData = {
+    ...plot,
+    soilMoisture: newMoisture,
+    lastUpdatedAt: now,
+  };
+  
+  // 如果遮雨棚过期，移除它
+  if (shelterExpired) {
+    updatedPlot.hasShelter = false;
+    updatedPlot.shelterInstalledAt = 0;
+  }
+  
+  // 没有植物，返回
   if (!plot.plant) {
-    return {
-      ...plot,
-      soilMoisture: newMoisture,
-      lastUpdatedAt: now,
-    };
+    return updatedPlot;
   }
   
   // 按天模拟植物
@@ -159,26 +182,24 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   if (days >= 1) {
     const result = simulateDay(plot.plant, plot.soilMoisture, effectiveWeather, false);
     return {
-      ...plot,
+      ...updatedPlot,
       plant: result.plant,
       soilMoisture: result.newSoilMoisture,
-      lastUpdatedAt: now,
     };
   }
   
-  // 不足一天，只更新土壤湿度
-  return { 
-    ...plot, 
-    soilMoisture: newMoisture,
-    lastUpdatedAt: now,
-  };
+  return updatedPlot;
 }
 
 /**
  * 安装遮雨棚
  */
 export function installShelter(plot: PlotData): PlotData {
-  return { ...plot, hasShelter: true };
+  return { 
+    ...plot, 
+    hasShelter: true,
+    shelterInstalledAt: Date.now(),
+  };
 }
 
 /**
