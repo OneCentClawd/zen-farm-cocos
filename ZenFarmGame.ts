@@ -5,7 +5,7 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas 
+  UITransform, view, director, Canvas, Sprite, SpriteFrame 
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
@@ -170,6 +170,50 @@ export class ZenFarmGame extends Component {
     }
     
     console.log('✅ UI 创建完成');
+  }
+  
+  /**
+   * 创建带半透明背景的弹窗容器
+   */
+  private createMenuWithBackground(name: string): Node {
+    const screenSize = view.getVisibleSize();
+    
+    // 主容器
+    const menuNode = new Node(name);
+    menuNode.layer = this.node.layer;
+    menuNode.setParent(this.node);
+    menuNode.setPosition(0, 0, 0);
+    
+    const menuTransform = menuNode.addComponent(UITransform);
+    menuTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    // 半透明黑色背景
+    const bgNode = new Node('Background');
+    bgNode.layer = this.node.layer;
+    bgNode.setParent(menuNode);
+    bgNode.setPosition(0, 0, 0);
+    
+    const bgTransform = bgNode.addComponent(UITransform);
+    bgTransform.setContentSize(screenSize.width, screenSize.height);
+    
+    const bgSprite = bgNode.addComponent(Sprite);
+    bgSprite.color = new Color(0, 0, 0, 180);  // 半透明黑色
+    bgSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    
+    // 内容区域（白色半透明背景）
+    const contentNode = new Node('Content');
+    contentNode.layer = this.node.layer;
+    contentNode.setParent(menuNode);
+    contentNode.setPosition(0, 0, 0);
+    
+    const contentTransform = contentNode.addComponent(UITransform);
+    contentTransform.setContentSize(screenSize.width * 0.85, screenSize.height * 0.7);
+    
+    const contentSprite = contentNode.addComponent(Sprite);
+    contentSprite.color = new Color(40, 40, 50, 230);  // 深色背景
+    contentSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    
+    return menuNode;
   }
   
   /**
@@ -400,17 +444,9 @@ export class ZenFarmGame extends Component {
       this.activeMenu = null;
     }
     
-    const screenSize = view.getVisibleSize();
-    
-    // 创建临时菜单
-    const menuNode = new Node('PlantMenu');
-    menuNode.layer = this.node.layer;
-    menuNode.setParent(this.node);
-    menuNode.setPosition(0, 0, 0);
+    // 创建带背景的菜单
+    const menuNode = this.createMenuWithBackground('PlantMenu');
     this.activeMenu = menuNode;
-    
-    const menuTransform = menuNode.addComponent(UITransform);
-    menuTransform.setContentSize(screenSize.width, screenSize.height);
     
     let yPos = 100;
     
@@ -529,17 +565,10 @@ export class ZenFarmGame extends Component {
     }
     
     const plot = this.gameData.plots[this.selectedPlot];
-    const screenSize = view.getVisibleSize();
     
-    // 创建菜单
-    const menuNode = new Node('FacilityMenu');
-    menuNode.layer = this.node.layer;
-    menuNode.setParent(this.node);
-    menuNode.setPosition(0, 0, 0);
+    // 创建带背景的菜单
+    const menuNode = this.createMenuWithBackground('FacilityMenu');
     this.activeMenu = menuNode;
-    
-    const menuTransform = menuNode.addComponent(UITransform);
-    menuTransform.setContentSize(screenSize.width, screenSize.height);
     
     // 标题
     const title = this.createLabelOn(menuNode, 'Title', '🏠 设施管理', 48);
