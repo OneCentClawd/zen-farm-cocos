@@ -77,8 +77,8 @@ export function harvestPlot(plot: PlotData): { plot: PlotData; harvested: boolea
     return { plot, harvested: false };
   }
   
-  // 一年生植物收获后死亡
-  if (config.lifespan > 0 && config.lifespan < 365) {
+  // 一年生植物收获后死亡（用 isAnnual 判断，而不是 lifespan）
+  if (config.isAnnual) {
     return {
       plot: {
         ...plot,

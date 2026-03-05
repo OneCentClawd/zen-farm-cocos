@@ -98,6 +98,7 @@ export interface PlantConfig {
   // 特殊需求
   needsVernalization?: boolean;   // 是否需要春化（樱花）
   vernalizationDays?: number;     // 春化需要的低温天数
+  isAnnual?: boolean;             // 是否一年生（收获后死亡）
 }
 
 /**
@@ -148,6 +149,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     waterlogTolerance: 0.4,
     heatTolerance: 0.7,
     coldTolerance: 0.2,
+    isAnnual: true,   // 一年生，收获后死亡
   },
   
   [PlantType.STRAWBERRY]: {

@@ -89,7 +89,8 @@ export async function fetchWeatherHistory(
   startDate: string,  // YYYY-MM-DD
   endDate: string
 ): Promise<WeatherData[]> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+  // 使用 archive API 获取历史数据
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
   
   try {
     const response = await fetch(url);
