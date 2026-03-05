@@ -3,7 +3,7 @@
  */
 
 import { PlantType, PlantData, HealthState, PLANT_CONFIGS } from './PlantTypes';
-import { WeatherData } from './Environment';
+import { WeatherData, updateSoilMoisture } from './Environment';
 import { createPlant, simulateDay, simulateOffline } from './Plant';
 
 /**
@@ -118,8 +118,6 @@ export function removePlant(plot: PlotData): PlotData {
  * 更新地块（实时）
  */
 export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
-  if (!plot.plant) return plot;
-  
   // 计算经过的小时数
   const now = Date.now();
   const hours = (now - plot.lastUpdatedAt) / (1000 * 60 * 60);
@@ -127,7 +125,19 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   // 不足 1 小时不更新
   if (hours < 1) return plot;
   
-  // 按天模拟
+  // 更新土壤湿度（即使没有植物也受天气影响）
+  let newMoisture = updateSoilMoisture(plot.soilMoisture, weather, hours, false);
+  
+  // 没有植物，只更新土壤
+  if (!plot.plant) {
+    return {
+      ...plot,
+      soilMoisture: newMoisture,
+      lastUpdatedAt: now,
+    };
+  }
+  
+  // 按天模拟植物
   const days = Math.floor(hours / 24);
   if (days >= 1) {
     const result = simulateDay(plot.plant, plot.soilMoisture, weather, false);
@@ -139,7 +149,12 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
     };
   }
   
-  return { ...plot, lastUpdatedAt: now };
+  // 不足一天，只更新土壤湿度
+  return { 
+    ...plot, 
+    soilMoisture: newMoisture,
+    lastUpdatedAt: now,
+  };
 }
 
 /**
