@@ -36,8 +36,40 @@ export class ZenFarmGame extends Component {
   
   start() {
     console.log('🌱 佛系种地启动');
+    this.ensureCanvas();
     this.createUI();
     this.initGame();
+  }
+  
+  /**
+   * 确保在 Canvas 下运行
+   */
+  ensureCanvas() {
+    // 检查是否已在 Canvas 下
+    let canvas = this.node.getComponent(Canvas);
+    if (!canvas) {
+      canvas = this.node.getComponentInParent(Canvas);
+    }
+    
+    if (!canvas) {
+      // 没有 Canvas，需要创建
+      console.log('⚠️ 未找到 Canvas，尝试查找场景中的 Canvas...');
+      const scene = director.getScene();
+      if (scene) {
+        const canvasNode = scene.getChildByName('Canvas');
+        if (canvasNode) {
+          // 把自己移到 Canvas 下
+          this.node.setParent(canvasNode);
+          this.node.layer = canvasNode.layer;
+          console.log('✅ 已移动到 Canvas 下');
+        } else {
+          console.error('❌ 场景中没有 Canvas！请先创建 Canvas');
+        }
+      }
+    }
+    
+    // 设置正确的 layer
+    this.node.layer = 1 << 25; // UI_2D
   }
   
   /**
