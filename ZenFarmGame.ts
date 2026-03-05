@@ -150,7 +150,9 @@ export class ZenFarmGame extends Component {
     node.setParent(this.node);
     
     const transform = node.addComponent(UITransform);
-    transform.setContentSize(500, fontSize + 20);
+    transform.setContentSize(600, fontSize + 40);
+    transform.anchorX = 0.5;
+    transform.anchorY = 0.5;
     
     const label = node.addComponent(Label);
     label.string = text;
@@ -159,6 +161,7 @@ export class ZenFarmGame extends Component {
     label.horizontalAlign = Label.HorizontalAlign.CENTER;
     label.verticalAlign = Label.VerticalAlign.CENTER;
     label.color = new Color(255, 255, 255, 255);
+    label.overflow = Label.Overflow.NONE;
     
     return label;
   }
