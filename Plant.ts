@@ -18,7 +18,7 @@ function generateId(): string {
 /**
  * 创建新植物
  */
-export function createPlant(type: PlantType): PlantData {
+export function createPlant(type: PlantType, hardMode: boolean = false): PlantData {
   return {
     id: generateId(),
     type,
@@ -31,6 +31,7 @@ export function createPlant(type: PlantType): PlantData {
     stressDays: {},
     vernalizationDays: 0,
     canBloom: type !== PlantType.SAKURA,  // 樱花需要春化才能开花
+    hardMode,
   };
 }
 

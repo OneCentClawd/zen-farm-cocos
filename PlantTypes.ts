@@ -58,6 +58,7 @@ export interface PlantData {
   stressDays: Record<string, number>;  // 各类胁迫累计天数
   vernalizationDays: number;      // 春化累计天数（低于7°C的天数）
   canBloom: boolean;              // 是否可以开花（樱花用）
+  hardMode: boolean;              // 困难模式（无提示）
 }
 
 /**

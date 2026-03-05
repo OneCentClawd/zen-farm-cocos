@@ -43,10 +43,10 @@ export function createPlot(id: number): PlotData {
 /**
  * 种植
  */
-export function plantSeed(plot: PlotData, type: PlantType): PlotData {
+export function plantSeed(plot: PlotData, type: PlantType, hardMode: boolean = false): PlotData {
   return {
     ...plot,
-    plant: createPlant(type),
+    plant: createPlant(type, hardMode),
     lastUpdatedAt: Date.now(),
   };
 }
