@@ -160,7 +160,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
       { id: 'leaf', name: '展叶', emoji: '🌿', progress: 0.15, description: '长出第一片叶子' },
       { id: 'clump', name: '成丛', emoji: '🍀', progress: 0.40, description: '叶片渐渐增多' },
       { id: 'bloom', name: '开花', emoji: '🍀', progress: 0.70, description: '小白花悄然绽放' },
-      { id: 'lucky', name: '四叶', emoji: '🍀', progress: 1.0, description: '也许会遇到四叶草？' },
+      { id: 'lucky', name: '四叶', emoji: '☘️', progress: 1.0, description: '也许会遇到四叶草？' },
     ],
     tempMin: 10,
     tempMax: 25,
@@ -172,7 +172,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     moistureMax: 70,
     moistureOptimal: 45,
     sunlightMin: 0.2,
-    growthDays: 14,
+    growthDays: 7,
     lifespan: -1,  // 多年生
     droughtTolerance: 0.8,
     waterlogTolerance: 0.5,
@@ -205,7 +205,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     moistureMax: 60,
     moistureOptimal: 45,
     sunlightMin: 0.6,
-    growthDays: 60,
+    growthDays: 30,
     lifespan: 120,  // 一年生
     droughtTolerance: 0.5,
     waterlogTolerance: 0.4,

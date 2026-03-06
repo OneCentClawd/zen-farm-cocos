@@ -3,7 +3,7 @@
  */
 
 import { 
-  PlantType, PlantData, HealthState, GrowthStage, StressType,
+  PlantType, PlantData, HealthState, StressType, StageConfig,
   PLANT_CONFIGS, PlantConfig 
 } from './PlantTypes';
 import { WeatherData, updateSoilMoisture } from './Environment';
@@ -19,60 +19,90 @@ function generateId(): string {
  * 创建新植物
  */
 export function createPlant(type: PlantType, hardMode: boolean = false): PlantData {
+  const config = PLANT_CONFIGS[type];
   return {
     id: generateId(),
     type,
     plantedAt: Date.now(),
+    
+    // 健康状态
     healthState: HealthState.HEALTHY,
     healthValue: 100,
+    
+    // 成长进度
     growthProgress: 0,
+    currentStageId: 'seed',
+    
+    // 物理特征 - 初始值（带少量随机性）
+    height: 0,
+    leafCount: 0,
+    rootDepth: 0,
+    stemWidth: 0,
+    
+    // 外观
+    leafColor: 0,      // 嫩绿
+    wiltLevel: 0,      // 健康
+    
+    // 养护记录
     lastWateredAt: Date.now(),
     harvestCount: 0,
+    totalWaterReceived: 0,
+    totalSunlightHours: 0,
+    totalRainfallReceived: 0,
+    
+    // 环境
     stressDays: {},
     vernalizationDays: 0,
     canBloom: type !== PlantType.SAKURA,  // 樱花需要春化才能开花
+    
+    // 游戏模式
     hardMode,
+    
+    // 成长日记
+    milestones: [{
+      stageId: 'seed',
+      date: Date.now(),
+      weather: '播种',
+      height: 0,
+    }],
   };
 }
 
 /**
- * 获取生长阶段
+ * 根据进度获取当前阶段
  */
-export function getGrowthStage(plant: PlantData): GrowthStage {
-  if (plant.healthState === HealthState.DEAD) return GrowthStage.DEAD;
-  
-  const progress = plant.growthProgress;
-  
-  if (progress < 0.05) return GrowthStage.SEED;
-  if (progress < 0.15) return GrowthStage.SPROUT;
-  if (progress < 0.35) return GrowthStage.SEEDLING;
-  if (progress < 0.7) return GrowthStage.GROWING;
-  if (progress < 1.0) return GrowthStage.MATURE;
-  
-  // 超过 1.0 表示衰老
+export function getCurrentStage(plant: PlantData): StageConfig {
   const config = PLANT_CONFIGS[plant.type];
-  if (config.lifespan > 0 && progress > 1.2) {
-    return GrowthStage.AGING;
+  const stages = config.stages;
+  
+  // 死亡特殊处理
+  if (plant.healthState === HealthState.DEAD) {
+    return { id: 'dead', name: '枯萎', emoji: '🥀', progress: 0, description: '植物已经枯萎' };
   }
   
-  return GrowthStage.MATURE;
+  // 从后往前找，找到第一个 progress <= 当前进度 的阶段
+  for (let i = stages.length - 1; i >= 0; i--) {
+    const stage = stages[i];
+    
+    // 检查条件
+    if (stage.condition === 'vernalization' && !plant.canBloom) {
+      continue;  // 跳过需要春化但未完成的阶段
+    }
+    
+    if (plant.growthProgress >= stage.progress) {
+      return stage;
+    }
+  }
+  
+  return stages[0];
 }
 
 /**
  * 获取显示用的 emoji
  */
 export function getPlantEmoji(plant: PlantData): string {
-  const stage = getGrowthStage(plant);
-  const config = PLANT_CONFIGS[plant.type];
-  
-  switch (stage) {
-    case GrowthStage.SEED: return '🌰';
-    case GrowthStage.SPROUT: return '🌱';
-    case GrowthStage.DEAD: return '🥀';
-    case GrowthStage.SEEDLING: return '🌿';
-    case GrowthStage.GROWING: return '🌿';
-    default: return config.emoji;
-  }
+  const stage = getCurrentStage(plant);
+  return stage.emoji;
 }
 
 /**
@@ -261,14 +291,53 @@ export function simulateDay(
     plant.healthValue = Math.max(0, plant.healthValue - totalDamage);
   }
   
-  // 4. 更新健康状态
+  // 4. 更新健康状态和外观
   plant.healthState = healthValueToState(plant.healthValue);
+  plant.wiltLevel = 1 - plant.healthValue / 100;  // 萎蔫程度
   
   // 5. 生长
   if (plant.healthState !== HealthState.DEAD) {
+    const oldStageId = getCurrentStage(plant).id;
+    
     const growthRate = calculateGrowthRate(plant, config, weather, newSoilMoisture);
     const dailyGrowth = growthRate / config.growthDays;
     plant.growthProgress += dailyGrowth;
+    
+    // 更新物理特征（带少量随机性，让每棵植物独特）
+    const heightGrowth = (config.maxHeight / config.growthDays) * growthRate;
+    plant.height += heightGrowth * (0.9 + Math.random() * 0.2);
+    plant.height = Math.min(plant.height, config.maxHeight);
+    
+    // 叶片随进度增长
+    if (plant.growthProgress > 0.1 && Math.random() < 0.3 * growthRate) {
+      plant.leafCount++;
+    }
+    
+    // 根系深度
+    plant.rootDepth += heightGrowth * 0.5 * (0.8 + Math.random() * 0.4);
+    
+    // 茎秆粗度
+    plant.stemWidth += heightGrowth * 0.02;
+    
+    // 叶色随成熟度变深
+    plant.leafColor = Math.min(1, plant.growthProgress * 1.2);
+    
+    // 累计日照和雨水
+    plant.totalSunlightHours += weather.sunlight * 12;  // 假设白天12小时
+    plant.totalRainfallReceived += weather.precipitation;
+    
+    // 检测阶段变化，记录里程碑
+    const newStage = getCurrentStage(plant);
+    if (newStage.id !== oldStageId) {
+      plant.currentStageId = newStage.id;
+      plant.milestones.push({
+        stageId: newStage.id,
+        date: Date.now(),
+        weather: getWeatherDescription(weather),
+        height: plant.height,
+      });
+      console.log(`🌱 ${config.name} 进入新阶段: ${newStage.name}`);
+    }
     
     // 樱花春化检测
     if (config.needsVernalization && weather.temperature < 7) {
@@ -289,6 +358,18 @@ export function simulateDay(
   }
   
   return { plant, newSoilMoisture };
+}
+
+/**
+ * 获取天气描述
+ */
+function getWeatherDescription(weather: WeatherData): string {
+  const temp = weather.temperature.toFixed(0);
+  if (weather.precipitation > 5) return `🌧️ 雨天 ${temp}°C`;
+  if (weather.precipitation > 0) return `🌦️ 小雨 ${temp}°C`;
+  if (weather.sunlight > 0.8) return `☀️ 晴天 ${temp}°C`;
+  if (weather.sunlight > 0.5) return `⛅ 多云 ${temp}°C`;
+  return `☁️ 阴天 ${temp}°C`;
 }
 
 /**
