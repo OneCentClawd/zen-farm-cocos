@@ -5,7 +5,7 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Graphics
+  UITransform, view, director, Canvas, Graphics, LabelOutline
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
@@ -138,22 +138,27 @@ export class ZenFarmGame extends Component {
     this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 42);
     this.weatherLabel.node.setPosition(0, halfH - 80, 0);
     
-    // 地块信息（左上角，加大字号）
-    this.plotLabel = this.createLabel('Plot', '🌾 地块 1/4', 36);
-    this.plotLabel.node.setPosition(-halfW + 120, halfH - 80, 0);
+    // 地块信息（左上角，可点击切换）
+    this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 36);
+    this.plotLabel.node.setPosition(0, halfH - 80, 0);  // 居中显示
+    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
+    const plotTransform = this.plotLabel.node.getComponent(UITransform);
+    if (plotTransform) {
+      plotTransform.setContentSize(400, 80);
+    }
     
     // ========== 中央植物区 ==========
     // 植物 emoji（放大主角）
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 240);
-    this.plantEmoji.node.setPosition(0, 100, 0);
+    this.plantEmoji.node.setPosition(0, 80, 0);
     
     // 阶段信息（植物下方）
     this.stageLabel = this.createLabel('Stage', '播种中...', 40);
-    this.stageLabel.node.setPosition(0, -80, 0);
+    this.stageLabel.node.setPosition(0, -100, 0);
     
     // 植物状态（健康 + 进度）
     this.statusLabel = this.createLabel('Status', '🟢 健康', 36);
-    this.statusLabel.node.setPosition(0, -140, 0);
+    this.statusLabel.node.setPosition(0, -160, 0);
     
     // ========== 底部信息区 ==========
     // 土壤湿度（上移，留出间距）
@@ -204,6 +209,15 @@ export class ZenFarmGame extends Component {
     label.color = new Color(255, 255, 255, 255);
     label.overflow = Label.Overflow.NONE;
     
+    // 添加描边增强可读性
+    const outline = node.addComponent(LabelOutline);
+    outline.color = new Color(0, 0, 0, 180);
+    outline.width = 3;
+    
+    return label;
+  }
+    label.overflow = Label.Overflow.NONE;
+    
     return label;
   }
   
@@ -225,7 +239,7 @@ export class ZenFarmGame extends Component {
     
     // 用 Graphics 画纯色背景（不需要 spriteFrame）
     const graphics = bgNode.addComponent(Graphics);
-    graphics.fillColor = new Color(135, 206, 235, 255);  // 默认晴天蓝
+    graphics.fillColor = new Color(135, 206, 235, 255);  // 默认晴天蓝 #87CEEB
     graphics.rect(-width / 2, -height / 2, width, height);
     graphics.fill();
     
@@ -248,23 +262,23 @@ export class ZenFarmGame extends Component {
     const sunlight = this.weather.sunlight;
     const precip = this.weather.precipitation;
     
-    let r = 135, g = 206, b = 250;  // 默认晴天蓝
+    let r = 135, g = 206, b = 235;  // 默认晴天蓝 #87CEEB
     
     if (precip > 5) {
-      // 大雨 - 深灰蓝
-      r = 100; g = 110; b = 130;
+      // 大雨 - 灰蓝
+      r = 119; g = 136; b = 153;  // #778899
     } else if (precip > 0) {
-      // 小雨 - 灰蓝
-      r = 140; g = 160; b = 180;
+      // 小雨 - 浅灰蓝
+      r = 176; g = 196; b = 222;  // #B0C4DE
     } else if (sunlight > 0.8) {
       // 大晴天 - 明亮天蓝
-      r = 120; g = 200; b = 255;
+      r = 135; g = 206; b = 250;  // #87CEFA
     } else if (sunlight > 0.5) {
-      // 多云 - 淡蓝
-      r = 170; g = 200; b = 230;
+      // 多云 - 淡天蓝
+      r = 173; g = 216; b = 230;  // #ADD8E6
     } else {
-      // 阴天 - 淡灰蓝
-      r = 160; g = 175; b = 190;
+      // 阴天 - 浅灰
+      r = 192; g = 192; b = 192;  // #C0C0C0
     }
     
     // 重绘背景
@@ -357,7 +371,7 @@ export class ZenFarmGame extends Component {
     
     // 地块
     if (this.plotLabel) {
-      this.plotLabel.string = `🌾 地块 ${this.selectedPlot + 1}/${this.gameData.plots.length}`;
+      this.plotLabel.string = `◀ 地块 ${this.selectedPlot + 1}/${this.gameData.plots.length} ▶`;
     }
     
     // 植物
@@ -445,6 +459,16 @@ export class ZenFarmGame extends Component {
   private getMoistureBar(moisture: number): string {
     const filled = Math.round(moisture / 20);
     return '💧'.repeat(Math.min(5, filled)) + '○'.repeat(Math.max(0, 5 - filled));
+  }
+  
+  /**
+   * 切换地块
+   */
+  cyclePlot() {
+    if (!this.gameData) return;
+    this.selectedPlot = (this.selectedPlot + 1) % this.gameData.plots.length;
+    this.updateUI();
+    console.log(`🌾 切换到地块 ${this.selectedPlot + 1}`);
   }
   
   /**
@@ -797,6 +821,11 @@ export class ZenFarmGame extends Component {
     label.verticalAlign = Label.VerticalAlign.CENTER;
     label.color = new Color(255, 255, 255, 255);
     label.overflow = Label.Overflow.NONE;
+    
+    // 添加描边增强可读性
+    const outline = node.addComponent(LabelOutline);
+    outline.color = new Color(0, 0, 0, 180);
+    outline.width = 3;
     
     return label;
   }
