@@ -38,6 +38,8 @@ export function createPlant(type: PlantType, hardMode: boolean = false): PlantDa
     leafCount: 0,
     rootDepth: 0,
     stemWidth: 0,
+    tiltAngle: 0,
+    tiltDirection: Math.random() * 360,  // 初始随机方向
     
     // 外观
     leafColor: 0,      // 嫩绿
@@ -378,6 +380,24 @@ export function simulateDay(
       stemMultiplier = 0.7;  // 遮挡下细弱
     }
     updated.stemWidth += baseHeightGrowth * 0.02 * stemMultiplier;
+    
+    // 倾斜：风大且茎细容易倾斜，向风向倾斜
+    if (!inShelter && weather.windSpeed > 10) {
+      // 茎越粗越不容易倾斜
+      const stiffness = Math.min(1, updated.stemWidth / 5);  // 茎粗5mm以上基本不倒
+      const tiltForce = (weather.windSpeed / 50) * (1 - stiffness);
+      
+      // 向风向倾斜（渐变，不是突变）
+      updated.tiltAngle = Math.min(30, updated.tiltAngle + tiltForce * 2);
+      // 倾斜方向渐变到风向
+      const windDir = weather.windDirection || 0;
+      const dirDiff = ((windDir - updated.tiltDirection + 540) % 360) - 180;
+      updated.tiltDirection += dirDiff * 0.1;  // 缓慢转向风向
+    } else if (updated.tiltAngle > 0) {
+      // 无风时慢慢恢复（茎粗恢复快）
+      const recovery = Math.min(1, updated.stemWidth / 3) * 0.5;
+      updated.tiltAngle = Math.max(0, updated.tiltAngle - recovery);
+    }
     
     // 叶片：阳光好叶子多，缺光叶子少
     const leafChance = weather.sunlight > 0.5 ? 0.4 : 0.15;

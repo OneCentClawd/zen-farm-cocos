@@ -11,6 +11,7 @@ export interface WeatherData {
   precipitation: number;    // 降水量 mm
   sunlight: number;         // 日照强度 0~1（根据天气状况推算）
   windSpeed: number;        // 风速 km/h
+  windDirection: number;    // 风向（度，0=北风，90=东风）
   weatherCode: number;      // 天气代码
   updatedAt: number;        // 更新时间
 }
@@ -55,7 +56,7 @@ function weatherCodeToSunlight(code: number): number {
  * 从 Open-Meteo 获取天气
  */
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherData | null> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto`;
   
   try {
     const response = await fetch(url);
@@ -73,6 +74,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
       precipitation: current.precipitation,
       sunlight: weatherCodeToSunlight(current.weather_code),
       windSpeed: current.wind_speed_10m || 0,
+      windDirection: current.wind_direction_10m || 0,
       weatherCode: current.weather_code,
       updatedAt: Date.now(),
     };
@@ -109,6 +111,7 @@ export async function fetchWeatherHistory(
         precipitation: daily.precipitation_sum[i],
         sunlight: weatherCodeToSunlight(daily.weather_code[i]),
         windSpeed: daily.wind_speed_10m_max?.[i] || 10,
+        windDirection: daily.wind_direction_10m_dominant?.[i] || 0,
         weatherCode: daily.weather_code[i],
         updatedAt: new Date(daily.time[i]).getTime(),
       });

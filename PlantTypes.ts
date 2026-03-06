@@ -75,6 +75,8 @@ export interface PlantData {
   leafCount: number;              // 叶片数量
   rootDepth: number;              // 根系深度 cm
   stemWidth: number;              // 茎秆粗度 mm
+  tiltAngle: number;              // 倾斜角度（度），0=笔直
+  tiltDirection: number;          // 倾斜方向（0-360度，0=北，90=东）
   
   // 颜色/外观（0~1，影响渲染）
   leafColor: number;              // 叶色深浅（0=嫩绿，1=深绿）
