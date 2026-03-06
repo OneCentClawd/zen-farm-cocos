@@ -170,11 +170,11 @@ export class ZenFarmGame extends Component {
     soilTransform.setContentSize(280, 120);
     const soilGraphics = soilNode.addComponent(Graphics);
     // 画椭圆形泥土 #8B6914 - 加大
-    soilGraphics.fillColor = new Color(139, 105, 20, 255);
+    soilGraphics.fillColor = new Color(160, 120, 60, 255);  // 棕色泥土 #A0783C
     soilGraphics.ellipse(0, 0, 130, 45);
     soilGraphics.fill();
     // 泥土高光
-    soilGraphics.fillColor = new Color(160, 130, 50, 255);
+    soilGraphics.fillColor = new Color(185, 150, 90, 255);  // 高光浅棕色
     soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
     
