@@ -329,7 +329,7 @@ export class ZenFarmGame extends Component {
       // 空地
       if (this.plantEmoji) this.plantEmoji.string = '🕳️';
       if (this.statusLabel) this.statusLabel.string = '空地 - 点击种植';
-      if (this.actionLabel) this.actionLabel.string = '🍀 幸运草  🌻 向日葵  🍓 草莓  🌸 樱花';
+      if (this.actionLabel) this.actionLabel.string = '👆 种点什么~';
       
       // 土壤（空地时显示）
       if (this.soilLabel) {
