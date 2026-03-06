@@ -173,7 +173,6 @@ export class ZenFarmGame extends Component {
     
     console.log('✅ UI 创建完成');
   }
-  }
   
   /**
    * 创建文本标签
