@@ -5,7 +5,7 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Sprite, SpriteFrame 
+  UITransform, view, director, Canvas, Sprite, SpriteFrame, Texture2D, ImageAsset, Graphics
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
@@ -187,7 +187,7 @@ export class ZenFarmGame extends Component {
     const menuTransform = menuNode.addComponent(UITransform);
     menuTransform.setContentSize(screenSize.width, screenSize.height);
     
-    // 半透明黑色背景
+    // 半透明黑色背景（用 Graphics 画）
     const bgNode = new Node('Background');
     bgNode.layer = this.node.layer;
     bgNode.setParent(menuNode);
@@ -196,22 +196,33 @@ export class ZenFarmGame extends Component {
     const bgTransform = bgNode.addComponent(UITransform);
     bgTransform.setContentSize(screenSize.width, screenSize.height);
     
-    const bgSprite = bgNode.addComponent(Sprite);
-    bgSprite.color = new Color(0, 0, 0, 180);  // 半透明黑色
-    bgSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    const bgGraphics = bgNode.addComponent(Graphics);
+    bgGraphics.fillColor = new Color(0, 0, 0, 180);
+    bgGraphics.rect(-screenSize.width / 2, -screenSize.height / 2, screenSize.width, screenSize.height);
+    bgGraphics.fill();
     
-    // 内容区域（白色半透明背景）
+    // 内容区域背景（深色）
     const contentNode = new Node('Content');
     contentNode.layer = this.node.layer;
     contentNode.setParent(menuNode);
     contentNode.setPosition(0, 0, 0);
     
-    const contentTransform = contentNode.addComponent(UITransform);
-    contentTransform.setContentSize(screenSize.width * 0.85, screenSize.height * 0.7);
+    const contentW = screenSize.width * 0.85;
+    const contentH = screenSize.height * 0.7;
     
-    const contentSprite = contentNode.addComponent(Sprite);
-    contentSprite.color = new Color(40, 40, 50, 230);  // 深色背景
-    contentSprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    const contentTransform = contentNode.addComponent(UITransform);
+    contentTransform.setContentSize(contentW, contentH);
+    
+    const contentGraphics = contentNode.addComponent(Graphics);
+    contentGraphics.fillColor = new Color(30, 30, 40, 240);
+    contentGraphics.roundRect(-contentW / 2, -contentH / 2, contentW, contentH, 20);
+    contentGraphics.fill();
+    
+    // 边框
+    contentGraphics.strokeColor = new Color(100, 100, 120, 255);
+    contentGraphics.lineWidth = 2;
+    contentGraphics.roundRect(-contentW / 2, -contentH / 2, contentW, contentH, 20);
+    contentGraphics.stroke();
     
     return menuNode;
   }
