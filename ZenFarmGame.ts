@@ -162,21 +162,21 @@ export class ZenFarmGame extends Component {
     
     // ========== 底部信息区 ==========
     // 土壤湿度（上移，留出间距）
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 38);
-    this.soilLabel.node.setPosition(0, -halfH + 280, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 42);
+    this.soilLabel.node.setPosition(0, -halfH + 300, 0);
     
-    // 操作按钮区（加大字号）
-    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 48);
-    this.actionLabel.node.setPosition(0, -halfH + 180, 0);
+    // 操作按钮区（大字醒目）
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 56);
+    this.actionLabel.node.setPosition(0, -halfH + 200, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(screenSize.width * 0.8, 100);
+      actionTransform.setContentSize(screenSize.width * 0.9, 120);
     }
     
     // 设施按钮（右下角，加大）
-    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 34);
-    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 80, 0);
+    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 40);
+    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 100, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
