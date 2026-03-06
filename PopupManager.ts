@@ -2,7 +2,7 @@
  * 🎨 弹窗管理器 - 统一管理弹窗样式
  */
 
-import { Node, UITransform, view, Color, Graphics, Label, Vec3 } from 'cc';
+import { Node, UITransform, view, Color, Graphics, Label } from 'cc';
 
 /**
  * 弹窗配置
@@ -15,6 +15,7 @@ export interface PopupConfig {
   panelColor?: Color;  // 面板颜色
   borderColor?: Color; // 边框颜色
   borderRadius?: number;
+  closeOnMask?: boolean; // 点击遮罩关闭
 }
 
 const DEFAULT_CONFIG: PopupConfig = {
@@ -24,7 +25,16 @@ const DEFAULT_CONFIG: PopupConfig = {
   panelColor: new Color(30, 30, 40, 245),
   borderColor: new Color(100, 100, 120, 255),
   borderRadius: 20,
+  closeOnMask: true,
 };
+
+/**
+ * 弹窗返回值
+ */
+export interface PopupResult {
+  popup: Node;    // 主容器
+  panel: Node;    // 内容面板（按钮应该加到这里）
+}
 
 /**
  * 弹窗管理器
@@ -74,6 +84,14 @@ export class PopupManager {
     maskGraphics.rect(-screenSize.width / 2, -screenSize.height / 2, screenSize.width, screenSize.height);
     maskGraphics.fill();
     
+    // 遮罩点击事件：关闭弹窗或拦截穿透
+    maskNode.on(Node.EventType.TOUCH_END, (event: any) => {
+      event.propagationStopped = true; // 阻止事件穿透
+      if (cfg.closeOnMask) {
+        this.close();
+      }
+    });
+    
     // 内容面板
     const panelNode = new Node('Panel');
     panelNode.layer = this.parentNode.layer;
@@ -96,11 +114,16 @@ export class PopupManager {
     panelGraphics.roundRect(-panelW / 2, -panelH / 2, panelW, panelH, cfg.borderRadius!);
     panelGraphics.stroke();
     
+    // 面板拦截点击（防止点面板也关闭）
+    panelNode.on(Node.EventType.TOUCH_END, (event: any) => {
+      event.propagationStopped = true;
+    });
+    
     // 标题
     if (cfg.title) {
       const titleNode = new Node('Title');
       titleNode.layer = this.parentNode.layer;
-      titleNode.setParent(popup);
+      titleNode.setParent(panelNode);
       titleNode.setPosition(0, panelH / 2 - 50, 0);
       
       const titleTransform = titleNode.addComponent(UITransform);
@@ -115,7 +138,9 @@ export class PopupManager {
     }
     
     this.activePopup = popup;
-    return popup;
+    
+    // 返回 panelNode，让调用者把内容加到面板里
+    return panelNode;
   }
   
   /**
