@@ -5,7 +5,7 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Graphics, LabelOutline
+  UITransform, view, director, Canvas, Graphics
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
@@ -209,10 +209,10 @@ export class ZenFarmGame extends Component {
     label.color = new Color(255, 255, 255, 255);
     label.overflow = Label.Overflow.NONE;
     
-    // 添加描边增强可读性
-    const outline = node.addComponent(LabelOutline);
-    outline.color = new Color(0, 0, 0, 180);
-    outline.width = 3;
+    // 描边增强可读性（使用 Label 自带属性）
+    label.enableOutline = true;
+    label.outlineColor = new Color(0, 0, 0, 200);
+    label.outlineWidth = 4;
     
     return label;
   }
@@ -818,10 +818,10 @@ export class ZenFarmGame extends Component {
     label.color = new Color(255, 255, 255, 255);
     label.overflow = Label.Overflow.NONE;
     
-    // 添加描边增强可读性
-    const outline = node.addComponent(LabelOutline);
-    outline.color = new Color(0, 0, 0, 180);
-    outline.width = 3;
+    // 描边增强可读性（使用 Label 自带属性）
+    label.enableOutline = true;
+    label.outlineColor = new Color(0, 0, 0, 200);
+    label.outlineWidth = 4;
     
     return label;
   }
