@@ -135,9 +135,21 @@ export class ZenFarmGame extends Component {
     this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
     
     // ========== 顶部区域 ==========
+    // 顶部半透明背景条
+    const topBar = new Node('TopBar');
+    topBar.layer = this.node.layer;
+    topBar.setParent(this.node);
+    topBar.setPosition(0, halfH - 90, 0);
+    const topBarTransform = topBar.addComponent(UITransform);
+    topBarTransform.setContentSize(screenSize.width, 160);
+    const topBarGraphics = topBar.addComponent(Graphics);
+    topBarGraphics.fillColor = new Color(0, 0, 0, 80);
+    topBarGraphics.rect(-screenSize.width / 2, -80, screenSize.width, 160);
+    topBarGraphics.fill();
+    
     // 地块信息（顶部居中，可点击切换）
     this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 44);
-    this.plotLabel.node.setPosition(0, halfH - 60, 0);
+    this.plotLabel.node.setPosition(0, halfH - 55, 0);
     this.plotLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
@@ -145,34 +157,34 @@ export class ZenFarmGame extends Component {
     }
     
     // 天气信息（地块下方）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 38);
-    this.weatherLabel.node.setPosition(0, halfH - 120, 0);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 40);
+    this.weatherLabel.node.setPosition(0, halfH - 115, 0);
     
     // ========== 中央植物区 ==========
-    // 泥土区域（让植物"种在地里"）
+    // 泥土区域（让植物"种在地里"）- 加大
     const soilNode = new Node('SoilArea');
     soilNode.layer = this.node.layer;
     soilNode.setParent(this.node);
-    soilNode.setPosition(0, -60, 0);
+    soilNode.setPosition(0, -80, 0);
     const soilTransform = soilNode.addComponent(UITransform);
-    soilTransform.setContentSize(200, 80);
+    soilTransform.setContentSize(280, 120);
     const soilGraphics = soilNode.addComponent(Graphics);
-    // 画椭圆形泥土 #8B6914
+    // 画椭圆形泥土 #8B6914 - 加大
     soilGraphics.fillColor = new Color(139, 105, 20, 255);
-    soilGraphics.ellipse(0, 0, 100, 35);
+    soilGraphics.ellipse(0, 0, 130, 45);
     soilGraphics.fill();
     // 泥土高光
     soilGraphics.fillColor = new Color(160, 130, 50, 255);
-    soilGraphics.ellipse(0, 10, 70, 20);
+    soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
     
     // 植物 emoji（放大主角）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 280);
-    this.plantEmoji.node.setPosition(0, 80, 0);
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
+    this.plantEmoji.node.setPosition(0, 100, 0);
     
     // 阶段信息（植物下方）
     this.stageLabel = this.createLabel('Stage', '播种中...', 44);
-    this.stageLabel.node.setPosition(0, -130, 0);
+    this.stageLabel.node.setPosition(0, -150, 0);
     
     // 植物状态（健康 + 进度）
     this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
@@ -448,8 +460,23 @@ export class ZenFarmGame extends Component {
     if (this.weather && this.weatherLabel) {
       const temp = this.weather.temperature.toFixed(1);
       const wind = this.weather.windSpeed.toFixed(0);
-      this.weatherLabel.string = `🌡️ ${temp}°C  🌬️ ${wind}km/h`;
-      console.log(`🌤️ 天气: ${temp}°C, 风速: ${wind}km/h`);
+      
+      // 根据天气选择 emoji
+      let weatherEmoji = '☀️';  // 默认晴天
+      if (this.weather.precipitation > 5) {
+        weatherEmoji = '🌧️';  // 大雨
+      } else if (this.weather.precipitation > 0) {
+        weatherEmoji = '🌦️';  // 小雨
+      } else if (this.weather.sunlight > 0.8) {
+        weatherEmoji = '☀️';  // 大晴天
+      } else if (this.weather.sunlight > 0.5) {
+        weatherEmoji = '⛅';  // 多云
+      } else {
+        weatherEmoji = '☁️';  // 阴天
+      }
+      
+      this.weatherLabel.string = `${weatherEmoji} ${temp}°C  🌬️ ${wind}km/h`;
+      console.log(`${weatherEmoji} 天气: ${temp}°C, 风速: ${wind}km/h`);
       
       // 更新背景颜色
       this.updateBackgroundColor();
