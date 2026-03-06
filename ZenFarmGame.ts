@@ -134,48 +134,48 @@ export class ZenFarmGame extends Component {
     this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
     
     // ========== 顶部区域 ==========
-    // 天气信息
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 36);
-    this.weatherLabel.node.setPosition(0, halfH - 60, 0);
+    // 天气信息（加大字号）
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 42);
+    this.weatherLabel.node.setPosition(0, halfH - 80, 0);
     
-    // 地块信息（左上角）
-    this.plotLabel = this.createLabel('Plot', '🌾 地块 1/4', 28);
-    this.plotLabel.node.setPosition(-halfW + 100, halfH - 60, 0);
+    // 地块信息（左上角，加大字号）
+    this.plotLabel = this.createLabel('Plot', '🌾 地块 1/4', 36);
+    this.plotLabel.node.setPosition(-halfW + 120, halfH - 80, 0);
     
     // ========== 中央植物区 ==========
-    // 植物 emoji（大图）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 180);
-    this.plantEmoji.node.setPosition(0, 80, 0);
+    // 植物 emoji（放大主角）
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 240);
+    this.plantEmoji.node.setPosition(0, 100, 0);
     
     // 阶段信息（植物下方）
-    this.stageLabel = this.createLabel('Stage', '播种中...', 32);
-    this.stageLabel.node.setPosition(0, -60, 0);
+    this.stageLabel = this.createLabel('Stage', '播种中...', 40);
+    this.stageLabel.node.setPosition(0, -80, 0);
     
     // 植物状态（健康 + 进度）
-    this.statusLabel = this.createLabel('Status', '🟢 健康', 28);
-    this.statusLabel.node.setPosition(0, -110, 0);
+    this.statusLabel = this.createLabel('Status', '🟢 健康', 36);
+    this.statusLabel.node.setPosition(0, -140, 0);
     
     // ========== 底部信息区 ==========
-    // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 32);
-    this.soilLabel.node.setPosition(0, -halfH + 200, 0);
+    // 土壤湿度（上移，留出间距）
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 38);
+    this.soilLabel.node.setPosition(0, -halfH + 280, 0);
     
-    // 操作按钮区
-    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 40);
-    this.actionLabel.node.setPosition(0, -halfH + 130, 0);
+    // 操作按钮区（加大字号）
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 48);
+    this.actionLabel.node.setPosition(0, -halfH + 180, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(screenSize.width * 0.8, 80);
+      actionTransform.setContentSize(screenSize.width * 0.8, 100);
     }
     
-    // 设施按钮（右下角）
-    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 28);
-    this.facilityLabel.node.setPosition(halfW - 80, -halfH + 60, 0);
+    // 设施按钮（右下角，加大）
+    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 34);
+    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 80, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
-      facilityTransform.setContentSize(300, 60);
+      facilityTransform.setContentSize(200, 80);
     }
     
     console.log('✅ UI 创建完成');
@@ -248,23 +248,23 @@ export class ZenFarmGame extends Component {
     const sunlight = this.weather.sunlight;
     const precip = this.weather.precipitation;
     
-    let r = 135, g = 206, b = 235;  // 默认晴天蓝
+    let r = 135, g = 206, b = 250;  // 默认晴天蓝
     
     if (precip > 5) {
-      // 大雨 - 深灰
-      r = 80; g = 90; b = 100;
+      // 大雨 - 深灰蓝
+      r = 100; g = 110; b = 130;
     } else if (precip > 0) {
       // 小雨 - 灰蓝
-      r = 120; g = 140; b = 160;
+      r = 140; g = 160; b = 180;
     } else if (sunlight > 0.8) {
-      // 大晴天 - 明亮蓝
-      r = 100; g = 180; b = 255;
+      // 大晴天 - 明亮天蓝
+      r = 120; g = 200; b = 255;
     } else if (sunlight > 0.5) {
-      // 多云 - 淡蓝灰
-      r = 160; g = 190; b = 210;
+      // 多云 - 淡蓝
+      r = 170; g = 200; b = 230;
     } else {
-      // 阴天 - 灰色
-      r = 140; g = 150; b = 160;
+      // 阴天 - 淡灰蓝
+      r = 160; g = 175; b = 190;
     }
     
     // 重绘背景
