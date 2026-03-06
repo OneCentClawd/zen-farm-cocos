@@ -134,40 +134,40 @@ export class ZenFarmGame extends Component {
     this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
     
     // ========== 顶部区域 ==========
-    // 天气信息（加大字号）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 42);
-    this.weatherLabel.node.setPosition(0, halfH - 80, 0);
-    
-    // 地块信息（左上角，可点击切换）
-    this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 36);
-    this.plotLabel.node.setPosition(0, halfH - 80, 0);  // 居中显示
+    // 地块信息（顶部居中，可点击切换）
+    this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 44);
+    this.plotLabel.node.setPosition(0, halfH - 60, 0);
     this.plotLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
-      plotTransform.setContentSize(400, 80);
+      plotTransform.setContentSize(500, 80);
     }
+    
+    // 天气信息（地块下方）
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 38);
+    this.weatherLabel.node.setPosition(0, halfH - 120, 0);
     
     // ========== 中央植物区 ==========
     // 植物 emoji（放大主角）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 240);
-    this.plantEmoji.node.setPosition(0, 80, 0);
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 280);
+    this.plantEmoji.node.setPosition(0, 60, 0);
     
     // 阶段信息（植物下方）
-    this.stageLabel = this.createLabel('Stage', '播种中...', 40);
-    this.stageLabel.node.setPosition(0, -100, 0);
+    this.stageLabel = this.createLabel('Stage', '播种中...', 44);
+    this.stageLabel.node.setPosition(0, -120, 0);
     
     // 植物状态（健康 + 进度）
-    this.statusLabel = this.createLabel('Status', '🟢 健康', 36);
-    this.statusLabel.node.setPosition(0, -160, 0);
+    this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
+    this.statusLabel.node.setPosition(0, -180, 0);
     
     // ========== 底部信息区 ==========
-    // 土壤湿度（上移，留出间距）
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 42);
-    this.soilLabel.node.setPosition(0, -halfH + 300, 0);
+    // 土壤湿度
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 44);
+    this.soilLabel.node.setPosition(0, -halfH + 320, 0);
     
     // 操作按钮区（大字醒目）
-    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 56);
-    this.actionLabel.node.setPosition(0, -halfH + 200, 0);
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 60);
+    this.actionLabel.node.setPosition(0, -halfH + 220, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
@@ -175,12 +175,12 @@ export class ZenFarmGame extends Component {
     }
     
     // 设施按钮（右下角，加大）
-    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 40);
-    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 100, 0);
+    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 44);
+    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 120, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
-      facilityTransform.setContentSize(200, 80);
+      facilityTransform.setContentSize(200, 100);
     }
     
     console.log('✅ UI 创建完成');
