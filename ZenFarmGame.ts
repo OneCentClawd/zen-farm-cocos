@@ -5,13 +5,14 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Sprite, SpriteFrame, Texture2D, ImageAsset, Graphics
+  UITransform, view, director, Canvas, Graphics
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
 import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot, installShelter, removeShelter, installDehumidifier, removeDehumidifier } from './GameData';
 import { saveGame, loadOrCreateGame } from './Storage';
 import { getGrowthStage, getPlantEmoji, getHealthEmoji } from './Plant';
+import { PopupManager } from './PopupManager';
 
 const { ccclass, property } = _decorator;
 
@@ -34,8 +35,8 @@ export class ZenFarmGame extends Component {
   private pendingPlantType: PlantType | null = null;
   private pendingHardMode: boolean = false;
   
-  // 临时菜单（防止重复弹出）
-  private activeMenu: Node | null = null;
+  // 弹窗管理器
+  private popupManager: PopupManager | null = null;
   
   // 游戏数据
   private gameData: GameSaveData | null = null;
@@ -48,6 +49,7 @@ export class ZenFarmGame extends Component {
   start() {
     console.log('🌱 佛系种地启动');
     this.ensureCanvas();
+    this.popupManager = new PopupManager(this.node);
     this.createUI();
     this.initGame();
   }
@@ -171,60 +173,6 @@ export class ZenFarmGame extends Component {
     
     console.log('✅ UI 创建完成');
   }
-  
-  /**
-   * 创建带半透明背景的弹窗容器
-   */
-  private createMenuWithBackground(name: string): Node {
-    const screenSize = view.getVisibleSize();
-    
-    // 主容器
-    const menuNode = new Node(name);
-    menuNode.layer = this.node.layer;
-    menuNode.setParent(this.node);
-    menuNode.setPosition(0, 0, 0);
-    
-    const menuTransform = menuNode.addComponent(UITransform);
-    menuTransform.setContentSize(screenSize.width, screenSize.height);
-    
-    // 半透明黑色背景（用 Graphics 画）
-    const bgNode = new Node('Background');
-    bgNode.layer = this.node.layer;
-    bgNode.setParent(menuNode);
-    bgNode.setPosition(0, 0, 0);
-    
-    const bgTransform = bgNode.addComponent(UITransform);
-    bgTransform.setContentSize(screenSize.width, screenSize.height);
-    
-    const bgGraphics = bgNode.addComponent(Graphics);
-    bgGraphics.fillColor = new Color(0, 0, 0, 180);
-    bgGraphics.rect(-screenSize.width / 2, -screenSize.height / 2, screenSize.width, screenSize.height);
-    bgGraphics.fill();
-    
-    // 内容区域背景（深色）
-    const contentNode = new Node('Content');
-    contentNode.layer = this.node.layer;
-    contentNode.setParent(menuNode);
-    contentNode.setPosition(0, 0, 0);
-    
-    const contentW = screenSize.width * 0.85;
-    const contentH = screenSize.height * 0.7;
-    
-    const contentTransform = contentNode.addComponent(UITransform);
-    contentTransform.setContentSize(contentW, contentH);
-    
-    const contentGraphics = contentNode.addComponent(Graphics);
-    contentGraphics.fillColor = new Color(30, 30, 40, 240);
-    contentGraphics.roundRect(-contentW / 2, -contentH / 2, contentW, contentH, 20);
-    contentGraphics.fill();
-    
-    // 边框
-    contentGraphics.strokeColor = new Color(100, 100, 120, 255);
-    contentGraphics.lineWidth = 2;
-    contentGraphics.roundRect(-contentW / 2, -contentH / 2, contentW, contentH, 20);
-    contentGraphics.stroke();
-    
-    return menuNode;
   }
   
   /**
@@ -449,99 +397,74 @@ export class ZenFarmGame extends Component {
    * 显示植物操作菜单
    */
   showPlantMenu(canHarvest: boolean) {
-    // 防止重复弹出
-    if (this.activeMenu) {
-      this.activeMenu.destroy();
-      this.activeMenu = null;
-    }
+    if (!this.popupManager) return;
     
-    // 创建带背景的菜单
-    const menuNode = this.createMenuWithBackground('PlantMenu');
-    this.activeMenu = menuNode;
+    // 创建弹窗
+    const popup = this.popupManager.show('PlantMenu', {
+      title: '🌱 植物操作',
+      height: 0.5,
+    });
     
-    let yPos = 100;
+    let yPos = 50;
     
     // 浇水按钮
-    const waterBtn = this.createLabelOn(menuNode, 'Water', '💧 浇水', 48);
-    waterBtn.node.setPosition(0, yPos, 0);
-    const waterTransform = waterBtn.node.getComponent(UITransform);
-    if (waterTransform) waterTransform.setContentSize(300, 80);
-    waterBtn.node.on(Node.EventType.TOUCH_END, () => {
+    const waterBtn = PopupManager.createButton(popup, 'Water', '💧 浇水', 42, () => {
       this.doWater();
-      this.closeActiveMenu();
-    }, this);
-    yPos -= 100;
+      this.popupManager?.close();
+    });
+    waterBtn.node.setPosition(0, yPos, 0);
+    yPos -= 80;
     
     // 收获按钮（仅成熟时显示）
     if (canHarvest) {
-      const harvestBtn = this.createLabelOn(menuNode, 'Harvest', '🌾 收获', 48);
-      harvestBtn.node.setPosition(0, yPos, 0);
-      const harvestTransform = harvestBtn.node.getComponent(UITransform);
-      if (harvestTransform) harvestTransform.setContentSize(300, 80);
-      harvestBtn.node.on(Node.EventType.TOUCH_END, () => {
+      const harvestBtn = PopupManager.createButton(popup, 'Harvest', '🌾 收获', 42, () => {
         this.doHarvest();
-        this.closeActiveMenu();
-      }, this);
-      yPos -= 100;
+        this.popupManager?.close();
+      });
+      harvestBtn.node.setPosition(0, yPos, 0);
+      yPos -= 80;
     }
     
     // 挖除按钮
-    const removeBtn = this.createLabelOn(menuNode, 'Remove', '🗑️ 挖除', 48);
+    const removeBtn = PopupManager.createButton(popup, 'Remove', '🗑️ 挖除', 42, () => {
+      this.showRemoveConfirm();
+    });
     removeBtn.node.setPosition(0, yPos, 0);
-    const removeTransform = removeBtn.node.getComponent(UITransform);
-    if (removeTransform) removeTransform.setContentSize(300, 80);
-    removeBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.showRemoveConfirm(menuNode);
-    }, this);
-    yPos -= 100;
+    yPos -= 80;
     
     // 取消按钮
-    const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 取消', 36);
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 36, () => {
+      this.popupManager?.close();
+    });
     cancelBtn.node.setPosition(0, yPos, 0);
-    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.closeActiveMenu();
-    }, this);
-  }
-  
-  /**
-   * 关闭当前活动菜单
-   */
-  closeActiveMenu() {
-    if (this.activeMenu) {
-      this.activeMenu.destroy();
-      this.activeMenu = null;
-    }
   }
   
   /**
    * 显示挖除确认
    */
-  showRemoveConfirm(parentMenu: Node) {
-    // 清除父菜单内容
-    parentMenu.removeAllChildren();
+  showRemoveConfirm() {
+    if (!this.popupManager) return;
     
-    const warnLabel = this.createLabelOn(parentMenu, 'Warn', '⚠️ 确定要挖除这棵植物吗？', 36);
-    warnLabel.node.setPosition(0, 50, 0);
+    const popup = this.popupManager.show('RemoveConfirm', {
+      title: '⚠️ 确认挖除',
+      height: 0.4,
+    });
     
-    const hintLabel = this.createLabelOn(parentMenu, 'Hint', '挖除后无法恢复！', 28);
-    hintLabel.node.setPosition(0, 0, 0);
+    const hintLabel = PopupManager.createLabel(popup, 'Hint', '挖除后无法恢复！', 28);
+    hintLabel.node.setPosition(0, 20, 0);
     
     // 确认按钮
-    const confirmBtn = this.createLabelOn(parentMenu, 'Confirm', '✅ 确认挖除', 40);
-    confirmBtn.node.setPosition(0, -80, 0);
-    const confirmTransform = confirmBtn.node.getComponent(UITransform);
-    if (confirmTransform) confirmTransform.setContentSize(300, 70);
-    confirmBtn.node.on(Node.EventType.TOUCH_END, () => {
+    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 40, () => {
       this.doRemovePlant();
-      this.closeActiveMenu();
-    }, this);
+      this.popupManager?.close();
+    });
+    confirmBtn.node.setPosition(0, -60, 0);
     
     // 取消按钮
-    const cancelBtn = this.createLabelOn(parentMenu, 'Cancel', '❌ 取消', 36);
-    cancelBtn.node.setPosition(0, -160, 0);
-    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.closeActiveMenu();
-    }, this);
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 36, () => {
+      this.popupManager?.close();
+    });
+    cancelBtn.node.setPosition(0, -140, 0);
   }
   
   /**
@@ -567,60 +490,48 @@ export class ZenFarmGame extends Component {
    * 显示设施管理菜单
    */
   showFacilityMenu() {
-    if (!this.gameData) return;
-    
-    // 防止重复弹出
-    if (this.activeMenu) {
-      this.activeMenu.destroy();
-      this.activeMenu = null;
-    }
+    if (!this.gameData || !this.popupManager) return;
     
     const plot = this.gameData.plots[this.selectedPlot];
     
-    // 创建带背景的菜单
-    const menuNode = this.createMenuWithBackground('FacilityMenu');
-    this.activeMenu = menuNode;
-    
-    // 标题
-    const title = this.createLabelOn(menuNode, 'Title', '🏠 设施管理', 48);
-    title.node.setPosition(0, 200, 0);
+    const popup = this.popupManager.show('FacilityMenu', {
+      title: '🏠 设施管理',
+      height: 0.55,
+    });
     
     // 遮雨棚
     const shelterText = plot.hasShelter ? '🏠 遮雨棚 ✅ (点击移除)' : '🏠 遮雨棚 (点击安装)';
-    const shelterBtn = this.createLabelOn(menuNode, 'Shelter', shelterText, 36);
-    shelterBtn.node.setPosition(0, 80, 0);
+    const shelterBtn = PopupManager.createButton(popup, 'Shelter', shelterText, 36, () => {
+      this.toggleShelter();
+      this.popupManager?.close();
+    });
+    shelterBtn.node.setPosition(0, 60, 0);
     const shelterTransform = shelterBtn.node.getComponent(UITransform);
     if (shelterTransform) shelterTransform.setContentSize(500, 70);
-    shelterBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.toggleShelter();
-      this.closeActiveMenu();
-    }, this);
     
     // 遮雨棚说明
-    const shelterHint = this.createLabelOn(menuNode, 'ShelterHint', '阻挡降雨，防止积涝（24小时后自动移除）', 24);
-    shelterHint.node.setPosition(0, 30, 0);
+    const shelterHint = PopupManager.createLabel(popup, 'ShelterHint', '阻挡降雨（24小时后自动移除）', 22);
+    shelterHint.node.setPosition(0, 10, 0);
     
     // 除湿器
     const dehumText = plot.hasDehumidifier ? '💨 除湿器 ✅ (点击移除)' : '💨 除湿器 (点击安装)';
-    const dehumBtn = this.createLabelOn(menuNode, 'Dehum', dehumText, 36);
-    dehumBtn.node.setPosition(0, -50, 0);
+    const dehumBtn = PopupManager.createButton(popup, 'Dehum', dehumText, 36, () => {
+      this.toggleDehumidifier();
+      this.popupManager?.close();
+    });
+    dehumBtn.node.setPosition(0, -60, 0);
     const dehumTransform = dehumBtn.node.getComponent(UITransform);
     if (dehumTransform) dehumTransform.setContentSize(500, 70);
-    dehumBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.toggleDehumidifier();
-      this.closeActiveMenu();
-    }, this);
     
     // 除湿器说明
-    const dehumHint = this.createLabelOn(menuNode, 'DehumHint', '每小时降低 2% 土壤湿度', 24);
-    dehumHint.node.setPosition(0, -100, 0);
+    const dehumHint = PopupManager.createLabel(popup, 'DehumHint', '每小时降低 2% 土壤湿度', 22);
+    dehumHint.node.setPosition(0, -110, 0);
     
-    // 取消按钮
-    const cancelBtn = this.createLabelOn(menuNode, 'Cancel', '❌ 关闭', 36);
-    cancelBtn.node.setPosition(0, -200, 0);
-    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      this.closeActiveMenu();
-    }, this);
+    // 关闭按钮
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 关闭', 36, () => {
+      this.popupManager?.close();
+    });
+    cancelBtn.node.setPosition(0, -190, 0);
   }
   
   /**
