@@ -250,7 +250,7 @@ export function updatePlotOffline(
 export function createNewGame(lat: number = 31.23, lon: number = 121.47): GameSaveData {
   return {
     version: 1,
-    plots: [createPlot(0), createPlot(1), createPlot(2), createPlot(3)],  // 默认4个地块
+    plots: [createPlot(0)],  // 初始只有1个地块，种成解锁新地块
     unlockedPlots: 1,
     lastOnlineAt: Date.now(),
     location: { lat, lon },

@@ -41,6 +41,7 @@ export class ZenFarmGame extends Component {
   private gameData: GameSaveData | null = null;
   private weather: WeatherData | null = null;
   private selectedPlot: number = 0;
+  private touchStartX: number = 0;  // 滑动起点
   
   // 自动保存
   private saveTimer: number = 0;
@@ -183,7 +184,40 @@ export class ZenFarmGame extends Component {
       facilityTransform.setContentSize(200, 100);
     }
     
+    // ========== 滑动切换地块 ==========
+    this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
+    this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
+    this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+    
     console.log('✅ UI 创建完成');
+  }
+  
+  /**
+   * 触摸开始
+   */
+  private onTouchStart(event: any) {
+    this.touchStartX = event.getLocationX();
+  }
+  
+  /**
+   * 触摸结束 - 检测滑动
+   */
+  private onTouchEnd(event: any) {
+    const endX = event.getLocationX();
+    const deltaX = endX - this.touchStartX;
+    const threshold = 80;  // 滑动阈值
+    
+    if (Math.abs(deltaX) > threshold && this.gameData) {
+      if (deltaX > 0) {
+        // 右滑 → 上一个地块
+        this.selectedPlot = Math.max(0, this.selectedPlot - 1);
+      } else {
+        // 左滑 → 下一个地块
+        this.selectedPlot = Math.min(this.gameData.plots.length - 1, this.selectedPlot + 1);
+      }
+      this.updateUI();
+      console.log(`📱 滑动切换到地块 ${this.selectedPlot + 1}`);
+    }
   }
   
   /**
@@ -365,9 +399,13 @@ export class ZenFarmGame extends Component {
     const plot = this.gameData.plots[this.selectedPlot];
     if (!plot) return;
     
-    // 地块
+    // 地块 - 只有多个地块时显示切换箭头
     if (this.plotLabel) {
-      this.plotLabel.string = `◀ 地块 ${this.selectedPlot + 1}/${this.gameData.plots.length} ▶`;
+      if (this.gameData.plots.length > 1) {
+        this.plotLabel.string = `◀ 地块 ${this.selectedPlot + 1}/${this.gameData.plots.length} ▶`;
+      } else {
+        this.plotLabel.string = `🌱 我的小菜园`;
+      }
     }
     
     // 植物
@@ -878,7 +916,19 @@ export class ZenFarmGame extends Component {
     if (result.harvested) {
       this.gameData.plots[this.selectedPlot] = result.plot;
       this.gameData.totalHarvests++;
-      console.log('🌾 收获了！');
+      
+      // 首次收获解锁新地块
+      const newPlotId = this.gameData.plots.length;
+      this.gameData.plots.push({
+        id: newPlotId,
+        plant: null,
+        soilMoisture: 40,
+        hasShelter: false,
+        hasDehumidifier: false,
+        lastUpdatedAt: Date.now(),
+      });
+      console.log(`🌾 收获了！解锁新地块 ${newPlotId + 1}`);
+      
       this.updateUI();
       saveGame(this.gameData);
     }
