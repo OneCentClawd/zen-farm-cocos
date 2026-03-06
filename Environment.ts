@@ -187,25 +187,21 @@ export function updateSoilMoisture(
 
 /**
  * 计算阳光对生长的加成
- * @param sunlight 日照强度 0~1
- * @param hasShelter 是否有遮挡
- * @returns 生长加成系数 0~1
+ * @param sunlight 日照强度 0~1（已经过遮挡处理）
+ * @returns 生长加成系数 0.5~1.0
  */
-export function getSunlightBonus(sunlight: number, hasShelter: boolean): number {
-  if (hasShelter) {
-    return 0.5;  // 遮挡下只有 50% 的光合作用
-  }
+export function getSunlightBonus(sunlight: number): number {
+  // sunlight 已经在 effectiveWeather 里处理过遮挡了
   return 0.5 + sunlight * 0.5;  // 0.5 ~ 1.0
 }
 
 /**
  * 计算雨水带来的肥料加成
- * @param precipitation 降水量 mm
- * @param hasShelter 是否有遮挡
+ * @param precipitation 降水量 mm（已经过遮挡处理，遮挡下为0）
  * @returns 肥力加成
  */
-export function getRainFertilizerBonus(precipitation: number, hasShelter: boolean): number {
-  if (hasShelter || precipitation <= 0) {
+export function getRainFertilizerBonus(precipitation: number): number {
+  if (precipitation <= 0) {
     return 0;
   }
   // 每 mm 降雨带来 0.5% 的肥力加成（上限 5%）
