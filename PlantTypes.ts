@@ -36,35 +36,67 @@ export enum StressType {
 export interface StageConfig {
   id: string;            // 阶段 ID
   name: string;          // 阶段名称
-  emoji: string;         // 显示 emoji
+  emoji: string;         // 临时占位
+  sprite?: string;       // 美术素材路径
   progress: number;      // 触发进度 0~1
   description: string;   // 描述文字
   condition?: string;    // 可选条件：'vernalization' 需要春化
 }
 
 /**
- * 植物实例数据
+ * 成长里程碑
+ */
+export interface Milestone {
+  stageId: string;       // 阶段 ID
+  date: number;          // 时间戳
+  weather: string;       // 当时天气描述
+  height: number;        // 当时高度
+  note?: string;         // 可选备注
+}
+
+/**
+ * 植物实例数据 - 每棵植物独一无二
  */
 export interface PlantData {
   id: string;
   type: PlantType;
   plantedAt: number;              // 播种时间戳
+  
+  // 健康状态
   healthState: HealthState;
   healthValue: number;            // 0~100
+  
+  // 成长进度
   growthProgress: number;         // 0~1
   currentStageId: string;         // 当前阶段 ID
+  
+  // 物理特征 - 让每棵植物独一无二
   height: number;                 // 高度 cm
+  leafCount: number;              // 叶片数量
+  rootDepth: number;              // 根系深度 cm
+  stemWidth: number;              // 茎秆粗度 mm
+  
+  // 颜色/外观（0~1，影响渲染）
+  leafColor: number;              // 叶色深浅（0=嫩绿，1=深绿）
+  wiltLevel: number;              // 萎蔫程度（0=健康，1=完全枯萎）
+  
+  // 养护记录
   lastWateredAt: number;
   harvestCount: number;
+  totalWaterReceived: number;     // 累计浇水量 ml
+  totalSunlightHours: number;     // 累计日照时长
+  totalRainfallReceived: number;  // 累计雨水量 mm
+  
+  // 环境胁迫
   stressDays: Record<string, number>;  // 各类胁迫累计天数
-  vernalizationDays: number;      // 春化累计天数（低于7°C的天数）
-  canBloom: boolean;              // 是否可以开花（樱花用）
+  vernalizationDays: number;      // 春化累计天数
+  canBloom: boolean;              // 是否可以开花
+  
+  // 游戏模式
   hardMode: boolean;              // 困难模式（无提示）
-  milestones: Array<{             // 成长日记
-    stageId: string;
-    date: number;
-    weather: string;
-  }>;
+  
+  // 成长日记 - 记录每个里程碑
+  milestones: Milestone[];
 }
 
 /**
