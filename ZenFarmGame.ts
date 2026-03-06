@@ -605,8 +605,75 @@ export class ZenFarmGame extends Component {
     const config = PLANT_CONFIGS[type];
     this.pendingPlantType = type;
     
-    // 显示难度选择
-    this.showDifficultySelect(config);
+    // 显示确认面板（展示植物详情）
+    this.showPlantConfirmPanel(config);
+  }
+  
+  /**
+   * 显示种植确认面板（展示植物详情）
+   */
+  showPlantConfirmPanel(config: any) {
+    if (!this.popupManager) return;
+    
+    const panel = this.popupManager.show('PlantConfirm', {
+      title: `${config.emoji} ${config.name}`,
+      height: 0.7,
+    });
+    
+    let yPos = 100;
+    
+    // 难度星级
+    const diffLabel = PopupManager.createLabel(panel, 'Diff', `难度: ${'⭐'.repeat(config.difficulty)}`, 28);
+    diffLabel.node.setPosition(0, yPos, 0);
+    yPos -= 45;
+    
+    // 生长周期
+    const growthLabel = PopupManager.createLabel(panel, 'Growth', `📅 成熟周期: ${config.growthDays} 天`, 28);
+    growthLabel.node.setPosition(0, yPos, 0);
+    yPos -= 45;
+    
+    // 温度要求
+    const tempLabel = PopupManager.createLabel(panel, 'Temp', 
+      `🌡️ 适宜温度: ${config.tempMin}°C ~ ${config.tempMax}°C`, 26);
+    tempLabel.node.setPosition(0, yPos, 0);
+    yPos -= 40;
+    
+    // 水分要求
+    const waterLabel = PopupManager.createLabel(panel, 'Water',
+      `💧 适宜湿度: ${config.moistureMin}% ~ ${config.moistureMax}%`, 26);
+    waterLabel.node.setPosition(0, yPos, 0);
+    yPos -= 40;
+    
+    // 特性
+    let traits: string[] = [];
+    if (config.droughtTolerance >= 0.7) traits.push('耐旱');
+    if (config.coldTolerance >= 0.7) traits.push('耐寒');
+    if (config.heatTolerance >= 0.7) traits.push('耐热');
+    if (config.needsVernalization) traits.push('需要春化');
+    if (config.isAnnual) traits.push('一年生');
+    
+    const traitText = traits.length > 0 ? `🏷️ 特性: ${traits.join('、')}` : '🏷️ 无特殊特性';
+    const traitLabel = PopupManager.createLabel(panel, 'Traits', traitText, 26);
+    traitLabel.node.setPosition(0, yPos, 0);
+    yPos -= 50;
+    
+    // 规则提示
+    const ruleLabel = PopupManager.createLabel(panel, 'Rule', '📜 需要每天关注天气，按时浇水', 22);
+    ruleLabel.node.setPosition(0, yPos, 0);
+    yPos -= 60;
+    
+    // 下一步按钮（选择难度）
+    const nextBtn = PopupManager.createButton(panel, 'Next', '👉 选择难度', 38, () => {
+      this.showDifficultySelect(config);
+    });
+    nextBtn.node.setPosition(0, yPos, 0);
+    yPos -= 70;
+    
+    // 返回按钮
+    const backBtn = PopupManager.createButton(panel, 'Back', '❌ 返回', 32, () => {
+      this.showPlantSelect();
+    });
+    backBtn.node.setPosition(0, yPos, 0);
   }
   
   /**
@@ -616,14 +683,15 @@ export class ZenFarmGame extends Component {
     if (!this.popupManager) return;
     
     const panel = this.popupManager.show('DifficultySelect', {
-      title: `🌱 选择难度`,
+      title: `🎮 选择难度`,
       height: 0.5,
     });
     
     // 佛系模式
     const zenBtn = PopupManager.createButton(panel, 'Zen', '🧘 佛系模式', 40, () => {
       this.pendingHardMode = false;
-      this.showPlantConfirmPanel(config);
+      this.doPlant();
+      this.popupManager?.close();
     });
     zenBtn.node.setPosition(0, 50, 0);
     
@@ -633,95 +701,13 @@ export class ZenFarmGame extends Component {
     // 硬核模式
     const hardBtn = PopupManager.createButton(panel, 'Hard', '🔥 硬核模式', 40, () => {
       this.pendingHardMode = true;
-      this.showPlantConfirmPanel(config);
+      this.doPlant();
+      this.popupManager?.close();
     });
     hardBtn.node.setPosition(0, -70, 0);
     
     const hardHint = PopupManager.createLabel(panel, 'HardHint', '隐藏详细信息，凭感觉种地', 24);
     hardHint.node.setPosition(0, -115, 0);
-  }
-  
-  /**
-   * 显示种植确认面板（展示植物详情）
-   */
-  showPlantConfirmPanel(config: any) {
-    if (!this.popupManager) return;
-    
-    const modeText = this.pendingHardMode ? '🔥 硬核' : '🧘 佛系';
-    
-    const panel = this.popupManager.show('PlantConfirm', {
-      title: `${config.emoji} ${config.name}`,
-      height: this.pendingHardMode ? 0.5 : 0.7,
-    });
-    
-    let yPos = 80;
-    
-    // 难度模式
-    const modeLabel = PopupManager.createLabel(panel, 'Mode', `模式: ${modeText}`, 28);
-    modeLabel.node.setPosition(0, yPos, 0);
-    yPos -= 45;
-    
-    // 难度星级
-    const diffLabel = PopupManager.createLabel(panel, 'Diff', `难度: ${'⭐'.repeat(config.difficulty)}`, 28);
-    diffLabel.node.setPosition(0, yPos, 0);
-    yPos -= 45;
-    
-    // 生长周期（始终显示）
-    const growthLabel = PopupManager.createLabel(panel, 'Growth', `📅 成熟周期: ${config.growthDays} 天`, 28);
-    growthLabel.node.setPosition(0, yPos, 0);
-    yPos -= 50;
-    
-    // 佛系模式显示详细信息
-    if (!this.pendingHardMode) {
-      // 温度要求
-      const tempLabel = PopupManager.createLabel(panel, 'Temp', 
-        `🌡️ 适宜温度: ${config.tempMin}°C ~ ${config.tempMax}°C`, 26);
-      tempLabel.node.setPosition(0, yPos, 0);
-      yPos -= 40;
-      
-      // 水分要求
-      const waterLabel = PopupManager.createLabel(panel, 'Water',
-        `💧 适宜湿度: ${config.moistureMin}% ~ ${config.moistureMax}%`, 26);
-      waterLabel.node.setPosition(0, yPos, 0);
-      yPos -= 40;
-      
-      // 特性
-      let traits: string[] = [];
-      if (config.droughtTolerance >= 0.7) traits.push('耐旱');
-      if (config.coldTolerance >= 0.7) traits.push('耐寒');
-      if (config.heatTolerance >= 0.7) traits.push('耐热');
-      if (config.needsVernalization) traits.push('需要春化');
-      if (config.isAnnual) traits.push('一年生');
-      
-      const traitText = traits.length > 0 ? `🏷️ 特性: ${traits.join('、')}` : '🏷️ 无特殊特性';
-      const traitLabel = PopupManager.createLabel(panel, 'Traits', traitText, 26);
-      traitLabel.node.setPosition(0, yPos, 0);
-      yPos -= 50;
-      
-      // 规则提示
-      const ruleLabel = PopupManager.createLabel(panel, 'Rule', '📜 需要每天关注天气，按时浇水', 22);
-      ruleLabel.node.setPosition(0, yPos, 0);
-      yPos -= 50;
-    } else {
-      // 硬核模式简单提示
-      const hardHint = PopupManager.createLabel(panel, 'HardHint', '💪 无任何提示，全靠经验！', 26);
-      hardHint.node.setPosition(0, yPos, 0);
-      yPos -= 60;
-    }
-    
-    // 确认按钮
-    const confirmBtn = PopupManager.createButton(panel, 'Confirm', '✅ 确认种植', 38, () => {
-      this.doPlant();
-      this.popupManager?.close();
-    });
-    confirmBtn.node.setPosition(0, yPos, 0);
-    yPos -= 70;
-    
-    // 返回按钮
-    const backBtn = PopupManager.createButton(panel, 'Back', '❌ 返回', 32, () => {
-      this.showDifficultySelect(config);
-    });
-    backBtn.node.setPosition(0, yPos, 0);
   }
   
   /**
