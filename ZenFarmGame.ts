@@ -149,17 +149,34 @@ export class ZenFarmGame extends Component {
     this.weatherLabel.node.setPosition(0, halfH - 120, 0);
     
     // ========== 中央植物区 ==========
+    // 泥土区域（让植物"种在地里"）
+    const soilNode = new Node('SoilArea');
+    soilNode.layer = this.node.layer;
+    soilNode.setParent(this.node);
+    soilNode.setPosition(0, -60, 0);
+    const soilTransform = soilNode.addComponent(UITransform);
+    soilTransform.setContentSize(200, 80);
+    const soilGraphics = soilNode.addComponent(Graphics);
+    // 画椭圆形泥土 #8B6914
+    soilGraphics.fillColor = new Color(139, 105, 20, 255);
+    soilGraphics.ellipse(0, 0, 100, 35);
+    soilGraphics.fill();
+    // 泥土高光
+    soilGraphics.fillColor = new Color(160, 130, 50, 255);
+    soilGraphics.ellipse(0, 10, 70, 20);
+    soilGraphics.fill();
+    
     // 植物 emoji（放大主角）
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 280);
-    this.plantEmoji.node.setPosition(0, 60, 0);
+    this.plantEmoji.node.setPosition(0, 80, 0);
     
     // 阶段信息（植物下方）
     this.stageLabel = this.createLabel('Stage', '播种中...', 44);
-    this.stageLabel.node.setPosition(0, -120, 0);
+    this.stageLabel.node.setPosition(0, -130, 0);
     
     // 植物状态（健康 + 进度）
     this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
-    this.statusLabel.node.setPosition(0, -180, 0);
+    this.statusLabel.node.setPosition(0, -190, 0);
     
     // ========== 底部信息区 ==========
     // 底部半透明背景条（增加对比度）
@@ -279,13 +296,53 @@ export class ZenFarmGame extends Component {
     transform.anchorX = 0.5;
     transform.anchorY = 0.5;
     
-    // 用 Graphics 画纯色背景（不需要 spriteFrame）
+    // 用 Graphics 画渐变背景（天空+草地）
     const graphics = bgNode.addComponent(Graphics);
-    graphics.fillColor = new Color(145, 215, 250, 255);  // 默认晴天蓝（更亮）
-    graphics.rect(-width / 2, -height / 2, width, height);
-    graphics.fill();
+    this.drawBackgroundGradient(graphics, width, height, 145, 215, 250);  // 默认晴天蓝
     
     return bgNode;
+  }
+  
+  /**
+   * 画渐变背景（天空+草地）
+   */
+  private drawBackgroundGradient(graphics: Graphics, width: number, height: number, skyR: number, skyG: number, skyB: number) {
+    graphics.clear();
+    
+    const halfW = width / 2;
+    const halfH = height / 2;
+    const groundHeight = height / 3;  // 下 1/3 是草地
+    
+    // 天空（上 2/3）- 用多条横线模拟渐变
+    const skyHeight = height - groundHeight;
+    const skySteps = 20;
+    for (let i = 0; i < skySteps; i++) {
+      const t = i / skySteps;
+      const y = halfH - (i * skyHeight / skySteps);
+      const h = skyHeight / skySteps + 1;
+      // 从天空色渐变到稍亮
+      const r = Math.round(skyR + (255 - skyR) * t * 0.3);
+      const g = Math.round(skyG + (255 - skyG) * t * 0.2);
+      const b = Math.round(skyB + (255 - skyB) * t * 0.1);
+      graphics.fillColor = new Color(r, g, b, 255);
+      graphics.rect(-halfW, y - h, width, h);
+      graphics.fill();
+    }
+    
+    // 草地（下 1/3）- 绿色渐变
+    const grassSteps = 10;
+    for (let i = 0; i < grassSteps; i++) {
+      const t = i / grassSteps;
+      const y = -halfH + (i * groundHeight / grassSteps);
+      const h = groundHeight / grassSteps + 1;
+      // 从深绿 #3d6b35 渐变到浅绿 #4a7c3f
+      const r = Math.round(61 + (74 - 61) * t);
+      const g = Math.round(107 + (124 - 107) * t);
+      const b = Math.round(53 + (63 - 53) * t);
+      graphics.fillColor = new Color(r, g, b, 255);
+      graphics.rect(-halfW, y, width, h);
+      graphics.fill();
+    }
   }
   
   /**
@@ -304,30 +361,27 @@ export class ZenFarmGame extends Component {
     const sunlight = this.weather.sunlight;
     const precip = this.weather.precipitation;
     
-    let r = 145, g = 215, b = 250;  // 默认晴天蓝（更亮）
+    let r = 145, g = 215, b = 250;  // 默认晴天蓝
     
     if (precip > 5) {
-      // 大雨 - 淡灰蓝
-      r = 160; g = 175; b = 195;
+      // 大雨 - 灰蓝
+      r = 140; g = 160; b = 180;
     } else if (precip > 0) {
-      // 小雨 - 浅蓝灰
-      r = 185; g = 205; b = 225;
+      // 小雨 - 浅灰蓝
+      r = 170; g = 195; b = 220;
     } else if (sunlight > 0.8) {
       // 大晴天 - 明亮天蓝
-      r = 150; g = 220; b = 255;
+      r = 135; g = 210; b = 255;
     } else if (sunlight > 0.5) {
       // 多云 - 淡天蓝
-      r = 180; g = 215; b = 240;
+      r = 170; g = 205; b = 235;
     } else {
       // 阴天 - 淡灰蓝
-      r = 200; g = 210; b = 220;
+      r = 185; g = 200; b = 215;
     }
     
-    // 重绘背景
-    graphics.clear();
-    graphics.fillColor = new Color(r, g, b, 255);
-    graphics.rect(-width / 2, -height / 2, width, height);
-    graphics.fill();
+    // 重绘渐变背景
+    this.drawBackgroundGradient(graphics, width, height, r, g, b);
   }
   
   /**
