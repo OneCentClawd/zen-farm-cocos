@@ -86,6 +86,13 @@ export interface PlantData {
   totalWaterReceived: number;     // 累计浇水量 ml
   totalSunlightHours: number;     // 累计日照时长
   totalRainfallReceived: number;  // 累计雨水量 mm
+  totalWindExposure: number;      // 累计风吹时长
+  
+  // 经历过的极端天气（影响外观和特性）
+  maxTempSeen: number;            // 经历过的最高温
+  minTempSeen: number;            // 经历过的最低温
+  maxWindSeen: number;            // 经历过的最大风速
+  daysInShelter: number;          // 在遮挡下的天数
   
   // 环境胁迫
   stressDays: Record<string, number>;  // 各类胁迫累计天数

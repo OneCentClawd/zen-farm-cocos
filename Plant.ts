@@ -49,6 +49,13 @@ export function createPlant(type: PlantType, hardMode: boolean = false): PlantDa
     totalWaterReceived: 0,
     totalSunlightHours: 0,
     totalRainfallReceived: 0,
+    totalWindExposure: 0,
+    
+    // 极端天气记录
+    maxTempSeen: 20,      // 初始假设常温
+    minTempSeen: 20,
+    maxWindSeen: 0,
+    daysInShelter: 0,
     
     // 环境
     stressDays: {},
@@ -251,13 +258,19 @@ export function simulateDay(
   plant: PlantData,
   soilMoisture: number,
   weather: WeatherData,
-  watered: boolean = false
+  watered: boolean = false,
+  inShelter: boolean = false
 ): { plant: PlantData; newSoilMoisture: number } {
   const config = PLANT_CONFIGS[plant.type];
   
   // 已死亡不再变化
   if (plant.healthState === HealthState.DEAD) {
     return { plant, newSoilMoisture: soilMoisture };
+  }
+  
+  // 记录遮挡天数
+  if (inShelter) {
+    plant.daysInShelter++;
   }
   
   // 1. 更新土壤湿度
@@ -322,9 +335,15 @@ export function simulateDay(
     // 叶色随成熟度变深
     plant.leafColor = Math.min(1, plant.growthProgress * 1.2);
     
-    // 累计日照和雨水
+    // 累计环境数据
     plant.totalSunlightHours += weather.sunlight * 12;  // 假设白天12小时
     plant.totalRainfallReceived += weather.precipitation;
+    plant.totalWindExposure += weather.windSpeed;
+    
+    // 记录极端天气
+    plant.maxTempSeen = Math.max(plant.maxTempSeen, weather.temperature);
+    plant.minTempSeen = Math.min(plant.minTempSeen, weather.temperature);
+    plant.maxWindSeen = Math.max(plant.maxWindSeen, weather.windSpeed);
     
     // 检测阶段变化，记录里程碑
     const newStage = getCurrentStage(plant);
