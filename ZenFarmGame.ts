@@ -5,13 +5,13 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Graphics
+  UITransform, view, director, Canvas, Graphics, Sprite
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
 import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot, installShelter, removeShelter, installDehumidifier, removeDehumidifier } from './GameData';
 import { saveGame, loadOrCreateGame } from './Storage';
-import { getGrowthStage, getPlantEmoji, getHealthEmoji } from './Plant';
+import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
 
 const { ccclass, property } = _decorator;
@@ -20,13 +20,15 @@ const { ccclass, property } = _decorator;
 export class ZenFarmGame extends Component {
   
   // UI 引用
+  private backgroundNode: Node | null = null;   // 背景节点
   private weatherLabel: Label | null = null;
   private plotLabel: Label | null = null;
   private plantEmoji: Label | null = null;
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;
-  private facilityLabel: Label | null = null;  // 设施状态
+  private facilityLabel: Label | null = null;   // 设施状态
+  private stageLabel: Label | null = null;      // 阶段信息
   
   // 种植选择
   private pendingPlantType: PlantType | null = null;
@@ -128,40 +130,48 @@ export class ZenFarmGame extends Component {
     parentTransform.anchorX = 0.5;
     parentTransform.anchorY = 0.5;
     
-    // 天气信息（顶部）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 48);
-    this.weatherLabel.node.setPosition(0, halfH - 100, 0);
+    // ========== 背景（体现天气） ==========
+    this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
     
-    // 植物 emoji（中心大图）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 200);
-    this.plantEmoji.node.setPosition(0, 150, 0);
+    // ========== 顶部区域 ==========
+    // 天气信息
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 36);
+    this.weatherLabel.node.setPosition(0, halfH - 60, 0);
     
-    // 植物状态
-    this.statusLabel = this.createLabel('Status', '选择种子开始种植', 48);
-    this.statusLabel.node.setPosition(0, -50, 0);
+    // 地块信息（左上角）
+    this.plotLabel = this.createLabel('Plot', '🌾 地块 1/4', 28);
+    this.plotLabel.node.setPosition(-halfW + 100, halfH - 60, 0);
     
+    // ========== 中央植物区 ==========
+    // 植物 emoji（大图）
+    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 180);
+    this.plantEmoji.node.setPosition(0, 80, 0);
+    
+    // 阶段信息（植物下方）
+    this.stageLabel = this.createLabel('Stage', '播种中...', 32);
+    this.stageLabel.node.setPosition(0, -60, 0);
+    
+    // 植物状态（健康 + 进度）
+    this.statusLabel = this.createLabel('Status', '🟢 健康', 28);
+    this.statusLabel.node.setPosition(0, -110, 0);
+    
+    // ========== 底部信息区 ==========
     // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 40);
-    this.soilLabel.node.setPosition(0, -150, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 32);
+    this.soilLabel.node.setPosition(0, -halfH + 200, 0);
     
-    // 地块选择
-    this.plotLabel = this.createLabel('Plot', '🌾 地块 1', 36);
-    this.plotLabel.node.setPosition(0, -250, 0);
-    
-    // 操作提示
-    this.actionLabel = this.createLabel('Action', '👆 点击种植', 48);
-    this.actionLabel.node.setPosition(0, -halfH + 200, 0);
+    // 操作按钮区
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 40);
+    this.actionLabel.node.setPosition(0, -halfH + 130, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
-    
-    // 增加点击区域
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(screenSize.width, 100);
+      actionTransform.setContentSize(screenSize.width * 0.8, 80);
     }
     
-    // 设施按钮
-    this.facilityLabel = this.createLabel('Facility', '🏠 设施管理', 32);
-    this.facilityLabel.node.setPosition(0, -halfH + 80, 0);
+    // 设施按钮（右下角）
+    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 28);
+    this.facilityLabel.node.setPosition(halfW - 80, -halfH + 60, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
@@ -195,6 +205,66 @@ export class ZenFarmGame extends Component {
     label.overflow = Label.Overflow.NONE;
     
     return label;
+  }
+  
+  /**
+   * 创建背景（体现天气）
+   */
+  private createBackground(width: number, height: number): Node {
+    const bgNode = new Node('Background');
+    bgNode.layer = this.node.layer;
+    bgNode.setParent(this.node);
+    
+    // 把背景放到最底层
+    bgNode.setSiblingIndex(0);
+    
+    const transform = bgNode.addComponent(UITransform);
+    transform.setContentSize(width, height);
+    transform.anchorX = 0.5;
+    transform.anchorY = 0.5;
+    
+    const sprite = bgNode.addComponent(Sprite);
+    sprite.type = Sprite.Type.SIMPLE;
+    sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    
+    // 默认天气背景色（晴天蓝）
+    sprite.color = new Color(135, 206, 235, 255);
+    
+    return bgNode;
+  }
+  
+  /**
+   * 根据天气更新背景颜色
+   */
+  private updateBackgroundColor() {
+    if (!this.backgroundNode || !this.weather) return;
+    
+    const sprite = this.backgroundNode.getComponent(Sprite);
+    if (!sprite) return;
+    
+    const sunlight = this.weather.sunlight;
+    const precip = this.weather.precipitation;
+    
+    let r = 135, g = 206, b = 235;  // 默认晴天蓝
+    
+    if (precip > 5) {
+      // 大雨 - 深灰
+      r = 80; g = 90; b = 100;
+    } else if (precip > 0) {
+      // 小雨 - 灰蓝
+      r = 120; g = 140; b = 160;
+    } else if (sunlight > 0.8) {
+      // 大晴天 - 明亮蓝
+      r = 100; g = 180; b = 255;
+    } else if (sunlight > 0.5) {
+      // 多云 - 淡蓝灰
+      r = 160; g = 190; b = 210;
+    } else {
+      // 阴天 - 灰色
+      r = 140; g = 150; b = 160;
+    }
+    
+    sprite.color = new Color(r, g, b, 255);
   }
   
   /**
@@ -263,6 +333,9 @@ export class ZenFarmGame extends Component {
       const wind = this.weather.windSpeed.toFixed(0);
       this.weatherLabel.string = `🌡️ ${temp}°C  🌬️ ${wind}km/h`;
       console.log(`🌤️ 天气: ${temp}°C, 风速: ${wind}km/h`);
+      
+      // 更新背景颜色
+      this.updateBackgroundColor();
     }
   }
   
@@ -284,21 +357,30 @@ export class ZenFarmGame extends Component {
     if (plot.plant) {
       const config = PLANT_CONFIGS[plot.plant.type];
       const emoji = getPlantEmoji(plot.plant);
+      const stage = getCurrentStage(plot.plant);
       const isHardMode = plot.plant.hardMode;
       
       if (this.plantEmoji) this.plantEmoji.string = emoji;
       
+      // 阶段信息
+      if (this.stageLabel) {
+        if (isHardMode) {
+          this.stageLabel.string = `${config.name}`;
+        } else {
+          this.stageLabel.string = `${config.name} · ${stage.name}`;
+        }
+      }
+      
       // 状态显示 - 硬核模式隐藏详细信息
       if (this.statusLabel) {
         if (isHardMode) {
-          // 硬核模式：只显示植物名和模式
-          const modeIcon = '🔥';
-          this.statusLabel.string = `${config.name} ${modeIcon}`;
+          // 硬核模式：只显示模式图标
+          this.statusLabel.string = '🔥 硬核模式';
         } else {
           // 佛系模式：显示完整信息
           const healthEmoji = getHealthEmoji(plot.plant.healthState);
           const progress = (plot.plant.growthProgress * 100).toFixed(0);
-          this.statusLabel.string = `${config.name} ${healthEmoji} ${plot.plant.healthValue.toFixed(0)}%\n生长: ${progress}%`;
+          this.statusLabel.string = `${healthEmoji} ${plot.plant.healthValue.toFixed(0)}%  📈 ${progress}%`;
         }
       }
       
@@ -328,7 +410,8 @@ export class ZenFarmGame extends Component {
     } else {
       // 空地
       if (this.plantEmoji) this.plantEmoji.string = '🕳️';
-      if (this.statusLabel) this.statusLabel.string = '空地 - 点击种植';
+      if (this.stageLabel) this.stageLabel.string = '空地';
+      if (this.statusLabel) this.statusLabel.string = '等待播种';
       if (this.actionLabel) this.actionLabel.string = '👆 种点什么~';
       
       // 土壤（空地时显示）
