@@ -59,6 +59,7 @@ export function createPlant(type: PlantType, hardMode: boolean = false): PlantDa
     
     // 环境
     stressDays: {},
+    stressHistory: [],
     vernalizationDays: 0,
     canBloom: type !== PlantType.SAKURA,  // 樱花需要春化才能开花
     
@@ -122,6 +123,20 @@ export function getHealthEmoji(state: HealthState): string {
     case HealthState.DAMAGED: return '🟠';
     case HealthState.SEVERE: return '🔴';
     case HealthState.DEAD: return '⚫';
+  }
+}
+
+/**
+ * 获取胁迫类型名称
+ */
+function getStressName(stress: StressType): string {
+  switch (stress) {
+    case StressType.HEAT: return '热害';
+    case StressType.COLD: return '冻害';
+    case StressType.DROUGHT: return '干旱';
+    case StressType.WATERLOG: return '积涝';
+    case StressType.LOW_LIGHT: return '缺光';
+    default: return '未知';
   }
 }
 
@@ -296,18 +311,31 @@ export function simulateDay(
   totalDamage += tempStress.damage;
   if (tempStress.stressType) {
     updated.stressDays[tempStress.stressType] = (updated.stressDays[tempStress.stressType] || 0) + 1;
+    // 首次遭受该类型胁迫时记录事件
+    if (updated.stressDays[tempStress.stressType] === 1) {
+      const date = new Date().toISOString().split('T')[0];
+      updated.stressHistory.push(`${date} ${getStressName(tempStress.stressType)}`);
+    }
   }
   
   const waterStress = checkWaterStress(updated, config, newSoilMoisture);
   totalDamage += waterStress.damage;
   if (waterStress.stressType) {
     updated.stressDays[waterStress.stressType] = (updated.stressDays[waterStress.stressType] || 0) + 1;
+    if (updated.stressDays[waterStress.stressType] === 1) {
+      const date = new Date().toISOString().split('T')[0];
+      updated.stressHistory.push(`${date} ${getStressName(waterStress.stressType)}`);
+    }
   }
   
   const lightStress = checkLightStress(updated, config, weather.sunlight);
   totalDamage += lightStress.damage;
   if (lightStress.stressType) {
     updated.stressDays[lightStress.stressType] = (updated.stressDays[lightStress.stressType] || 0) + 1;
+    if (updated.stressDays[lightStress.stressType] === 1) {
+      const date = new Date().toISOString().split('T')[0];
+      updated.stressHistory.push(`${date} ${getStressName(lightStress.stressType)}`);
+    }
   }
   
   // 3. 恢复（无胁迫时每天恢复 5 点）

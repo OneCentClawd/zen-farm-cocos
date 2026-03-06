@@ -96,6 +96,7 @@ export interface PlantData {
   
   // 环境胁迫
   stressDays: Record<string, number>;  // 各类胁迫累计天数
+  stressHistory: string[];        // 胁迫事件历史（如 "2026-03-06 热害"）
   vernalizationDays: number;      // 春化累计天数
   canBloom: boolean;              // 是否可以开花
   
