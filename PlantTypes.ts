@@ -20,19 +20,6 @@ export enum HealthState {
 }
 
 /**
- * 生长阶段
- */
-export enum GrowthStage {
-  SEED = 'seed',           // 种子
-  SPROUT = 'sprout',       // 发芽
-  SEEDLING = 'seedling',   // 幼苗
-  GROWING = 'growing',     // 成长
-  MATURE = 'mature',       // 成熟
-  AGING = 'aging',         // 衰老
-  DEAD = 'dead',           // 死亡
-}
-
-/**
  * 胁迫类型
  */
 export enum StressType {
@@ -41,6 +28,18 @@ export enum StressType {
   DROUGHT = 'drought',     // 干旱
   WATERLOG = 'waterlog',   // 积涝
   LOW_LIGHT = 'low_light', // 缺光
+}
+
+/**
+ * 成长阶段配置
+ */
+export interface StageConfig {
+  id: string;            // 阶段 ID
+  name: string;          // 阶段名称
+  emoji: string;         // 显示 emoji
+  progress: number;      // 触发进度 0~1
+  description: string;   // 描述文字
+  condition?: string;    // 可选条件：'vernalization' 需要春化
 }
 
 /**
@@ -53,12 +52,19 @@ export interface PlantData {
   healthState: HealthState;
   healthValue: number;            // 0~100
   growthProgress: number;         // 0~1
+  currentStageId: string;         // 当前阶段 ID
+  height: number;                 // 高度 cm
   lastWateredAt: number;
   harvestCount: number;
   stressDays: Record<string, number>;  // 各类胁迫累计天数
   vernalizationDays: number;      // 春化累计天数（低于7°C的天数）
   canBloom: boolean;              // 是否可以开花（樱花用）
   hardMode: boolean;              // 困难模式（无提示）
+  milestones: Array<{             // 成长日记
+    stageId: string;
+    date: number;
+    weather: string;
+  }>;
 }
 
 /**
@@ -69,6 +75,10 @@ export interface PlantConfig {
   name: string;
   emoji: string;
   difficulty: number;             // 1-5
+  
+  // 成长阶段
+  stages: StageConfig[];
+  maxHeight: number;              // 最大高度 cm
   
   // 温度
   tempMin: number;                // 适宜最低温
@@ -111,6 +121,15 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     name: '幸运草',
     emoji: '🍀',
     difficulty: 1,
+    maxHeight: 15,
+    stages: [
+      { id: 'seed', name: '种子', emoji: '🌰', progress: 0, description: '一粒小小的种子' },
+      { id: 'sprout', name: '发芽', emoji: '🌱', progress: 0.05, description: '破土而出' },
+      { id: 'leaf', name: '展叶', emoji: '🌿', progress: 0.15, description: '长出第一片叶子' },
+      { id: 'clump', name: '成丛', emoji: '🍀', progress: 0.40, description: '叶片渐渐增多' },
+      { id: 'bloom', name: '开花', emoji: '🍀', progress: 0.70, description: '小白花悄然绽放' },
+      { id: 'lucky', name: '四叶', emoji: '🍀', progress: 1.0, description: '也许会遇到四叶草？' },
+    ],
     tempMin: 10,
     tempMax: 25,
     tempHeatDamage: 30,
@@ -134,12 +153,22 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     name: '向日葵',
     emoji: '🌻',
     difficulty: 2,
+    maxHeight: 200,
+    stages: [
+      { id: 'seed', name: '种子', emoji: '🌰', progress: 0, description: '葵花籽静静躺着' },
+      { id: 'sprout', name: '破土', emoji: '🌱', progress: 0.03, description: '小芽钻出泥土' },
+      { id: 'seedling', name: '幼苗', emoji: '🌿', progress: 0.08, description: '两片子叶舒展开' },
+      { id: 'stem', name: '抽茎', emoji: '🌿', progress: 0.20, description: '茎秆开始长高' },
+      { id: 'bud', name: '花苞', emoji: '🌻', progress: 0.50, description: '顶端鼓起花苞' },
+      { id: 'bloom', name: '盛开', emoji: '🌻', progress: 0.70, description: '金黄花盘向阳开放' },
+      { id: 'seed_head', name: '结籽', emoji: '🌻', progress: 1.0, description: '花盘里结满葵花籽' },
+    ],
     tempMin: 18,
     tempMax: 30,
     tempHeatDamage: 35,
     tempColdDamage: 10,
-    tempLethalHigh: 45,         // 高温致死
-    tempLethalLow: -5,          // 低温致死
+    tempLethalHigh: 45,
+    tempLethalLow: -5,
     moistureMin: 30,
     moistureMax: 60,
     moistureOptimal: 45,
@@ -150,7 +179,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     waterlogTolerance: 0.4,
     heatTolerance: 0.7,
     coldTolerance: 0.2,
-    isAnnual: true,   // 一年生，收获后死亡
+    isAnnual: true,
   },
   
   [PlantType.STRAWBERRY]: {
@@ -158,6 +187,16 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     name: '草莓',
     emoji: '🍓',
     difficulty: 4,
+    maxHeight: 30,
+    stages: [
+      { id: 'seed', name: '种子', emoji: '🌰', progress: 0, description: '细小的草莓种子' },
+      { id: 'sprout', name: '发芽', emoji: '🌱', progress: 0.03, description: '嫩芽探出头' },
+      { id: 'leaf', name: '展叶', emoji: '🌿', progress: 0.10, description: '锯齿状叶片展开' },
+      { id: 'runner', name: '匍匐茎', emoji: '🌿', progress: 0.25, description: '长出匍匐茎' },
+      { id: 'bloom', name: '开花', emoji: '🌸', progress: 0.45, description: '小白花朵朵开放' },
+      { id: 'green', name: '青果', emoji: '🫛', progress: 0.65, description: '绿色小果实长出' },
+      { id: 'ripe', name: '红果', emoji: '🍓', progress: 1.0, description: '草莓红透了！' },
+    ],
     tempMin: 15,
     tempMax: 25,
     tempHeatDamage: 28,
@@ -181,6 +220,17 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     name: '樱花',
     emoji: '🌸',
     difficulty: 5,
+    maxHeight: 500,
+    stages: [
+      { id: 'seed', name: '种子', emoji: '🌰', progress: 0, description: '樱桃核静待发芽' },
+      { id: 'sprout', name: '发芽', emoji: '🌱', progress: 0.02, description: '小苗破壳而出' },
+      { id: 'seedling', name: '幼苗', emoji: '🌿', progress: 0.05, description: '纤细的小苗' },
+      { id: 'woody', name: '木质化', emoji: '🪵', progress: 0.15, description: '茎秆开始木质化' },
+      { id: 'branch', name: '枝繁', emoji: '🌳', progress: 0.35, description: '枝条渐渐丰满' },
+      { id: 'bud', name: '花苞', emoji: '🌳', progress: 0.60, description: '枝头结满花苞', condition: 'vernalization' },
+      { id: 'bloom', name: '盛开', emoji: '🌸', progress: 0.80, description: '满树樱花绚烂绽放' },
+      { id: 'fall', name: '落樱', emoji: '🌸', progress: 1.0, description: '花瓣如雪飘落' },
+    ],
     tempMin: 15,
     tempMax: 25,
     tempHeatDamage: 35,
@@ -197,7 +247,7 @@ export const PLANT_CONFIGS: Record<PlantType, PlantConfig> = {
     waterlogTolerance: 0.2,
     heatTolerance: 0.4,
     coldTolerance: 0.8,
-    needsVernalization: true,     // 需要春化
-    vernalizationDays: 30,        // 需要低于 7°C 的天数
+    needsVernalization: true,
+    vernalizationDays: 30,
   },
 };
