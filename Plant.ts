@@ -252,7 +252,7 @@ function calculateGrowthRate(
 }
 
 /**
- * 模拟一天的变化
+ * 模拟一天的变化（纯函数，不修改原对象）
  */
 export function simulateDay(
   plant: PlantData,
@@ -268,9 +268,22 @@ export function simulateDay(
     return { plant, newSoilMoisture: soilMoisture };
   }
   
+  // 创建副本，不修改原对象
+  const updated: PlantData = {
+    ...plant,
+    stressDays: { ...plant.stressDays },
+    milestones: [...plant.milestones],
+  };
+  
   // 记录遮挡天数
   if (inShelter) {
-    plant.daysInShelter++;
+    updated.daysInShelter++;
+  }
+  
+  // 记录浇水
+  if (watered) {
+    updated.totalWaterReceived++;
+    updated.lastWateredAt = Date.now();
   }
   
   // 1. 更新土壤湿度
@@ -279,104 +292,104 @@ export function simulateDay(
   // 2. 检查各类胁迫，累计伤害
   let totalDamage = 0;
   
-  const tempStress = checkTemperatureStress(plant, config, weather.temperature);
+  const tempStress = checkTemperatureStress(updated, config, weather.temperature);
   totalDamage += tempStress.damage;
   if (tempStress.stressType) {
-    plant.stressDays[tempStress.stressType] = (plant.stressDays[tempStress.stressType] || 0) + 1;
+    updated.stressDays[tempStress.stressType] = (updated.stressDays[tempStress.stressType] || 0) + 1;
   }
   
-  const waterStress = checkWaterStress(plant, config, newSoilMoisture);
+  const waterStress = checkWaterStress(updated, config, newSoilMoisture);
   totalDamage += waterStress.damage;
   if (waterStress.stressType) {
-    plant.stressDays[waterStress.stressType] = (plant.stressDays[waterStress.stressType] || 0) + 1;
+    updated.stressDays[waterStress.stressType] = (updated.stressDays[waterStress.stressType] || 0) + 1;
   }
   
-  const lightStress = checkLightStress(plant, config, weather.sunlight);
+  const lightStress = checkLightStress(updated, config, weather.sunlight);
   totalDamage += lightStress.damage;
   if (lightStress.stressType) {
-    plant.stressDays[lightStress.stressType] = (plant.stressDays[lightStress.stressType] || 0) + 1;
+    updated.stressDays[lightStress.stressType] = (updated.stressDays[lightStress.stressType] || 0) + 1;
   }
   
   // 3. 恢复（无胁迫时每天恢复 5 点）
-  if (totalDamage === 0 && plant.healthValue < 100) {
-    plant.healthValue = Math.min(100, plant.healthValue + 5);
+  if (totalDamage === 0 && updated.healthValue < 100) {
+    updated.healthValue = Math.min(100, updated.healthValue + 5);
   } else {
-    plant.healthValue = Math.max(0, plant.healthValue - totalDamage);
+    updated.healthValue = Math.max(0, updated.healthValue - totalDamage);
   }
   
   // 4. 更新健康状态和外观
-  plant.healthState = healthValueToState(plant.healthValue);
-  plant.wiltLevel = 1 - plant.healthValue / 100;  // 萎蔫程度
+  updated.healthState = healthValueToState(updated.healthValue);
+  updated.wiltLevel = 1 - updated.healthValue / 100;  // 萎蔫程度
   
   // 5. 生长
-  if (plant.healthState !== HealthState.DEAD) {
-    const oldStageId = getCurrentStage(plant).id;
+  if (updated.healthState !== HealthState.DEAD) {
+    const oldStageId = getCurrentStage(updated).id;
     
-    const growthRate = calculateGrowthRate(plant, config, weather, newSoilMoisture);
+    const growthRate = calculateGrowthRate(updated, config, weather, newSoilMoisture);
     const dailyGrowth = growthRate / config.growthDays;
-    plant.growthProgress += dailyGrowth;
+    updated.growthProgress = Math.min(1, updated.growthProgress + dailyGrowth);  // 限制上限
     
     // 更新物理特征（带少量随机性，让每棵植物独特）
     const heightGrowth = (config.maxHeight / config.growthDays) * growthRate;
-    plant.height += heightGrowth * (0.9 + Math.random() * 0.2);
-    plant.height = Math.min(plant.height, config.maxHeight);
+    updated.height += heightGrowth * (0.9 + Math.random() * 0.2);
+    updated.height = Math.min(updated.height, config.maxHeight);
     
     // 叶片随进度增长
-    if (plant.growthProgress > 0.1 && Math.random() < 0.3 * growthRate) {
-      plant.leafCount++;
+    if (updated.growthProgress > 0.1 && Math.random() < 0.3 * growthRate) {
+      updated.leafCount++;
     }
     
     // 根系深度
-    plant.rootDepth += heightGrowth * 0.5 * (0.8 + Math.random() * 0.4);
+    updated.rootDepth += heightGrowth * 0.5 * (0.8 + Math.random() * 0.4);
     
     // 茎秆粗度
-    plant.stemWidth += heightGrowth * 0.02;
+    updated.stemWidth += heightGrowth * 0.02;
     
     // 叶色随成熟度变深
-    plant.leafColor = Math.min(1, plant.growthProgress * 1.2);
+    updated.leafColor = Math.min(1, updated.growthProgress * 1.2);
     
     // 累计环境数据
-    plant.totalSunlightHours += weather.sunlight * 12;  // 假设白天12小时
-    plant.totalRainfallReceived += weather.precipitation;
-    plant.totalWindExposure += weather.windSpeed;
+    updated.totalSunlightHours += weather.sunlight * 12;  // 假设白天12小时
+    updated.totalRainfallReceived += weather.precipitation;
+    updated.totalWindExposure += weather.windSpeed;
     
     // 记录极端天气
-    plant.maxTempSeen = Math.max(plant.maxTempSeen, weather.temperature);
-    plant.minTempSeen = Math.min(plant.minTempSeen, weather.temperature);
-    plant.maxWindSeen = Math.max(plant.maxWindSeen, weather.windSpeed);
+    updated.maxTempSeen = Math.max(updated.maxTempSeen, weather.temperature);
+    updated.minTempSeen = Math.min(updated.minTempSeen, weather.temperature);
+    updated.maxWindSeen = Math.max(updated.maxWindSeen, weather.windSpeed);
     
     // 检测阶段变化，记录里程碑
-    const newStage = getCurrentStage(plant);
+    const newStage = getCurrentStage(updated);
     if (newStage.id !== oldStageId) {
-      plant.currentStageId = newStage.id;
-      plant.milestones.push({
+      updated.currentStageId = newStage.id;
+      updated.milestones.push({
         stageId: newStage.id,
         date: Date.now(),
         weather: getWeatherDescription(weather),
-        height: plant.height,
+        height: updated.height,
       });
       console.log(`🌱 ${config.name} 进入新阶段: ${newStage.name}`);
     }
     
     // 樱花春化检测
     if (config.needsVernalization && weather.temperature < 7) {
-      plant.vernalizationDays++;
-      if (plant.vernalizationDays >= (config.vernalizationDays || 30)) {
-        plant.canBloom = true;
+      updated.vernalizationDays++;
+      if (updated.vernalizationDays >= (config.vernalizationDays || 30)) {
+        updated.canBloom = true;
       }
     }
     
     // 一年生植物超龄死亡
     if (config.lifespan > 0) {
-      const age = (Date.now() - plant.plantedAt) / (24 * 60 * 60 * 1000);
+      const age = (Date.now() - updated.plantedAt) / (24 * 60 * 60 * 1000);
       if (age > config.lifespan) {
-        plant.healthValue = Math.max(0, plant.healthValue - 5);
-        plant.healthState = healthValueToState(plant.healthValue);
+        updated.healthValue = Math.max(0, updated.healthValue - 5);
+        updated.healthState = healthValueToState(updated.healthValue);
       }
     }
   }
   
-  return { plant, newSoilMoisture };
+  return { plant: updated, newSoilMoisture };
 }
 
 /**
