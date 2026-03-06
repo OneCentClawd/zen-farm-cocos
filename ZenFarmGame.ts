@@ -260,9 +260,9 @@ export class ZenFarmGame extends Component {
     
     if (this.weather && this.weatherLabel) {
       const temp = this.weather.temperature.toFixed(1);
-      const humidity = this.weather.humidity;
-      this.weatherLabel.string = `🌡️ ${temp}°C  💨 ${humidity}%`;
-      console.log(`🌤️ 天气: ${temp}°C`);
+      const wind = this.weather.windSpeed.toFixed(0);
+      this.weatherLabel.string = `🌡️ ${temp}°C  🌬️ ${wind}km/h`;
+      console.log(`🌤️ 天气: ${temp}°C, 风速: ${wind}km/h`);
     }
   }
   
@@ -506,7 +506,7 @@ export class ZenFarmGame extends Component {
     if (shelterTransform) shelterTransform.setContentSize(500, 70);
     
     // 遮雨棚说明
-    const shelterHint = PopupManager.createLabel(popup, 'ShelterHint', '阻挡降雨（24小时后自动移除）', 22);
+    const shelterHint = PopupManager.createLabel(popup, 'ShelterHint', '阻挡风雨阳光，减少蒸发但影响生长', 20);
     shelterHint.node.setPosition(0, 10, 0);
     
     // 除湿器

@@ -3,7 +3,7 @@
  */
 
 import { PlantType, PlantData, HealthState, PLANT_CONFIGS } from './PlantTypes';
-import { WeatherData, updateSoilMoisture } from './Environment';
+import { WeatherData, updateSoilMoisture, getSunlightBonus, getRainFertilizerBonus } from './Environment';
 import { createPlant, simulateDay, simulateOffline } from './Plant';
 
 /**
@@ -146,13 +146,15 @@ export function updatePlot(plot: PlotData, weather: WeatherData): PlotData {
   // 调整天气效果（遮雨棚/除湿器）
   let effectiveWeather = { ...weather };
   
-  // 遮雨棚：阻挡降雨
+  // 遮雨棚：阻挡降雨、风、阳光
   if (shelterActive) {
     effectiveWeather.precipitation = 0;
+    effectiveWeather.windSpeed = 0;
+    effectiveWeather.sunlight *= 0.3;  // 阳光大幅减弱
   }
   
-  // 更新土壤湿度
-  let newMoisture = updateSoilMoisture(plot.soilMoisture, effectiveWeather, hours, false);
+  // 更新土壤湿度（传入 shelter 状态）
+  let newMoisture = updateSoilMoisture(plot.soilMoisture, effectiveWeather, hours, false, shelterActive);
   
   // 除湿器：每小时降低 2% 湿度
   if (plot.hasDehumidifier) {

@@ -10,6 +10,7 @@ export interface WeatherData {
   humidity: number;         // 空气湿度 %
   precipitation: number;    // 降水量 mm
   sunlight: number;         // 日照强度 0~1（根据天气状况推算）
+  windSpeed: number;        // 风速 km/h
   weatherCode: number;      // 天气代码
   updatedAt: number;        // 更新时间
 }
@@ -54,7 +55,7 @@ function weatherCodeToSunlight(code: number): number {
  * 从 Open-Meteo 获取天气
  */
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherData | null> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&timezone=auto`;
   
   try {
     const response = await fetch(url);
@@ -71,6 +72,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
       humidity: current.relative_humidity_2m,
       precipitation: current.precipitation,
       sunlight: weatherCodeToSunlight(current.weather_code),
+      windSpeed: current.wind_speed_10m || 0,
       weatherCode: current.weather_code,
       updatedAt: Date.now(),
     };
@@ -90,7 +92,7 @@ export async function fetchWeatherHistory(
   endDate: string
 ): Promise<WeatherData[]> {
   // 使用 archive API 获取历史数据
-  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code,wind_speed_10m_max&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
   
   try {
     const response = await fetch(url);
@@ -106,6 +108,7 @@ export async function fetchWeatherHistory(
         humidity: 60,  // 历史数据没有湿度，用默认值
         precipitation: daily.precipitation_sum[i],
         sunlight: weatherCodeToSunlight(daily.weather_code[i]),
+        windSpeed: daily.wind_speed_10m_max?.[i] || 10,
         weatherCode: daily.weather_code[i],
         updatedAt: new Date(daily.time[i]).getTime(),
       });
@@ -124,13 +127,15 @@ export async function fetchWeatherHistory(
  * @param weather 天气数据
  * @param hours 经过时间（小时）
  * @param watered 是否浇水
+ * @param hasShelter 是否有遮挡（阻挡风、阳光、雨）
  * @returns 新的湿度值
  */
 export function updateSoilMoisture(
   currentMoisture: number,
   weather: WeatherData,
   hours: number,
-  watered: boolean = false
+  watered: boolean = false,
+  hasShelter: boolean = false
 ): number {
   let moisture = currentMoisture;
   
@@ -139,21 +144,38 @@ export function updateSoilMoisture(
     moisture += 20;
   }
   
-  // 2. 降水增加湿度
-  // 每 mm 降水约增加 3% 湿度
-  moisture += weather.precipitation * 3;
+  // 2. 降水增加湿度（遮挡下无效）
+  if (!hasShelter) {
+    // 每 mm 降水约增加 3% 湿度
+    moisture += weather.precipitation * 3;
+  }
   
   // 3. 蒸发减少湿度
-  // 蒸发率受温度和日照影响
   const baseEvaporation = 0.5;  // 基础蒸发 %/小时
+  
+  // 温度因子：温度越高蒸发越快
   const tempFactor = Math.max(0.5, 1 + (weather.temperature - 20) / 30);
-  const sunFactor = 0.5 + weather.sunlight * 0.5;
+  
+  // 空气湿度因子：空气越干燥蒸发越快
   const humidityFactor = 1.5 - weather.humidity / 100;
   
-  let evaporation = baseEvaporation * tempFactor * sunFactor * humidityFactor;
+  // 日照因子：阳光越强蒸发越快（遮挡下无阳光）
+  let sunFactor = 0.5 + weather.sunlight * 0.5;
+  if (hasShelter) {
+    sunFactor = 0.3;  // 遮挡下阳光大幅减弱
+  }
+  
+  // 风速因子：风越大蒸发越快（遮挡下无风）
+  let windFactor = 1.0;
+  if (!hasShelter) {
+    // 风速每增加 10 km/h，蒸发增加 20%
+    windFactor = 1 + (weather.windSpeed / 50);
+  }
+  
+  let evaporation = baseEvaporation * tempFactor * sunFactor * humidityFactor * windFactor;
   
   // 下雨时蒸发很慢
-  if (weather.precipitation > 0) {
+  if (weather.precipitation > 0 && !hasShelter) {
     evaporation *= 0.1;
   }
   
@@ -161,4 +183,31 @@ export function updateSoilMoisture(
   
   // 限制范围
   return Math.max(0, Math.min(100, moisture));
+}
+
+/**
+ * 计算阳光对生长的加成
+ * @param sunlight 日照强度 0~1
+ * @param hasShelter 是否有遮挡
+ * @returns 生长加成系数 0~1
+ */
+export function getSunlightBonus(sunlight: number, hasShelter: boolean): number {
+  if (hasShelter) {
+    return 0.5;  // 遮挡下只有 50% 的光合作用
+  }
+  return 0.5 + sunlight * 0.5;  // 0.5 ~ 1.0
+}
+
+/**
+ * 计算雨水带来的肥料加成
+ * @param precipitation 降水量 mm
+ * @param hasShelter 是否有遮挡
+ * @returns 肥力加成
+ */
+export function getRainFertilizerBonus(precipitation: number, hasShelter: boolean): number {
+  if (hasShelter || precipitation <= 0) {
+    return 0;
+  }
+  // 每 mm 降雨带来 0.5% 的肥力加成（上限 5%）
+  return Math.min(5, precipitation * 0.5);
 }
