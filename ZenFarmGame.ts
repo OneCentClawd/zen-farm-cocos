@@ -162,13 +162,25 @@ export class ZenFarmGame extends Component {
     this.statusLabel.node.setPosition(0, -180, 0);
     
     // ========== 底部信息区 ==========
+    // 底部半透明背景条（增加对比度）
+    const bottomBar = new Node('BottomBar');
+    bottomBar.layer = this.node.layer;
+    bottomBar.setParent(this.node);
+    bottomBar.setPosition(0, -halfH + 200, 0);
+    const bottomBarTransform = bottomBar.addComponent(UITransform);
+    bottomBarTransform.setContentSize(screenSize.width, 280);
+    const bottomBarGraphics = bottomBar.addComponent(Graphics);
+    bottomBarGraphics.fillColor = new Color(0, 0, 0, 80);  // 半透明黑
+    bottomBarGraphics.rect(-screenSize.width / 2, -140, screenSize.width, 280);
+    bottomBarGraphics.fill();
+    
     // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 44);
-    this.soilLabel.node.setPosition(0, -halfH + 320, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 46);
+    this.soilLabel.node.setPosition(0, -halfH + 300, 0);
     
     // 操作按钮区（大字醒目）
-    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 60);
-    this.actionLabel.node.setPosition(0, -halfH + 220, 0);
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 64);
+    this.actionLabel.node.setPosition(0, -halfH + 210, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
@@ -177,7 +189,7 @@ export class ZenFarmGame extends Component {
     
     // 设施按钮（右下角，加大）
     this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 44);
-    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 120, 0);
+    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 110, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
@@ -269,7 +281,7 @@ export class ZenFarmGame extends Component {
     
     // 用 Graphics 画纯色背景（不需要 spriteFrame）
     const graphics = bgNode.addComponent(Graphics);
-    graphics.fillColor = new Color(135, 206, 235, 255);  // 默认晴天蓝 #87CEEB
+    graphics.fillColor = new Color(145, 215, 250, 255);  // 默认晴天蓝（更亮）
     graphics.rect(-width / 2, -height / 2, width, height);
     graphics.fill();
     
@@ -292,23 +304,23 @@ export class ZenFarmGame extends Component {
     const sunlight = this.weather.sunlight;
     const precip = this.weather.precipitation;
     
-    let r = 135, g = 206, b = 235;  // 默认晴天蓝 #87CEEB
+    let r = 145, g = 215, b = 250;  // 默认晴天蓝（更亮）
     
     if (precip > 5) {
-      // 大雨 - 灰蓝
-      r = 119; g = 136; b = 153;  // #778899
+      // 大雨 - 淡灰蓝
+      r = 160; g = 175; b = 195;
     } else if (precip > 0) {
-      // 小雨 - 浅灰蓝
-      r = 176; g = 196; b = 222;  // #B0C4DE
+      // 小雨 - 浅蓝灰
+      r = 185; g = 205; b = 225;
     } else if (sunlight > 0.8) {
       // 大晴天 - 明亮天蓝
-      r = 135; g = 206; b = 250;  // #87CEFA
+      r = 150; g = 220; b = 255;
     } else if (sunlight > 0.5) {
       // 多云 - 淡天蓝
-      r = 173; g = 216; b = 230;  // #ADD8E6
+      r = 180; g = 215; b = 240;
     } else {
-      // 阴天 - 浅灰
-      r = 192; g = 192; b = 192;  // #C0C0C0
+      // 阴天 - 淡灰蓝
+      r = 200; g = 210; b = 220;
     }
     
     // 重绘背景
