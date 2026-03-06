@@ -216,10 +216,6 @@ export class ZenFarmGame extends Component {
     
     return label;
   }
-    label.overflow = Label.Overflow.NONE;
-    
-    return label;
-  }
   
   /**
    * 创建背景（体现天气）
