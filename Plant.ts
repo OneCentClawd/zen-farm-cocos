@@ -357,27 +357,49 @@ export function simulateDay(
     const dailyGrowth = growthRate / config.growthDays;
     updated.growthProgress = Math.min(1, updated.growthProgress + dailyGrowth);  // 限制上限
     
-    // 更新物理特征（带少量随机性，让每棵植物独特）
-    const heightGrowth = (config.maxHeight / config.growthDays) * growthRate;
-    updated.height += heightGrowth * (0.9 + Math.random() * 0.2);
+    // ========== 物理特征：当天环境实时影响形态 ==========
+    const baseHeightGrowth = (config.maxHeight / config.growthDays) * growthRate;
+    
+    // 高度：遮挡下徒长（长得高但细），阳光充足长得矮壮
+    let heightMultiplier = 1.0;
+    if (inShelter) {
+      heightMultiplier = 1.3;  // 遮挡下徒长 30%
+    } else if (weather.sunlight > 0.7) {
+      heightMultiplier = 0.9;  // 阳光好，矮壮
+    }
+    updated.height += baseHeightGrowth * heightMultiplier * (0.9 + Math.random() * 0.2);
     updated.height = Math.min(updated.height, config.maxHeight);
     
-    // 叶片随进度增长
-    if (updated.growthProgress > 0.1 && Math.random() < 0.3 * growthRate) {
+    // 茎秆粗度：风大长得粗（抗风），遮挡下长得细
+    let stemMultiplier = 1.0;
+    if (weather.windSpeed > 20) {
+      stemMultiplier = 1.5;  // 大风，茎秆加粗
+    } else if (inShelter) {
+      stemMultiplier = 0.7;  // 遮挡下细弱
+    }
+    updated.stemWidth += baseHeightGrowth * 0.02 * stemMultiplier;
+    
+    // 叶片：阳光好叶子多，缺光叶子少
+    const leafChance = weather.sunlight > 0.5 ? 0.4 : 0.15;
+    if (updated.growthProgress > 0.1 && Math.random() < leafChance * growthRate) {
       updated.leafCount++;
     }
     
-    // 根系深度
-    updated.rootDepth += heightGrowth * 0.5 * (0.8 + Math.random() * 0.4);
+    // 根系深度：干旱时根系长得深（找水），水多则浅
+    let rootMultiplier = 1.0;
+    if (newSoilMoisture < config.moistureMin) {
+      rootMultiplier = 1.5;  // 缺水，根系拼命往下长
+    } else if (newSoilMoisture > config.moistureMax) {
+      rootMultiplier = 0.6;  // 水多，根系不需要深
+    }
+    updated.rootDepth += baseHeightGrowth * 0.5 * rootMultiplier * (0.8 + Math.random() * 0.4);
     
-    // 茎秆粗度
-    updated.stemWidth += heightGrowth * 0.02;
+    // 叶色：阳光充足颜色深，缺光颜色浅
+    const targetColor = weather.sunlight > 0.5 ? updated.growthProgress * 1.2 : updated.growthProgress * 0.8;
+    updated.leafColor = Math.min(1, (updated.leafColor * 0.9 + targetColor * 0.1));  // 渐变
     
-    // 叶色随成熟度变深
-    updated.leafColor = Math.min(1, updated.growthProgress * 1.2);
-    
-    // 累计环境数据
-    updated.totalSunlightHours += weather.sunlight * 12;  // 假设白天12小时
+    // ========== 累计环境数据（仅记录，不影响计算） ==========
+    updated.totalSunlightHours += weather.sunlight * 12;
     updated.totalRainfallReceived += weather.precipitation;
     updated.totalWindExposure += weather.windSpeed;
     
