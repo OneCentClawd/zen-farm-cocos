@@ -5,7 +5,7 @@
 
 import { 
   _decorator, Component, Node, Label, Color, 
-  UITransform, view, director, Canvas, Graphics, Sprite
+  UITransform, view, director, Canvas, Graphics
 } from 'cc';
 import { PlantType, HealthState, PLANT_CONFIGS } from './PlantTypes';
 import { WeatherData, fetchWeather } from './Environment';
@@ -223,12 +223,11 @@ export class ZenFarmGame extends Component {
     transform.anchorX = 0.5;
     transform.anchorY = 0.5;
     
-    const sprite = bgNode.addComponent(Sprite);
-    sprite.type = Sprite.Type.SIMPLE;
-    sprite.sizeMode = Sprite.SizeMode.CUSTOM;
-    
-    // 默认天气背景色（晴天蓝）
-    sprite.color = new Color(135, 206, 235, 255);
+    // 用 Graphics 画纯色背景（不需要 spriteFrame）
+    const graphics = bgNode.addComponent(Graphics);
+    graphics.fillColor = new Color(135, 206, 235, 255);  // 默认晴天蓝
+    graphics.rect(-width / 2, -height / 2, width, height);
+    graphics.fill();
     
     return bgNode;
   }
@@ -239,8 +238,12 @@ export class ZenFarmGame extends Component {
   private updateBackgroundColor() {
     if (!this.backgroundNode || !this.weather) return;
     
-    const sprite = this.backgroundNode.getComponent(Sprite);
-    if (!sprite) return;
+    const graphics = this.backgroundNode.getComponent(Graphics);
+    if (!graphics) return;
+    
+    const screenSize = view.getVisibleSize();
+    const width = screenSize.width;
+    const height = screenSize.height;
     
     const sunlight = this.weather.sunlight;
     const precip = this.weather.precipitation;
@@ -264,7 +267,11 @@ export class ZenFarmGame extends Component {
       r = 140; g = 150; b = 160;
     }
     
-    sprite.color = new Color(r, g, b, 255);
+    // 重绘背景
+    graphics.clear();
+    graphics.fillColor = new Color(r, g, b, 255);
+    graphics.rect(-width / 2, -height / 2, width, height);
+    graphics.fill();
   }
   
   /**
