@@ -371,14 +371,14 @@ export class ZenFarmGame extends Component {
       // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
-      // 操作按钮
+      // 操作按钮提示
       if (this.actionLabel) {
         if (plot.plant.healthState === HealthState.DEAD) {
-          this.actionLabel.string = '🗑️ 清除';
+          this.actionLabel.string = '🗑️ 点击清除';
         } else if (plot.plant.growthProgress >= 1.0) {
-          this.actionLabel.string = '💧 浇水    🌾 收获';
+          this.actionLabel.string = '👆 点击操作（浇水/收获/挖除）';
         } else {
-          this.actionLabel.string = '💧 浇水';
+          this.actionLabel.string = '👆 点击操作（浇水/挖除）';
         }
       }
     } else {
