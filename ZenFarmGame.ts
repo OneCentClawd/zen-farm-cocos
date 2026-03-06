@@ -28,10 +28,7 @@ export class ZenFarmGame extends Component {
   private actionLabel: Label | null = null;
   private facilityLabel: Label | null = null;  // 设施状态
   
-  // 选择界面
-  private selectPanel: Node | null = null;
-  private confirmPanel: Node | null = null;
-  private difficultyPanel: Node | null = null;
+  // 种植选择
   private pendingPlantType: PlantType | null = null;
   private pendingHardMode: boolean = false;
   
@@ -573,54 +570,32 @@ export class ZenFarmGame extends Component {
    * 显示种植选择界面
    */
   showPlantSelect() {
-    if (this.selectPanel) {
-      this.selectPanel.active = true;
-      return;
-    }
+    if (!this.popupManager) return;
     
-    const screenSize = view.getVisibleSize();
-    
-    // 创建选择面板
-    this.selectPanel = new Node('SelectPanel');
-    this.selectPanel.layer = this.node.layer;
-    this.selectPanel.setParent(this.node);
-    this.selectPanel.setPosition(0, 0, 0);
-    
-    const panelTransform = this.selectPanel.addComponent(UITransform);
-    panelTransform.setContentSize(screenSize.width, screenSize.height);
-    
-    // 标题
-    const titleLabel = this.createLabelOn(this.selectPanel, 'Title', '🌱 选择要种植的植物', 40);
-    titleLabel.node.setPosition(0, 300, 0);
+    const panel = this.popupManager.show('PlantSelect', {
+      title: '🌱 选择要种植的植物',
+      height: 0.6,
+    });
     
     // 植物选项
     const plants = [
-      { type: PlantType.CLOVER, emoji: '🍀', name: '幸运草', y: 150 },
-      { type: PlantType.SUNFLOWER, emoji: '🌻', name: '向日葵', y: 50 },
-      { type: PlantType.STRAWBERRY, emoji: '🍓', name: '草莓', y: -50 },
-      { type: PlantType.SAKURA, emoji: '🌸', name: '樱花', y: -150 },
+      { type: PlantType.CLOVER, emoji: '🍀', name: '幸运草', y: 80 },
+      { type: PlantType.SUNFLOWER, emoji: '🌻', name: '向日葵', y: 0 },
+      { type: PlantType.STRAWBERRY, emoji: '🍓', name: '草莓', y: -80 },
+      { type: PlantType.SAKURA, emoji: '🌸', name: '樱花', y: -160 },
     ];
     
     for (const p of plants) {
       const config = PLANT_CONFIGS[p.type];
-      const btn = this.createLabelOn(this.selectPanel, p.name, 
-        `${p.emoji} ${p.name}  ⭐${config.difficulty}  📅${config.growthDays}天`, 36);
+      const btn = PopupManager.createButton(panel, p.name, 
+        `${p.emoji} ${p.name}  ⭐${config.difficulty}  📅${config.growthDays}天`, 32, () => {
+        this.showPlantConfirm(p.type);
+      });
       btn.node.setPosition(0, p.y, 0);
       
       const btnTransform = btn.node.getComponent(UITransform);
       if (btnTransform) btnTransform.setContentSize(500, 60);
-      
-      btn.node.on(Node.EventType.TOUCH_END, () => {
-        this.showPlantConfirm(p.type);
-      }, this);
     }
-    
-    // 取消按钮
-    const cancelBtn = this.createLabelOn(this.selectPanel, 'Cancel', '❌ 取消', 36);
-    cancelBtn.node.setPosition(0, -280, 0);
-    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.selectPanel) this.selectPanel.active = false;
-    }, this);
   }
   
   /**
@@ -630,9 +605,6 @@ export class ZenFarmGame extends Component {
     const config = PLANT_CONFIGS[type];
     this.pendingPlantType = type;
     
-    // 隐藏选择面板
-    if (this.selectPanel) this.selectPanel.active = false;
-    
     // 显示难度选择
     this.showDifficultySelect(config);
   }
@@ -641,185 +613,34 @@ export class ZenFarmGame extends Component {
    * 显示难度选择界面
    */
   showDifficultySelect(config: any) {
-    if (this.difficultyPanel) {
-      this.difficultyPanel.active = true;
-      this.updateDifficultyPanel(config);
-      return;
-    }
+    if (!this.popupManager) return;
     
-    const screenSize = view.getVisibleSize();
-    
-    this.difficultyPanel = new Node('DifficultyPanel');
-    this.difficultyPanel.layer = this.node.layer;
-    this.difficultyPanel.setParent(this.node);
-    this.difficultyPanel.setPosition(0, 0, 0);
-    
-    const panelTransform = this.difficultyPanel.addComponent(UITransform);
-    panelTransform.setContentSize(screenSize.width, screenSize.height);
-    
-    this.updateDifficultyPanel(config);
-  }
-  
-  /**
-   * 更新难度选择面板
-   */
-  updateDifficultyPanel(config: any) {
-    if (!this.difficultyPanel) return;
-    
-    this.difficultyPanel.removeAllChildren();
-    
-    // 标题
-    const titleLabel = this.createLabelOn(this.difficultyPanel, 'Title',
-      `${config.emoji} ${config.name}`, 56);
-    titleLabel.node.setPosition(0, 300, 0);
-    
-    // 选择难度提示
-    const hintLabel = this.createLabelOn(this.difficultyPanel, 'Hint',
-      '选择游戏难度', 36);
-    hintLabel.node.setPosition(0, 200, 0);
+    const panel = this.popupManager.show('DifficultySelect', {
+      title: `🌱 种植 ${config.emoji} ${config.name}`,
+      height: 0.55,
+    });
     
     // 佛系模式
-    const normalBtn = this.createLabelOn(this.difficultyPanel, 'Normal',
-      '🧘 佛系模式\n显示适宜温度、湿度等提示', 32);
-    normalBtn.node.setPosition(0, 80, 0);
-    const normalTransform = normalBtn.node.getComponent(UITransform);
-    if (normalTransform) normalTransform.setContentSize(500, 100);
-    normalBtn.node.on(Node.EventType.TOUCH_END, () => {
+    const zenBtn = PopupManager.createButton(panel, 'Zen', '🧘 佛系模式', 40, () => {
       this.pendingHardMode = false;
-      this.showConfirmPanel(config);
-    }, this);
+      this.doPlant();
+      this.popupManager?.close();
+    });
+    zenBtn.node.setPosition(0, 60, 0);
+    
+    const zenHint = PopupManager.createLabel(panel, 'ZenHint', '显示所有数值，适合新手', 24);
+    zenHint.node.setPosition(0, 15, 0);
     
     // 硬核模式
-    const hardBtn = this.createLabelOn(this.difficultyPanel, 'Hard',
-      '💪 硬核模式\n无任何提示，全靠经验！', 32);
-    hardBtn.node.setPosition(0, -60, 0);
-    const hardTransform = hardBtn.node.getComponent(UITransform);
-    if (hardTransform) hardTransform.setContentSize(500, 100);
-    hardBtn.node.on(Node.EventType.TOUCH_END, () => {
+    const hardBtn = PopupManager.createButton(panel, 'Hard', '🔥 硬核模式', 40, () => {
       this.pendingHardMode = true;
-      this.showConfirmPanel(config);
-    }, this);
+      this.doPlant();
+      this.popupManager?.close();
+    });
+    hardBtn.node.setPosition(0, -60, 0);
     
-    // 返回按钮
-    const backBtn = this.createLabelOn(this.difficultyPanel, 'Back', '❌ 返回', 36);
-    backBtn.node.setPosition(0, -200, 0);
-    backBtn.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.difficultyPanel) this.difficultyPanel.active = false;
-      if (this.selectPanel) this.selectPanel.active = true;
-    }, this);
-  }
-  
-  /**
-   * 显示最终确认面板
-   */
-  showConfirmPanel(config: any) {
-    if (this.difficultyPanel) this.difficultyPanel.active = false;
-    
-    if (this.confirmPanel) {
-      this.confirmPanel.active = true;
-      this.updateConfirmPanel(config);
-      return;
-    }
-    
-    const screenSize = view.getVisibleSize();
-    
-    // 创建确认面板
-    this.confirmPanel = new Node('ConfirmPanel');
-    this.confirmPanel.layer = this.node.layer;
-    this.confirmPanel.setParent(this.node);
-    this.confirmPanel.setPosition(0, 0, 0);
-    
-    const panelTransform = this.confirmPanel.addComponent(UITransform);
-    panelTransform.setContentSize(screenSize.width, screenSize.height);
-    
-    this.updateConfirmPanel(config);
-  }
-  
-  /**
-   * 更新确认面板内容
-   */
-  updateConfirmPanel(config: any) {
-    if (!this.confirmPanel) return;
-    
-    // 清空旧内容
-    this.confirmPanel.removeAllChildren();
-    
-    // 植物名称
-    const modeText = this.pendingHardMode ? '🔥' : '🌿';
-    const titleLabel = this.createLabelOn(this.confirmPanel, 'Title', 
-      `${config.emoji} ${config.name} ${modeText}`, 56);
-    titleLabel.node.setPosition(0, 300, 0);
-    
-    // 难度模式
-    const modeLabel = this.createLabelOn(this.confirmPanel, 'Mode',
-      this.pendingHardMode ? '硬核模式 - 无提示' : '佛系模式 - 有提示', 28);
-    modeLabel.node.setPosition(0, 230, 0);
-    
-    // 难度星级
-    const diffLabel = this.createLabelOn(this.confirmPanel, 'Diff',
-      `难度: ${'⭐'.repeat(config.difficulty)}`, 32);
-    diffLabel.node.setPosition(0, 170, 0);
-    
-    // 生长周期（始终显示）
-    const growthLabel = this.createLabelOn(this.confirmPanel, 'Growth',
-      `📅 成熟周期: ${config.growthDays} 天`, 32);
-    growthLabel.node.setPosition(0, 110, 0);
-    
-    // 以下只在佛系模式显示
-    if (!this.pendingHardMode) {
-      // 温度要求
-      const tempLabel = this.createLabelOn(this.confirmPanel, 'Temp',
-        `🌡️ 适宜温度: ${config.tempMin}°C ~ ${config.tempMax}°C`, 28);
-      tempLabel.node.setPosition(0, 50, 0);
-      
-      // 水分要求
-      const waterLabel = this.createLabelOn(this.confirmPanel, 'Water',
-        `💧 适宜湿度: ${config.moistureMin}% ~ ${config.moistureMax}%`, 28);
-      waterLabel.node.setPosition(0, 0, 0);
-      
-      // 特性
-      let traits = [];
-      if (config.droughtTolerance >= 0.7) traits.push('耐旱');
-      if (config.coldTolerance >= 0.7) traits.push('耐寒');
-      if (config.heatTolerance >= 0.7) traits.push('耐热');
-      if (config.needsVernalization) traits.push('需要春化');
-      if (config.isAnnual) traits.push('一年生');
-      
-      const traitText = traits.length > 0 ? `🏷️ 特性: ${traits.join('、')}` : '🏷️ 无特殊特性';
-      const traitLabel = this.createLabelOn(this.confirmPanel, 'Traits', traitText, 28);
-      traitLabel.node.setPosition(0, -50, 0);
-      
-      // 规则提示
-      const ruleLabel = this.createLabelOn(this.confirmPanel, 'Rule',
-        '📜 需要每天关注天气，按时浇水\n极端天气可能导致植物死亡！', 24);
-      ruleLabel.node.setPosition(0, -120, 0);
-    } else {
-      // 硬核模式只显示简单提示
-      const hardHint = this.createLabelOn(this.confirmPanel, 'HardHint',
-        '💪 硬核模式下不会显示任何提示\n你需要自己判断植物的状态！', 28);
-      hardHint.node.setPosition(0, 0, 0);
-    }
-    
-    // 确认按钮
-    const confirmBtn = this.createLabelOn(this.confirmPanel, 'Confirm', '✅ 确认种植', 40);
-    confirmBtn.node.setPosition(0, -230, 0);
-    const confirmTransform = confirmBtn.node.getComponent(UITransform);
-    if (confirmTransform) confirmTransform.setContentSize(300, 70);
-    confirmBtn.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.pendingPlantType !== null) {
-        this.doPlant(this.pendingPlantType, this.pendingHardMode);
-        this.pendingPlantType = null;
-      }
-      if (this.confirmPanel) this.confirmPanel.active = false;
-    }, this);
-    
-    // 取消按钮
-    const cancelBtn = this.createLabelOn(this.confirmPanel, 'Cancel', '❌ 返回', 36);
-    cancelBtn.node.setPosition(0, -310, 0);
-    cancelBtn.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.confirmPanel) this.confirmPanel.active = false;
-      if (this.difficultyPanel) this.difficultyPanel.active = true;
-    }, this);
+    const hardHint = PopupManager.createLabel(panel, 'HardHint', '隐藏详细信息，凭感觉种地', 24);
+    hardHint.node.setPosition(0, -105, 0);
   }
   
   /**
@@ -864,19 +685,27 @@ export class ZenFarmGame extends Component {
   /**
    * 种植
    */
-  doPlant(type: PlantType, hardMode: boolean = false) {
-    if (!this.gameData) return;
+  doPlant(type?: PlantType, hardMode: boolean = false) {
+    // 如果没有传参数，使用 pending 的值
+    const plantType = type ?? this.pendingPlantType;
+    const isHardMode = type !== undefined ? hardMode : this.pendingHardMode;
+    
+    if (!this.gameData || plantType === null) return;
     
     const plot = this.gameData.plots[this.selectedPlot];
     if (plot.plant) return;  // 已有植物
     
-    this.gameData.plots[this.selectedPlot] = plantSeed(plot, type, hardMode);
+    this.gameData.plots[this.selectedPlot] = plantSeed(plot, plantType, isHardMode);
     
-    const config = PLANT_CONFIGS[type];
-    const modeText = hardMode ? '（硬核模式）' : '';
+    const config = PLANT_CONFIGS[plantType];
+    const modeText = isHardMode ? '（硬核模式）' : '';
     console.log(`🌱 种下了 ${config.name}${modeText}！`);
     this.updateUI();
     saveGame(this.gameData);
+    
+    // 清理 pending
+    this.pendingPlantType = null;
+    this.pendingHardMode = false;
   }
   
   /**
