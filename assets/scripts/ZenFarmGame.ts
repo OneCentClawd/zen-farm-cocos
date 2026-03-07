@@ -197,10 +197,10 @@ export class ZenFarmGame extends Component {
     this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
     this.statusLabel.node.setPosition(0, groundCenterY + 230, 0);
     
-    // ========== 右上角操作区 ==========
+    // ========== 操作区（信息区下方，居中）==========
     // 操作按钮
     this.actionLabel = this.createLabel('Action', '👆 种植', 36);
-    this.actionLabel.node.setPosition(halfW - 80, halfH - 60, 0);
+    this.actionLabel.node.setPosition(-60, halfH - 200, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
@@ -209,7 +209,7 @@ export class ZenFarmGame extends Component {
     
     // 设施按钮
     this.facilityLabel = this.createLabel('Facility', '🏠 设施', 36);
-    this.facilityLabel.node.setPosition(halfW - 80, halfH - 110, 0);
+    this.facilityLabel.node.setPosition(60, halfH - 200, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
