@@ -156,9 +156,13 @@ export class ZenFarmGame extends Component {
       plotTransform.setContentSize(500, 80);
     }
     
-    // 天气信息（地块下方）
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 40);
-    this.weatherLabel.node.setPosition(0, halfH - 115, 0);
+    // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 32);
+    this.weatherLabel.node.setPosition(0, halfH - 110, 0);
+    
+    // 土壤湿度（天气下方）
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 32);
+    this.soilLabel.node.setPosition(0, halfH - 150, 0);
     
     // ========== 中央植物区 ==========
     // 土地区域是下1/3，泥土放在土地正中间
@@ -194,26 +198,22 @@ export class ZenFarmGame extends Component {
     this.statusLabel.node.setPosition(0, groundCenterY + 230, 0);
     
     // ========== 右上角操作区 ==========
-    // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 --%', 36);
-    this.soilLabel.node.setPosition(halfW - 100, halfH - 60, 0);
-    
     // 操作按钮
     this.actionLabel = this.createLabel('Action', '👆 种植', 36);
-    this.actionLabel.node.setPosition(halfW - 100, halfH - 110, 0);
+    this.actionLabel.node.setPosition(halfW - 80, halfH - 60, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(180, 60);
+      actionTransform.setContentSize(150, 60);
     }
     
     // 设施按钮
     this.facilityLabel = this.createLabel('Facility', '🏠 设施', 36);
-    this.facilityLabel.node.setPosition(halfW - 100, halfH - 160, 0);
+    this.facilityLabel.node.setPosition(halfW - 80, halfH - 110, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
-      facilityTransform.setContentSize(180, 60);
+      facilityTransform.setContentSize(150, 60);
     }
     
     // ========== 滑动切换地块 ==========
@@ -466,8 +466,10 @@ export class ZenFarmGame extends Component {
         weatherEmoji = '☁️';  // 阴天
       }
       
-      this.weatherLabel.string = `${weatherEmoji} ${temp}°C  🌬️ ${wind}km/h`;
-      console.log(`${weatherEmoji} 天气: ${temp}°C, 风速: ${wind}km/h`);
+      const sunPercent = Math.round(this.weather.sunlight * 100);
+      const rain = this.weather.precipitation.toFixed(1);
+      this.weatherLabel.string = `${weatherEmoji} ${temp}°C  ☀️${sunPercent}%  🌧️${rain}mm  🌬️${wind}km/h`;
+      console.log(`${weatherEmoji} 天气: ${temp}°C, 阳光: ${sunPercent}%, 降雨: ${rain}mm, 风速: ${wind}km/h`);
       
       // 更新背景颜色
       this.updateBackgroundColor();
