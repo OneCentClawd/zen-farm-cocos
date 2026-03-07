@@ -157,12 +157,20 @@ export class ZenFarmGame extends Component {
     }
     
     // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 32);
-    this.weatherLabel.node.setPosition(0, halfH - 110, 0);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 28);
+    this.weatherLabel.node.setPosition(0, halfH - 100, 0);
     
     // 土壤湿度（天气下方）
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 32);
-    this.soilLabel.node.setPosition(0, halfH - 150, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 28);
+    this.soilLabel.node.setPosition(0, halfH - 135, 0);
+    
+    // 植物阶段信息（土壤下方）
+    this.stageLabel = this.createLabel('Stage', '🌱 空地', 28);
+    this.stageLabel.node.setPosition(0, halfH - 170, 0);
+    
+    // 植物状态/健康（阶段下方）
+    this.statusLabel = this.createLabel('Status', '等待播种', 28);
+    this.statusLabel.node.setPosition(0, halfH - 205, 0);
     
     // ========== 中央植物区 ==========
     // 土地区域是下1/3，泥土放在土地正中间
@@ -189,18 +197,10 @@ export class ZenFarmGame extends Component {
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
     this.plantEmoji.node.setPosition(0, groundCenterY + 100, 0);  // 植物根部在泥土中心
     
-    // 阶段信息（植物上方，天空区域）
-    this.stageLabel = this.createLabel('Stage', '播种中...', 44);
-    this.stageLabel.node.setPosition(0, groundCenterY + 280, 0);
-    
-    // 植物状态（阶段信息下方）
-    this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
-    this.statusLabel.node.setPosition(0, groundCenterY + 230, 0);
-    
     // ========== 操作区（信息区下方，靠右纵向排列）==========
     // 操作按钮
     this.actionLabel = this.createLabel('Action', '👆 种植', 36);
-    this.actionLabel.node.setPosition(halfW - 100, halfH - 200, 0);
+    this.actionLabel.node.setPosition(halfW - 100, halfH - 250, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
@@ -209,7 +209,7 @@ export class ZenFarmGame extends Component {
     
     // 设施按钮
     this.facilityLabel = this.createLabel('Facility', '🏠 设施', 36);
-    this.facilityLabel.node.setPosition(halfW - 100, halfH - 260, 0);
+    this.facilityLabel.node.setPosition(halfW - 100, halfH - 310, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
