@@ -161,16 +161,18 @@ export class ZenFarmGame extends Component {
     this.weatherLabel.node.setPosition(0, halfH - 115, 0);
     
     // ========== 中央植物区 ==========
-    // 泥土区域（让植物"种在地里"）- 加大
+    // 泥土区域放在草地上（下1/3区域）
+    const groundY = -halfH + screenSize.height / 3;  // 草地顶部位置
+    
     const soilNode = new Node('SoilArea');
     soilNode.layer = this.node.layer;
     soilNode.setParent(this.node);
-    soilNode.setPosition(0, -80, 0);
+    soilNode.setPosition(0, groundY - 30, 0);  // 泥土在草地上
     const soilTransform = soilNode.addComponent(UITransform);
     soilTransform.setContentSize(280, 120);
     const soilGraphics = soilNode.addComponent(Graphics);
-    // 画椭圆形泥土 #8B6914 - 加大
-    soilGraphics.fillColor = new Color(160, 120, 60, 255);  // 棕色泥土 #A0783C
+    // 画椭圆形泥土
+    soilGraphics.fillColor = new Color(160, 120, 60, 255);  // 棕色泥土
     soilGraphics.ellipse(0, 0, 130, 45);
     soilGraphics.fill();
     // 泥土高光
@@ -178,17 +180,17 @@ export class ZenFarmGame extends Component {
     soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
     
-    // 植物 emoji（放大主角）
+    // 植物 emoji（从泥土里长出来）
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
-    this.plantEmoji.node.setPosition(0, 100, 0);
+    this.plantEmoji.node.setPosition(0, groundY + 120, 0);  // 植物在泥土上方
     
-    // 阶段信息（植物下方）
+    // 阶段信息（草地上，泥土下方）
     this.stageLabel = this.createLabel('Stage', '播种中...', 44);
-    this.stageLabel.node.setPosition(0, -150, 0);
+    this.stageLabel.node.setPosition(0, groundY - 100, 0);
     
-    // 植物状态（健康 + 进度）
+    // 植物状态（阶段信息下方）
     this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
-    this.statusLabel.node.setPosition(0, -190, 0);
+    this.statusLabel.node.setPosition(0, groundY - 150, 0);
     
     // ========== 底部信息区 ==========
     // 底部半透明背景条（增加对比度）
