@@ -61,7 +61,7 @@ export function plantSeed(plot: PlotData, type: PlantType, hardMode: boolean = f
  * 浇水
  */
 export function waterPlot(plot: PlotData): PlotData {
-  const newMoisture = Math.min(100, plot.soilMoisture + 20);
+  const newMoisture = Math.min(100, plot.soilMoisture + 5);
   return {
     ...plot,
     soilMoisture: newMoisture,
