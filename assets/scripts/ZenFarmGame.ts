@@ -216,9 +216,9 @@ export class ZenFarmGame extends Component {
       actionTransform.setContentSize(screenSize.width * 0.9, 120);
     }
     
-    // 设施按钮（右下角，加大）
-    this.facilityLabel = this.createLabel('Facility', '⚙️ 设施', 44);
-    this.facilityLabel.node.setPosition(halfW - 100, -halfH + 110, 0);
+    // 设施按钮（右下角，往左移一点）
+    this.facilityLabel = this.createLabel('Facility', '🏠 设施管理', 40);
+    this.facilityLabel.node.setPosition(halfW - 150, -halfH + 110, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
