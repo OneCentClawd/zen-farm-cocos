@@ -161,13 +161,13 @@ export class ZenFarmGame extends Component {
     this.weatherLabel.node.setPosition(0, halfH - 115, 0);
     
     // ========== 中央植物区 ==========
-    // 泥土区域放在草地上（下1/3区域）
-    const groundY = -halfH + screenSize.height / 3;  // 草地顶部位置
+    // 泥土区域放在土地上（下1/3区域）
+    const groundY = -halfH + screenSize.height / 3;  // 土地顶部位置
     
     const soilNode = new Node('SoilArea');
     soilNode.layer = this.node.layer;
     soilNode.setParent(this.node);
-    soilNode.setPosition(0, groundY - 30, 0);  // 泥土在草地上
+    soilNode.setPosition(0, groundY, 0);  // 泥土在土地顶部
     const soilTransform = soilNode.addComponent(UITransform);
     soilTransform.setContentSize(280, 120);
     const soilGraphics = soilNode.addComponent(Graphics);
@@ -180,47 +180,35 @@ export class ZenFarmGame extends Component {
     soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
     
-    // 植物 emoji（从泥土里长出来）
+    // 植物 emoji（从泥土中间长出来）
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
-    this.plantEmoji.node.setPosition(0, groundY + 120, 0);  // 植物在泥土上方
+    this.plantEmoji.node.setPosition(0, groundY + 100, 0);  // 植物根部在泥土中心
     
-    // 阶段信息（草地上，泥土下方）
+    // 阶段信息（植物上方，天空区域）
     this.stageLabel = this.createLabel('Stage', '播种中...', 44);
-    this.stageLabel.node.setPosition(0, groundY - 100, 0);
+    this.stageLabel.node.setPosition(0, groundY + 280, 0);
     
     // 植物状态（阶段信息下方）
     this.statusLabel = this.createLabel('Status', '🟢 健康', 40);
-    this.statusLabel.node.setPosition(0, groundY - 150, 0);
+    this.statusLabel.node.setPosition(0, groundY + 230, 0);
     
-    // ========== 底部信息区 ==========
-    // 底部半透明背景条（增加对比度）
-    const bottomBar = new Node('BottomBar');
-    bottomBar.layer = this.node.layer;
-    bottomBar.setParent(this.node);
-    bottomBar.setPosition(0, -halfH + 200, 0);
-    const bottomBarTransform = bottomBar.addComponent(UITransform);
-    bottomBarTransform.setContentSize(screenSize.width, 280);
-    const bottomBarGraphics = bottomBar.addComponent(Graphics);
-    bottomBarGraphics.fillColor = new Color(0, 0, 0, 80);  // 半透明黑
-    bottomBarGraphics.rect(-screenSize.width / 2, -140, screenSize.width, 280);
-    bottomBarGraphics.fill();
+    // ========== 顶部信息区（土壤+操作）==========
+    // 土壤湿度（天气下方）
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 40);
+    this.soilLabel.node.setPosition(0, halfH - 170, 0);
     
-    // 土壤湿度
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 46);
-    this.soilLabel.node.setPosition(0, -halfH + 300, 0);
-    
-    // 操作按钮区（大字醒目）
-    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 64);
-    this.actionLabel.node.setPosition(0, -halfH + 210, 0);
+    // 操作按钮区（土壤下方）
+    this.actionLabel = this.createLabel('Action', '👆 种点什么~', 52);
+    this.actionLabel.node.setPosition(0, halfH - 230, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
     if (actionTransform) {
-      actionTransform.setContentSize(screenSize.width * 0.9, 120);
+      actionTransform.setContentSize(screenSize.width * 0.9, 100);
     }
     
-    // 设施按钮（右下角，往左移一点）
+    // 设施按钮（右下角）
     this.facilityLabel = this.createLabel('Facility', '🏠 设施管理', 40);
-    this.facilityLabel.node.setPosition(halfW - 150, -halfH + 110, 0);
+    this.facilityLabel.node.setPosition(halfW - 150, -halfH + 80, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) {
