@@ -26,8 +26,10 @@ export class ZenFarmGame extends Component {
   private plantEmoji: Label | null = null;
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
-  private actionLabel: Label | null = null;
-  private facilityLabel: Label | null = null;   // 设施状态
+  private actionLabel: Label | null = null;      // 种植/挖除按钮
+  private waterLabel: Label | null = null;       // 浇水按钮
+  private harvestLabel: Label | null = null;     // 收获按钮
+  private facilityLabel: Label | null = null;    // 设施按钮
   private stageLabel: Label | null = null;      // 阶段信息
   
   // 种植选择
@@ -198,23 +200,40 @@ export class ZenFarmGame extends Component {
     this.plantEmoji.node.setPosition(0, groundCenterY + 100, 0);  // 植物根部在泥土中心
     
     // ========== 操作区（信息区下方，靠右纵向排列）==========
-    // 操作按钮
-    this.actionLabel = this.createLabel('Action', '👆 种植', 36);
-    this.actionLabel.node.setPosition(halfW - 100, halfH - 250, 0);
-    this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onActionTap, this);
+    const btnX = halfW - 100;
+    let btnY = halfH - 250;
+    const btnGap = 55;
+    
+    // 种植/挖除按钮
+    this.actionLabel = this.createLabel('Action', '🌱 种植', 32);
+    this.actionLabel.node.setPosition(btnX, btnY, 0);
+    this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onPlantTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
-    if (actionTransform) {
-      actionTransform.setContentSize(150, 60);
-    }
+    if (actionTransform) actionTransform.setContentSize(150, 50);
+    
+    // 浇水按钮
+    btnY -= btnGap;
+    this.waterLabel = this.createLabel('Water', '💧 浇水', 32);
+    this.waterLabel.node.setPosition(btnX, btnY, 0);
+    this.waterLabel.node.on(Node.EventType.TOUCH_END, this.onWaterTap, this);
+    const waterTransform = this.waterLabel.node.getComponent(UITransform);
+    if (waterTransform) waterTransform.setContentSize(150, 50);
+    
+    // 收获按钮
+    btnY -= btnGap;
+    this.harvestLabel = this.createLabel('Harvest', '🌾 收获', 32);
+    this.harvestLabel.node.setPosition(btnX, btnY, 0);
+    this.harvestLabel.node.on(Node.EventType.TOUCH_END, this.onHarvestTap, this);
+    const harvestTransform = this.harvestLabel.node.getComponent(UITransform);
+    if (harvestTransform) harvestTransform.setContentSize(150, 50);
     
     // 设施按钮
-    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 36);
-    this.facilityLabel.node.setPosition(halfW - 100, halfH - 310, 0);
+    btnY -= btnGap;
+    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 32);
+    this.facilityLabel.node.setPosition(btnX, btnY, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
-    if (facilityTransform) {
-      facilityTransform.setContentSize(150, 60);
-    }
+    if (facilityTransform) facilityTransform.setContentSize(150, 50);
     
     // ========== 滑动切换地块 ==========
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
@@ -538,22 +557,41 @@ export class ZenFarmGame extends Component {
       // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
-      // 操作按钮提示
+      // 操作按钮状态
       if (this.actionLabel) {
         if (plot.plant.healthState === HealthState.DEAD) {
-          this.actionLabel.string = '🗑️ 点击清除';
-        } else if (plot.plant.growthProgress >= 1.0) {
-          this.actionLabel.string = '👆 点击操作（浇水/收获/挖除）';
+          this.actionLabel.string = '🗑️ 清除';
         } else {
-          this.actionLabel.string = '👆 点击操作（浇水/挖除）';
+          this.actionLabel.string = '⛏️ 挖除';
+        }
+      }
+      
+      // 浇水按钮 - 始终可用
+      if (this.waterLabel) {
+        this.waterLabel.string = '💧 浇水';
+      }
+      
+      // 收获按钮 - 根据成熟状态
+      if (this.harvestLabel) {
+        if (plot.plant.growthProgress >= 1.0 && plot.plant.healthState !== HealthState.DEAD) {
+          this.harvestLabel.string = '🌾 收获';
+          this.harvestLabel.color = new Color(255, 255, 255, 255);
+        } else {
+          this.harvestLabel.string = '🌾 未成熟';
+          this.harvestLabel.color = new Color(150, 150, 150, 255);
         }
       }
     } else {
       // 空地
       if (this.plantEmoji) this.plantEmoji.string = '🕳️';
-      if (this.stageLabel) this.stageLabel.string = '空地';
+      if (this.stageLabel) this.stageLabel.string = '🌱 空地';
       if (this.statusLabel) this.statusLabel.string = '等待播种';
-      if (this.actionLabel) this.actionLabel.string = '👆 种点什么~';
+      if (this.actionLabel) this.actionLabel.string = '🌱 种植';
+      if (this.waterLabel) this.waterLabel.string = '💧 浇水';
+      if (this.harvestLabel) {
+        this.harvestLabel.string = '🌾 收获';
+        this.harvestLabel.color = new Color(150, 150, 150, 255);
+      }
       
       // 土壤（空地时显示）
       if (this.soilLabel) {
@@ -569,7 +607,7 @@ export class ZenFarmGame extends Component {
       if (plot.hasDehumidifier) facilities.push('💨除湿');
       this.facilityLabel.string = facilities.length > 0 
         ? `设施: ${facilities.join(' ')}` 
-        : '🏠 设施管理';
+        : '🏠 设施';
     }
   }
   
@@ -620,6 +658,52 @@ export class ZenFarmGame extends Component {
     } else {
       // 空地 - 显示种植选择
       this.showPlantSelect();
+    }
+  }
+  
+  /**
+   * 点击种植按钮
+   */
+  onPlantTap() {
+    if (!this.gameData) return;
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (!plot) return;
+    
+    if (plot.plant) {
+      if (plot.plant.healthState === HealthState.DEAD) {
+        // 清除死亡植物
+        this.gameData.plots[this.selectedPlot] = {
+          ...plot,
+          plant: null,
+          lastUpdatedAt: Date.now(),
+        };
+        saveGame(this.gameData);
+        this.updateUI();
+      } else {
+        // 有植物时变成挖除
+        this.doRemove();
+      }
+    } else {
+      // 空地 - 显示种植选择
+      this.showPlantSelect();
+    }
+  }
+  
+  /**
+   * 点击浇水按钮
+   */
+  onWaterTap() {
+    this.doWater();
+  }
+  
+  /**
+   * 点击收获按钮
+   */
+  onHarvestTap() {
+    if (!this.gameData) return;
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (plot?.plant && plot.plant.growthProgress >= 1.0) {
+      this.doHarvest();
     }
   }
   
