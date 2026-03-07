@@ -310,7 +310,7 @@ export class ZenFarmGame extends Component {
     transform.anchorX = 0.5;
     transform.anchorY = 0.5;
     
-    // 用 Graphics 画渐变背景（天空+草地）
+    // 用 Graphics 画渐变背景（天空+泥土）
     const graphics = bgNode.addComponent(Graphics);
     this.drawBackgroundGradient(graphics, width, height, 145, 215, 250);  // 默认晴天蓝
     
@@ -318,14 +318,14 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 画渐变背景（天空+草地）
+   * 画渐变背景（天空+泥土）
    */
   private drawBackgroundGradient(graphics: Graphics, width: number, height: number, skyR: number, skyG: number, skyB: number) {
     graphics.clear();
     
     const halfW = width / 2;
     const halfH = height / 2;
-    const groundHeight = height / 3;  // 下 1/3 是草地
+    const groundHeight = height / 3;  // 下 1/3 是泥土
     
     // 天空（上 2/3）- 用多条横线模拟渐变
     const skyHeight = height - groundHeight;
@@ -343,16 +343,16 @@ export class ZenFarmGame extends Component {
       graphics.fill();
     }
     
-    // 草地（下 1/3）- 绿色渐变
-    const grassSteps = 10;
-    for (let i = 0; i < grassSteps; i++) {
-      const t = i / grassSteps;
-      const y = -halfH + (i * groundHeight / grassSteps);
-      const h = groundHeight / grassSteps + 1;
-      // 从深绿 #3d6b35 渐变到浅绿 #4a7c3f
-      const r = Math.round(61 + (74 - 61) * t);
-      const g = Math.round(107 + (124 - 107) * t);
-      const b = Math.round(53 + (63 - 53) * t);
+    // 土地（下 1/3）- 棕色泥土渐变
+    const soilSteps = 10;
+    for (let i = 0; i < soilSteps; i++) {
+      const t = i / soilSteps;
+      const y = -halfH + (i * groundHeight / soilSteps);
+      const h = groundHeight / soilSteps + 1;
+      // 从深棕色渐变到浅棕色
+      const r = Math.round(100 + (140 - 100) * t);
+      const g = Math.round(70 + (100 - 70) * t);
+      const b = Math.round(40 + (60 - 40) * t);
       graphics.fillColor = new Color(r, g, b, 255);
       graphics.rect(-halfW, y, width, h);
       graphics.fill();
