@@ -693,6 +693,9 @@ export class ZenFarmGame extends Component {
    * 点击浇水按钮
    */
   onWaterTap() {
+    if (!this.gameData) return;
+    const plot = this.gameData.plots[this.selectedPlot];
+    // 空地也可以浇水（预湿土壤），直接执行
     this.doWater();
   }
   
@@ -702,7 +705,8 @@ export class ZenFarmGame extends Component {
   onHarvestTap() {
     if (!this.gameData) return;
     const plot = this.gameData.plots[this.selectedPlot];
-    if (plot?.plant && plot.plant.growthProgress >= 1.0) {
+    // 只有成熟且未死亡的植物才能收获
+    if (plot?.plant && plot.plant.growthProgress >= 1.0 && plot.plant.healthState !== HealthState.DEAD) {
       this.doHarvest();
     }
   }
