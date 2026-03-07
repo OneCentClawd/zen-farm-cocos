@@ -26,9 +26,10 @@ export class ZenFarmGame extends Component {
   private plantEmoji: Label | null = null;
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
-  private actionLabel: Label | null = null;      // 种植/挖除按钮
+  // actionLabel 已移除，通过点击泥土触发种植
   private waterLabel: Label | null = null;       // 浇水按钮
   private harvestLabel: Label | null = null;     // 收获按钮
+  private hintLabel: Label | null = null;        // 泥土区域提示
   private facilityLabel: Label | null = null;    // 设施按钮
   private stageLabel: Label | null = null;      // 阶段信息
   
@@ -194,6 +195,12 @@ export class ZenFarmGame extends Component {
     soilGraphics.fillColor = new Color(185, 150, 90, 255);  // 高光浅棕色
     soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
+    // 点击泥土触发种植/操作
+    soilNode.on(Node.EventType.TOUCH_END, this.onSoilTap, this);
+    
+    // 泥土区域的提示文字（空地时显示）
+    this.hintLabel = this.createLabel('Hint', '👆 点击种植', 28);
+    this.hintLabel.node.setPosition(0, groundCenterY - 70, 0);
     
     // 植物 emoji（从泥土中间长出来）
     this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
@@ -204,15 +211,7 @@ export class ZenFarmGame extends Component {
     let btnY = halfH - 250;
     const btnGap = 55;
     
-    // 种植/挖除按钮
-    this.actionLabel = this.createLabel('Action', '🌱 种植', 32);
-    this.actionLabel.node.setPosition(btnX, btnY, 0);
-    this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onPlantTap, this);
-    const actionTransform = this.actionLabel.node.getComponent(UITransform);
-    if (actionTransform) actionTransform.setContentSize(150, 50);
-    
     // 浇水按钮
-    btnY -= btnGap;
     this.waterLabel = this.createLabel('Water', '💧 浇水', 32);
     this.waterLabel.node.setPosition(btnX, btnY, 0);
     this.waterLabel.node.on(Node.EventType.TOUCH_END, this.onWaterTap, this);
@@ -557,15 +556,6 @@ export class ZenFarmGame extends Component {
       // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
-      // 操作按钮状态
-      if (this.actionLabel) {
-        if (plot.plant.healthState === HealthState.DEAD) {
-          this.actionLabel.string = '🗑️ 清除';
-        } else {
-          this.actionLabel.string = '⛏️ 挖除';
-        }
-      }
-      
       // 浇水按钮 - 始终可用
       if (this.waterLabel) {
         this.waterLabel.string = '💧 浇水';
@@ -581,16 +571,31 @@ export class ZenFarmGame extends Component {
           this.harvestLabel.color = new Color(150, 150, 150, 255);
         }
       }
+      
+      // 提示文字 - 有植物时隐藏，死亡时显示清除提示
+      if (this.hintLabel) {
+        if (plot.plant.healthState === HealthState.DEAD) {
+          this.hintLabel.string = '👆 点击清除';
+          this.hintLabel.node.active = true;
+        } else {
+          this.hintLabel.node.active = false;
+        }
+      }
     } else {
       // 空地
       if (this.plantEmoji) this.plantEmoji.string = '🕳️';
       if (this.stageLabel) this.stageLabel.string = '🌱 空地';
       if (this.statusLabel) this.statusLabel.string = '等待播种';
-      if (this.actionLabel) this.actionLabel.string = '🌱 种植';
       if (this.waterLabel) this.waterLabel.string = '💧 浇水';
       if (this.harvestLabel) {
         this.harvestLabel.string = '🌾 收获';
         this.harvestLabel.color = new Color(150, 150, 150, 255);
+      }
+      
+      // 提示文字 - 空地时显示
+      if (this.hintLabel) {
+        this.hintLabel.string = '👆 点击种植';
+        this.hintLabel.node.active = true;
       }
       
       // 土壤（空地时显示）
@@ -662,9 +667,9 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 点击种植按钮
+   * 点击泥土区域
    */
-  onPlantTap() {
+  onSoilTap() {
     if (!this.gameData) return;
     const plot = this.gameData.plots[this.selectedPlot];
     if (!plot) return;
@@ -679,14 +684,19 @@ export class ZenFarmGame extends Component {
         };
         saveGame(this.gameData);
         this.updateUI();
-      } else {
-        // 有植物时变成挖除
-        this.doRemove();
       }
+      // 有活植物时点击泥土不做操作
     } else {
       // 空地 - 显示种植选择
       this.showPlantSelect();
     }
+  }
+  
+  /**
+   * 点击种植按钮（保留用于兼容）
+   */
+  onPlantTap() {
+    this.onSoilTap();
   }
   
   /**
