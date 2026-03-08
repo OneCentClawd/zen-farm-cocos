@@ -41,33 +41,61 @@ export class ProceduralPlantRenderer extends Component {
     const traits = plant.physicalTraits;
     const progress = plant.growthProgress;
     const stage = getCurrentStage(plant);
+    const wiltLevel = plant.wiltLevel || 0;  // 萎蔫程度 0~1
+    const isDead = plant.healthState === 3;  // HealthState.DEAD = 3
     
-    // 根据生长阶段调整颜色
-    this.updateColors(traits);
+    // 根据生长阶段和健康状态调整颜色
+    this.updateColors(traits, wiltLevel, isDead);
     
-    if (progress < 0.05) {
+    if (isDead) {
+      // 死亡状态：枯萎的植物
+      this.drawDeadPlant(traits, progress);
+    } else if (progress < 0.05) {
       // 种子期
       this.drawSeed();
     } else if (progress < 0.15) {
       // 发芽期
-      this.drawSprout(progress);
+      this.drawSprout(progress, wiltLevel);
     } else {
       // 生长期及以后
-      this.drawFullPlant(traits, progress, stage.index >= 3);
+      this.drawFullPlant(traits, progress, stage.index >= 3, wiltLevel);
     }
   }
   
   /**
    * 根据植物特征更新颜色
    */
-  private updateColors(traits: PlantData['physicalTraits']) {
+  private updateColors(traits: PlantData['physicalTraits'], wiltLevel: number = 0, isDead: boolean = false) {
     // 根据 leafColor 值（健康度）调整颜色鲜艳度
     const health = Math.min(100, Math.max(0, traits.leafColor)) / 100;
     
-    // 健康的植物更绿，不健康的偏黄
-    const greenBoost = Math.round(health * 50);
-    this.leafColor = new Color(60, 129 + greenBoost, 80 + greenBoost * 0.5);
-    this.stemColor = new Color(76, 120 + greenBoost * 0.5, 76);
+    if (isDead) {
+      // 死亡：棕色/灰色
+      this.leafColor = new Color(120, 90, 60, 255);
+      this.leafDarkColor = new Color(80, 60, 40, 255);
+      this.stemColor = new Color(100, 80, 50, 255);
+      this.flowerColor = new Color(180, 160, 140, 255);
+    } else if (wiltLevel > 0.5) {
+      // 严重枯萎：黄棕色
+      const wiltFactor = (wiltLevel - 0.5) * 2;  // 0~1
+      this.leafColor = new Color(
+        Math.round(60 + 100 * wiltFactor),   // 偏黄
+        Math.round(150 - 60 * wiltFactor),   // 减绿
+        Math.round(80 - 40 * wiltFactor),    // 减蓝
+        255
+      );
+      this.stemColor = new Color(
+        Math.round(76 + 50 * wiltFactor),
+        Math.round(120 - 40 * wiltFactor),
+        76,
+        255
+      );
+    } else {
+      // 健康/轻微枯萎
+      const greenBoost = Math.round(health * 50 * (1 - wiltLevel));
+      this.leafColor = new Color(60 + Math.round(wiltLevel * 40), 129 + greenBoost, 80 + greenBoost * 0.5);
+      this.stemColor = new Color(76, 120 + greenBoost * 0.5, 76);
+    }
   }
   
   /**
@@ -91,30 +119,42 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画发芽
    */
-  private drawSprout(progress: number) {
+  private drawSprout(progress: number, wiltLevel: number = 0) {
     const g = this.graphics!;
     
     // 发芽高度随 progress 增长
     const sproutHeight = 10 + (progress - 0.05) * 300;
     
-    // 小茎
+    // 枯萎时茎弯曲
+    const droop = wiltLevel * 0.3;  // 下垂程度
+    
+    // 小茎（枯萎时弯曲）
     g.strokeColor = this.stemColor;
     g.lineWidth = 3;
     g.moveTo(0, 0);
-    g.lineTo(0, sproutHeight);
+    if (wiltLevel > 0.3) {
+      // 弯曲的茎
+      g.quadraticCurveTo(sproutHeight * droop, sproutHeight * 0.5, sproutHeight * droop * 0.5, sproutHeight * (1 - droop * 0.3));
+    } else {
+      g.lineTo(0, sproutHeight);
+    }
     g.stroke();
     
     // 子叶（两片小圆叶）
     if (progress > 0.08) {
       const leafSize = 8 + (progress - 0.08) * 100;
+      // 枯萎时叶子下垂变小
+      const wiltedSize = leafSize * (1 - wiltLevel * 0.3);
+      const leafDroop = wiltLevel * leafSize * 0.3;
+      
       g.fillColor = this.leafColor;
       
-      // 左子叶
-      g.ellipse(-leafSize * 0.8, sproutHeight, leafSize, leafSize * 0.6);
+      // 左子叶（枯萎时下垂）
+      g.ellipse(-wiltedSize * 0.8, sproutHeight - leafDroop, wiltedSize, wiltedSize * 0.6);
       g.fill();
       
-      // 右子叶
-      g.ellipse(leafSize * 0.8, sproutHeight, leafSize, leafSize * 0.6);
+      // 右子叶（枯萎时下垂）
+      g.ellipse(wiltedSize * 0.8, sproutHeight - leafDroop, wiltedSize, wiltedSize * 0.6);
       g.fill();
     }
   }
@@ -122,14 +162,16 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画完整植物
    */
-  private drawFullPlant(traits: PlantData['physicalTraits'], progress: number, hasFlower: boolean) {
+  private drawFullPlant(traits: PlantData['physicalTraits'], progress: number, hasFlower: boolean, wiltLevel: number = 0) {
     const g = this.graphics!;
     
     // 计算实际尺寸
     const stemHeight = traits.height * 3;  // 放大显示
     const stemWidth = Math.max(2, traits.stemWidth * 0.8);
     const leafCount = traits.leafCount;
-    const tiltAngle = traits.tiltAngle * Math.PI / 180;
+    // 枯萎时倾斜加大
+    const wiltTilt = wiltLevel * 30;  // 最多额外倾斜 30 度
+    const tiltAngle = (traits.tiltAngle + wiltTilt) * Math.PI / 180;
     
     // 画茎秆
     this.drawStem(stemHeight, stemWidth, tiltAngle);
@@ -137,9 +179,50 @@ export class ProceduralPlantRenderer extends Component {
     // 画叶子
     this.drawLeaves(stemHeight, leafCount, tiltAngle, progress);
     
-    // 画花
-    if (hasFlower) {
-      this.drawFlower(stemHeight, tiltAngle);
+    // 画花（枯萎时花朵变小/消失）
+    if (hasFlower && wiltLevel < 0.8) {
+      this.drawFlower(stemHeight, tiltAngle, wiltLevel);
+    }
+  }
+  
+  /**
+   * 画死亡/枯萎的植物
+   */
+  private drawDeadPlant(traits: PlantData['physicalTraits'], progress: number) {
+    const g = this.graphics!;
+    
+    // 死亡植物倒伏
+    const stemHeight = traits.height * 3 * 0.6;  // 高度缩减
+    const stemWidth = Math.max(2, traits.stemWidth * 0.6);
+    const tiltAngle = 50 * Math.PI / 180;  // 大幅倾斜
+    
+    // 画弯曲倒下的茎
+    g.strokeColor = this.stemColor;
+    g.lineWidth = stemWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    
+    // 更弯曲的曲线（倒伏）
+    const endX = Math.sin(tiltAngle) * stemHeight * 0.8;
+    const endY = stemHeight * 0.5;
+    const ctrlX = Math.sin(tiltAngle * 0.5) * stemHeight * 0.4;
+    const ctrlY = stemHeight * 0.7;
+    
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+    g.stroke();
+    
+    // 枯萎的叶子（下垂、卷曲）
+    const leafCount = Math.max(1, Math.floor(traits.leafCount * 0.5));
+    for (let i = 0; i < leafCount; i++) {
+      const t = (i + 1) / (leafCount + 1);
+      const leafX = ctrlX * t + (endX - ctrlX) * t * t;
+      const leafY = ctrlY * t + (endY - ctrlY) * t * t;
+      const leafSize = 10 + t * 15;
+      
+      g.fillColor = this.leafColor;
+      // 下垂的叶子（向下的椭圆）
+      g.ellipse(leafX + leafSize * 0.3, leafY - leafSize * 0.5, leafSize * 0.4, leafSize * 0.6);
+      g.fill();
     }
   }
   
@@ -277,29 +360,35 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画花朵
    */
-  private drawFlower(stemHeight: number, tilt: number) {
+  private drawFlower(stemHeight: number, tilt: number, wiltLevel: number = 0) {
     const g = this.graphics!;
     
     const flowerX = Math.sin(tilt) * stemHeight * 0.3;
-    const flowerY = stemHeight + 25;
+    // 枯萎时花朵下垂
+    const droop = wiltLevel * 20;
+    const flowerY = stemHeight + 25 - droop;
+    
+    // 枯萎时花变小变暗
+    const sizeScale = 1 - wiltLevel * 0.4;
     
     // 白色三叶草花（球状）
     g.fillColor = this.flowerColor;
     
     // 用多个小圆模拟球状花序
-    for (let i = 0; i < 12; i++) {
-      const angle = i * 30 * Math.PI / 180;
-      const r = 8;
-      const px = flowerX + Math.cos(angle) * 6;
-      const py = flowerY + Math.sin(angle) * 4;
+    const petalCount = Math.max(6, Math.round(12 * (1 - wiltLevel * 0.5)));
+    for (let i = 0; i < petalCount; i++) {
+      const angle = i * (360 / petalCount) * Math.PI / 180;
+      const r = 8 * sizeScale;
+      const px = flowerX + Math.cos(angle) * 6 * sizeScale;
+      const py = flowerY + Math.sin(angle) * 4 * sizeScale;
       
-      g.circle(px, py, 4);
+      g.circle(px, py, 4 * sizeScale);
       g.fill();
     }
     
     // 花心
     g.fillColor = this.flowerCenterColor;
-    g.circle(flowerX, flowerY, 5);
+    g.circle(flowerX, flowerY, 5 * sizeScale);
     g.fill();
   }
   
