@@ -1,10 +1,17 @@
 /**
  * 程序化植物渲染器（方案一：纯代码绘制）
  * 用 Graphics 组件绘制植物，不需要素材
+ * 
+ * 支持植物类型：
+ * - 🍀 幸运草 (clover)
+ * - 🌻 向日葵 (sunflower)
+ * - 🍓 草莓 (strawberry) [待实现]
+ * - 🌸 樱花 (sakura) [待实现]
  */
 
 import { _decorator, Component, Node, Graphics, Color, UITransform, Vec2 } from 'cc';
 import { PlantData, getCurrentStage } from './Plant';
+import { PlantType } from './PlantTypes';
 const { ccclass, property } = _decorator;
 
 @ccclass('ProceduralPlantRenderer')
@@ -12,12 +19,17 @@ export class ProceduralPlantRenderer extends Component {
   
   private graphics: Graphics | null = null;
   
-  // 颜色配置
+  // 通用颜色配置
   private stemColor = new Color(76, 153, 76);      // 茎秆绿
   private leafColor = new Color(60, 179, 113);     // 叶子绿
   private leafDarkColor = new Color(34, 139, 34);  // 深绿（阴影）
   private flowerColor = new Color(255, 255, 255);  // 白色花
   private flowerCenterColor = new Color(255, 223, 186); // 花心
+  
+  // 向日葵专用颜色
+  private sunflowerPetalColor = new Color(255, 200, 50);    // 花瓣金黄
+  private sunflowerCenterColor = new Color(90, 60, 30);     // 花盘棕色
+  private sunflowerSeedColor = new Color(60, 40, 20);       // 种子深棕
   
   onLoad() {
     // 创建 Graphics 组件
@@ -38,14 +50,39 @@ export class ProceduralPlantRenderer extends Component {
     
     this.graphics.clear();
     
-    const traits = plant.physicalTraits;
-    const progress = plant.growthProgress;
-    const stage = getCurrentStage(plant);
-    const wiltLevel = plant.wiltLevel || 0;  // 萎蔫程度 0~1
+    const wiltLevel = plant.wiltLevel || 0;
     const isDead = plant.healthState === 3;  // HealthState.DEAD = 3
     
-    // 根据生长阶段和健康状态调整颜色
-    this.updateColors(traits, wiltLevel, isDead);
+    // 根据植物类型选择绘制方法
+    switch (plant.type) {
+      case PlantType.SUNFLOWER:
+        this.renderSunflower(plant, wiltLevel, isDead);
+        break;
+      case PlantType.STRAWBERRY:
+        this.renderStrawberry(plant, wiltLevel, isDead);
+        break;
+      case PlantType.SAKURA:
+        this.renderSakura(plant, wiltLevel, isDead);
+        break;
+      case PlantType.CLOVER:
+      default:
+        this.renderClover(plant, wiltLevel, isDead);
+        break;
+    }
+  }
+  
+  // ==================== 幸运草 ====================
+  
+  /**
+   * 渲染幸运草
+   */
+  private renderClover(plant: PlantData, wiltLevel: number, isDead: boolean) {
+    const traits = plant;
+    const progress = plant.growthProgress;
+    const stage = getCurrentStage(plant);
+    
+    // 更新颜色
+    this.updateCloverColors(traits, wiltLevel, isDead);
     
     if (isDead) {
       // 死亡状态：枯萎的植物
@@ -63,9 +100,9 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 根据植物特征更新颜色
+   * 幸运草颜色更新
    */
-  private updateColors(traits: PlantData['physicalTraits'], wiltLevel: number = 0, isDead: boolean = false) {
+  private updateCloverColors(traits: PlantData, wiltLevel: number = 0, isDead: boolean = false) {
     // 根据 leafColor 值（健康度）调整颜色鲜艳度
     const health = Math.min(100, Math.max(0, traits.leafColor)) / 100;
     
@@ -162,7 +199,7 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画完整植物
    */
-  private drawFullPlant(traits: PlantData['physicalTraits'], progress: number, hasFlower: boolean, wiltLevel: number = 0) {
+  private drawFullPlant(traits: PlantData, progress: number, hasFlower: boolean, wiltLevel: number = 0) {
     const g = this.graphics!;
     
     // 计算实际尺寸
@@ -188,7 +225,7 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画死亡/枯萎的植物
    */
-  private drawDeadPlant(traits: PlantData['physicalTraits'], progress: number) {
+  private drawDeadPlant(traits: PlantData, progress: number) {
     const g = this.graphics!;
     
     // 死亡植物倒伏
@@ -391,6 +428,363 @@ export class ProceduralPlantRenderer extends Component {
     g.circle(flowerX, flowerY, 5 * sizeScale);
     g.fill();
   }
+  
+  // ==================== 向日葵 ====================
+  
+  /**
+   * 渲染向日葵
+   */
+  private renderSunflower(plant: PlantData, wiltLevel: number, isDead: boolean) {
+    const traits = plant;
+    const progress = plant.growthProgress;
+    const stage = getCurrentStage(plant);
+    
+    // 更新颜色
+    this.updateSunflowerColors(wiltLevel, isDead);
+    
+    if (isDead) {
+      this.drawDeadSunflower(traits, progress);
+    } else if (progress < 0.03) {
+      // 种子期
+      this.drawSunflowerSeed();
+    } else if (progress < 0.08) {
+      // 破土/幼苗
+      this.drawSunflowerSprout(progress, wiltLevel);
+    } else if (progress < 0.50) {
+      // 抽茎期（茎秆长高，叶子增多）
+      this.drawSunflowerStem(traits, progress, wiltLevel);
+    } else {
+      // 花苞/盛开/结籽
+      const hasFlower = progress >= 0.50;
+      const isFullBloom = progress >= 0.70;
+      const hasSeed = progress >= 1.0;
+      this.drawFullSunflower(traits, progress, wiltLevel, hasFlower, isFullBloom, hasSeed);
+    }
+  }
+  
+  /**
+   * 向日葵颜色更新
+   */
+  private updateSunflowerColors(wiltLevel: number, isDead: boolean) {
+    if (isDead) {
+      this.stemColor = new Color(100, 80, 50);
+      this.leafColor = new Color(120, 100, 60);
+      this.sunflowerPetalColor = new Color(150, 120, 60);
+      this.sunflowerCenterColor = new Color(60, 40, 20);
+    } else if (wiltLevel > 0.5) {
+      const wf = (wiltLevel - 0.5) * 2;
+      this.stemColor = new Color(76 + Math.round(40 * wf), 130 - Math.round(40 * wf), 60);
+      this.leafColor = new Color(80 + Math.round(60 * wf), 150 - Math.round(50 * wf), 60);
+      this.sunflowerPetalColor = new Color(255, 200 - Math.round(80 * wf), 50);
+    } else {
+      this.stemColor = new Color(76, 140, 60);
+      this.leafColor = new Color(70, 160, 70);
+      this.sunflowerPetalColor = new Color(255, 200, 50);
+      this.sunflowerCenterColor = new Color(90, 60, 30);
+    }
+  }
+  
+  /**
+   * 向日葵种子
+   */
+  private drawSunflowerSeed() {
+    const g = this.graphics!;
+    
+    // 葵花籽（黑白条纹的椭圆）
+    g.fillColor = new Color(40, 30, 20);
+    g.ellipse(0, 5, 10, 6);
+    g.fill();
+    
+    // 条纹
+    g.strokeColor = new Color(200, 200, 200);
+    g.lineWidth = 1;
+    g.moveTo(-4, 5);
+    g.lineTo(4, 5);
+    g.stroke();
+  }
+  
+  /**
+   * 向日葵发芽
+   */
+  private drawSunflowerSprout(progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const height = 15 + (progress - 0.03) * 400;
+    const droop = wiltLevel * 0.2;
+    
+    // 茎
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 4;
+    g.moveTo(0, 0);
+    g.lineTo(height * droop, height);
+    g.stroke();
+    
+    // 子叶（椭圆形，比幸运草大）
+    if (progress > 0.05) {
+      const leafSize = 15 + (progress - 0.05) * 200;
+      const leafDroop = wiltLevel * leafSize * 0.3;
+      
+      g.fillColor = this.leafColor;
+      
+      // 左子叶
+      g.ellipse(-leafSize, height - leafDroop, leafSize * 0.7, leafSize * 0.4);
+      g.fill();
+      
+      // 右子叶  
+      g.ellipse(leafSize, height - leafDroop, leafSize * 0.7, leafSize * 0.4);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 向日葵抽茎期
+   */
+  private drawSunflowerStem(traits: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    // 茎秆高度随进度增长
+    const maxHeight = traits.height * 2;
+    const stemProgress = (progress - 0.08) / 0.42;  // 0~1 在这个阶段
+    const stemHeight = 30 + stemProgress * maxHeight;
+    const stemWidth = 4 + stemProgress * 4;
+    
+    const tilt = (traits.tiltAngle + wiltLevel * 20) * Math.PI / 180;
+    
+    // 画茎秆
+    g.strokeColor = this.stemColor;
+    g.lineWidth = stemWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    
+    const endX = Math.sin(tilt) * stemHeight * 0.2;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(endX * 0.5, stemHeight * 0.5, endX, stemHeight);
+    g.stroke();
+    
+    // 叶子（心形大叶，交替排列）
+    const leafCount = Math.floor(2 + stemProgress * traits.leafCount);
+    for (let i = 0; i < leafCount; i++) {
+      const t = (i + 1) / (leafCount + 1);
+      const leafY = stemHeight * t;
+      const leafX = Math.sin(tilt) * leafY * 0.2;
+      
+      const side = i % 2 === 0 ? -1 : 1;
+      const leafSize = 20 + t * 30 * stemProgress;
+      const leafAngle = side * (40 + this.seededRandom(i * 17) * 20) * Math.PI / 180;
+      const leafDroop = wiltLevel * 20;
+      
+      this.drawSunflowerLeaf(leafX, leafY - leafDroop, leafSize, leafAngle, side);
+    }
+  }
+  
+  /**
+   * 画向日葵叶子（心形）
+   */
+  private drawSunflowerLeaf(x: number, y: number, size: number, angle: number, side: number) {
+    const g = this.graphics!;
+    
+    g.fillColor = this.leafColor;
+    
+    // 心形叶子（向日葵特有的大叶）
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    // 叶柄
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 2;
+    g.moveTo(x, y);
+    g.lineTo(x + cos * size * 0.3, y + sin * size * 0.3);
+    g.stroke();
+    
+    // 叶片（用椭圆简化）
+    const leafCenterX = x + cos * size * 0.6;
+    const leafCenterY = y + sin * size * 0.6;
+    
+    g.fillColor = this.leafColor;
+    g.ellipse(leafCenterX, leafCenterY, size * 0.5, size * 0.35);
+    g.fill();
+    
+    // 叶脉
+    g.strokeColor = new Color(50, 120, 50);
+    g.lineWidth = 1;
+    g.moveTo(x + cos * size * 0.3, y + sin * size * 0.3);
+    g.lineTo(leafCenterX + cos * size * 0.3, leafCenterY + sin * size * 0.3);
+    g.stroke();
+  }
+  
+  /**
+   * 完整向日葵（花苞/盛开/结籽）
+   */
+  private drawFullSunflower(
+    traits: PlantData,
+    progress: number,
+    wiltLevel: number,
+    hasFlower: boolean,
+    isFullBloom: boolean,
+    hasSeed: boolean
+  ) {
+    const g = this.graphics!;
+    
+    const stemHeight = traits.height * 2;
+    const stemWidth = 8;
+    const tilt = (traits.tiltAngle + wiltLevel * 25) * Math.PI / 180;
+    
+    // 画茎秆
+    g.strokeColor = this.stemColor;
+    g.lineWidth = stemWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    
+    const endX = Math.sin(tilt) * stemHeight * 0.25;
+    const endY = stemHeight;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(endX * 0.4, stemHeight * 0.5, endX, endY);
+    g.stroke();
+    
+    // 叶子
+    const leafCount = traits.leafCount;
+    for (let i = 0; i < leafCount; i++) {
+      const t = (i + 1) / (leafCount + 1);
+      const leafY = stemHeight * t;
+      const leafX = Math.sin(tilt) * leafY * 0.25;
+      
+      const side = i % 2 === 0 ? -1 : 1;
+      const leafSize = 25 + t * 35;
+      const leafAngle = side * (45 + this.seededRandom(i * 23) * 15) * Math.PI / 180;
+      const leafDroop = wiltLevel * 25;
+      
+      this.drawSunflowerLeaf(leafX, leafY - leafDroop, leafSize * (1 - wiltLevel * 0.3), leafAngle, side);
+    }
+    
+    // 花朵
+    if (hasFlower) {
+      const flowerX = endX;
+      const flowerY = endY + 10;
+      const flowerDroop = wiltLevel * 40;
+      
+      this.drawSunflowerHead(flowerX, flowerY - flowerDroop, isFullBloom, hasSeed, wiltLevel);
+    }
+  }
+  
+  /**
+   * 画向日葵花盘
+   */
+  private drawSunflowerHead(x: number, y: number, isFullBloom: boolean, hasSeed: boolean, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const baseSize = isFullBloom ? 50 : 30;
+    const size = baseSize * (1 - wiltLevel * 0.3);
+    
+    // 花瓣（金黄色舌状花）
+    if (!hasSeed || wiltLevel < 0.5) {
+      const petalCount = isFullBloom ? 20 : 12;
+      const petalLength = size * 0.8;
+      const petalWidth = size * 0.15;
+      
+      g.fillColor = this.sunflowerPetalColor;
+      
+      for (let i = 0; i < petalCount; i++) {
+        const angle = (i / petalCount) * Math.PI * 2 - Math.PI / 2;
+        const px = x + Math.cos(angle) * size * 0.5;
+        const py = y + Math.sin(angle) * size * 0.5;
+        
+        // 花瓣（椭圆）
+        const petalAngle = angle;
+        const tipX = x + Math.cos(angle) * (size * 0.5 + petalLength);
+        const tipY = y + Math.sin(angle) * (size * 0.5 + petalLength);
+        
+        // 简化花瓣为椭圆
+        const centerX = (px + tipX) / 2;
+        const centerY = (py + tipY) / 2;
+        
+        g.ellipse(centerX, centerY, petalLength / 2, petalWidth);
+        g.fill();
+      }
+    }
+    
+    // 花盘（棕色圆形）
+    g.fillColor = this.sunflowerCenterColor;
+    g.circle(x, y, size * 0.5);
+    g.fill();
+    
+    // 花盘纹理/种子
+    if (isFullBloom || hasSeed) {
+      g.fillColor = this.sunflowerSeedColor;
+      const seedCount = hasSeed ? 30 : 15;
+      
+      for (let i = 0; i < seedCount; i++) {
+        const r = this.seededRandom(i * 13) * size * 0.4;
+        const a = this.seededRandom(i * 29) * Math.PI * 2;
+        const sx = x + Math.cos(a) * r;
+        const sy = y + Math.sin(a) * r;
+        const seedSize = hasSeed ? 3 : 2;
+        
+        g.circle(sx, sy, seedSize);
+        g.fill();
+      }
+    }
+  }
+  
+  /**
+   * 死亡的向日葵
+   */
+  private drawDeadSunflower(traits: PlantData, progress: number) {
+    const g = this.graphics!;
+    
+    const stemHeight = traits.height * 1.5;
+    
+    // 倒伏的茎（大幅弯曲）
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 6;
+    g.lineCap = Graphics.LineCap.ROUND;
+    
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(stemHeight * 0.3, stemHeight * 0.6, stemHeight * 0.5, stemHeight * 0.4);
+    g.stroke();
+    
+    // 下垂的花盘
+    if (progress >= 0.5) {
+      g.fillColor = new Color(80, 60, 40);
+      g.circle(stemHeight * 0.5, stemHeight * 0.3, 25);
+      g.fill();
+      
+      // 枯萎的花瓣
+      g.fillColor = new Color(120, 90, 50);
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const px = stemHeight * 0.5 + Math.cos(angle) * 30;
+        const py = stemHeight * 0.3 + Math.sin(angle) * 30 - 10;  // 下垂
+        g.ellipse(px, py, 12, 5);
+        g.fill();
+      }
+    }
+    
+    // 枯叶
+    g.fillColor = new Color(100, 80, 50);
+    for (let i = 0; i < 3; i++) {
+      const t = (i + 1) / 4;
+      const lx = stemHeight * 0.15 * t;
+      const ly = stemHeight * 0.5 * t;
+      g.ellipse(lx + 20, ly - 15, 15, 8);
+      g.fill();
+    }
+  }
+  
+  // ==================== 草莓 (待实现) ====================
+  
+  private renderStrawberry(plant: PlantData, wiltLevel: number, isDead: boolean) {
+    // TODO: 实现草莓渲染
+    // 临时用幸运草占位
+    this.renderClover(plant, wiltLevel, isDead);
+  }
+  
+  // ==================== 樱花 (待实现) ====================
+  
+  private renderSakura(plant: PlantData, wiltLevel: number, isDead: boolean) {
+    // TODO: 实现樱花渲染
+    // 临时用幸运草占位
+    this.renderClover(plant, wiltLevel, isDead);
+  }
+  
+  // ==================== 通用工具 ====================
   
   /**
    * 清除画面
