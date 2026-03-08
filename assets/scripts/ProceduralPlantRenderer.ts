@@ -1149,12 +1149,469 @@ export class ProceduralPlantRenderer extends Component {
     }
   }
   
-  // ==================== 樱花 (待实现) ====================
+  // ==================== 樱花 ====================
   
+  // 樱花专用颜色
+  private sakuraBarkColor = new Color(90, 60, 50);         // 树皮棕
+  private sakuraBranchColor = new Color(70, 50, 40);       // 枝条深棕
+  private sakuraPetalColor = new Color(255, 183, 197);     // 花瓣粉
+  private sakuraPetalLightColor = new Color(255, 220, 230);// 花瓣浅粉
+  private sakuraBudColor = new Color(200, 100, 120);       // 花苞红
+  private sakuraLeafColor = new Color(80, 150, 80);        // 叶子绿
+  
+  /**
+   * 渲染樱花
+   */
   private renderSakura(plant: PlantData, wiltLevel: number, isDead: boolean) {
-    // TODO: 实现樱花渲染
-    // 临时用幸运草占位
-    this.renderClover(plant, wiltLevel, isDead);
+    const progress = plant.growthProgress;
+    
+    this.updateSakuraColors(wiltLevel, isDead);
+    
+    if (isDead) {
+      this.drawDeadSakura(plant, progress);
+    } else if (progress < 0.02) {
+      // 种子期（樱桃核）
+      this.drawSakuraSeed();
+    } else if (progress < 0.05) {
+      // 发芽期
+      this.drawSakuraSprout(progress, wiltLevel);
+    } else if (progress < 0.15) {
+      // 幼苗期
+      this.drawSakuraSeedling(plant, progress, wiltLevel);
+    } else if (progress < 0.35) {
+      // 木质化期
+      this.drawSakuraWoody(plant, progress, wiltLevel);
+    } else if (progress < 0.60) {
+      // 枝繁期
+      this.drawSakuraBranching(plant, progress, wiltLevel);
+    } else if (progress < 0.80) {
+      // 花苞期（需要春化）
+      const canBloom = plant.canBloom !== false;  // 默认允许
+      this.drawSakuraBuds(plant, progress, wiltLevel, canBloom);
+    } else {
+      // 盛开/落樱期
+      const isFalling = progress >= 1.0;
+      this.drawSakuraBloom(plant, progress, wiltLevel, isFalling);
+    }
+  }
+  
+  /**
+   * 樱花颜色更新
+   */
+  private updateSakuraColors(wiltLevel: number, isDead: boolean) {
+    if (isDead) {
+      this.sakuraBarkColor = new Color(60, 40, 30);
+      this.sakuraBranchColor = new Color(50, 35, 25);
+      this.sakuraPetalColor = new Color(150, 120, 110);
+      this.sakuraLeafColor = new Color(100, 80, 50);
+    } else if (wiltLevel > 0.5) {
+      const wf = (wiltLevel - 0.5) * 2;
+      this.sakuraLeafColor = new Color(
+        80 + Math.round(40 * wf),
+        150 - Math.round(60 * wf),
+        80 - Math.round(30 * wf)
+      );
+      this.sakuraPetalColor = new Color(
+        255 - Math.round(50 * wf),
+        183 - Math.round(50 * wf),
+        197 - Math.round(60 * wf)
+      );
+    } else {
+      this.sakuraBarkColor = new Color(90, 60, 50);
+      this.sakuraBranchColor = new Color(70, 50, 40);
+      this.sakuraPetalColor = new Color(255, 183, 197);
+      this.sakuraLeafColor = new Color(80, 150, 80);
+    }
+  }
+  
+  /**
+   * 樱花种子（樱桃核）
+   */
+  private drawSakuraSeed() {
+    const g = this.graphics!;
+    
+    // 樱桃核（椭圆形，棕色，有纹理）
+    g.fillColor = new Color(120, 80, 60);
+    g.ellipse(0, 5, 8, 6);
+    g.fill();
+    
+    // 纹理线
+    g.strokeColor = new Color(80, 50, 35);
+    g.lineWidth = 1;
+    g.moveTo(-3, 3);
+    g.lineTo(3, 7);
+    g.stroke();
+  }
+  
+  /**
+   * 樱花发芽
+   */
+  private drawSakuraSprout(progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const height = 5 + (progress - 0.02) * 300;
+    const droop = wiltLevel * height * 0.1;
+    
+    // 细嫩茎
+    g.strokeColor = new Color(100, 160, 100);
+    g.lineWidth = 2;
+    g.moveTo(0, 0);
+    g.lineTo(droop, height);
+    g.stroke();
+    
+    // 子叶
+    if (progress > 0.03) {
+      const leafSize = 5 + (progress - 0.03) * 200;
+      g.fillColor = new Color(120, 180, 120);
+      g.ellipse(-leafSize * 0.7, height, leafSize * 0.5, leafSize * 0.3);
+      g.fill();
+      g.ellipse(leafSize * 0.7, height, leafSize * 0.5, leafSize * 0.3);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 樱花幼苗
+   */
+  private drawSakuraSeedling(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const seedlingProgress = (progress - 0.05) / 0.10;
+    const height = 15 + seedlingProgress * 40;
+    const droop = wiltLevel * 8;
+    
+    // 开始木质化的茎
+    g.strokeColor = new Color(100 - seedlingProgress * 20, 140 - seedlingProgress * 60, 90 - seedlingProgress * 30);
+    g.lineWidth = 3 + seedlingProgress * 2;
+    g.moveTo(0, 0);
+    g.lineTo(droop * 0.3, height);
+    g.stroke();
+    
+    // 几片叶子
+    const leafCount = Math.floor(2 + seedlingProgress * 4);
+    for (let i = 0; i < leafCount; i++) {
+      const t = (i + 1) / (leafCount + 1);
+      const ly = height * t;
+      const lx = droop * 0.3 * t;
+      const side = i % 2 === 0 ? -1 : 1;
+      const leafSize = 8 + seedlingProgress * 10;
+      const leafDroop = wiltLevel * 5;
+      
+      g.fillColor = this.sakuraLeafColor;
+      g.ellipse(lx + side * leafSize * 0.8, ly - leafDroop, leafSize * 0.5, leafSize * 0.3);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 樱花木质化期
+   */
+  private drawSakuraWoody(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const woodyProgress = (progress - 0.15) / 0.20;
+    const trunkHeight = 60 + woodyProgress * 60;
+    const trunkWidth = 6 + woodyProgress * 4;
+    
+    // 树干
+    g.strokeColor = this.sakuraBarkColor;
+    g.lineWidth = trunkWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(0, 0);
+    g.lineTo(0, trunkHeight);
+    g.stroke();
+    
+    // 小分枝开始出现
+    const branchCount = Math.floor(woodyProgress * 4);
+    for (let i = 0; i < branchCount; i++) {
+      const t = 0.5 + (i / branchCount) * 0.4;
+      const by = trunkHeight * t;
+      const side = i % 2 === 0 ? -1 : 1;
+      const branchLen = 15 + this.seededRandom(i * 17) * 20;
+      const angle = side * (30 + this.seededRandom(i * 23) * 20) * Math.PI / 180;
+      
+      g.strokeColor = this.sakuraBranchColor;
+      g.lineWidth = 3;
+      g.moveTo(0, by);
+      g.lineTo(Math.sin(angle) * branchLen, by + Math.cos(angle) * branchLen * 0.5);
+      g.stroke();
+      
+      // 枝上的叶子
+      const leafX = Math.sin(angle) * branchLen * 0.8;
+      const leafY = by + Math.cos(angle) * branchLen * 0.4;
+      g.fillColor = this.sakuraLeafColor;
+      g.ellipse(leafX, leafY, 8, 5);
+      g.fill();
+    }
+    
+    // 顶部叶簇
+    g.fillColor = this.sakuraLeafColor;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI - Math.PI / 2;
+      const lx = Math.cos(angle) * 12;
+      const ly = trunkHeight + 5 + Math.sin(angle) * 8;
+      g.ellipse(lx, ly, 10, 6);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 樱花枝繁期（树形成型）
+   */
+  private drawSakuraBranching(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const branchProgress = (progress - 0.35) / 0.25;
+    const trunkHeight = 120 + branchProgress * 40;
+    const trunkWidth = 10 + branchProgress * 4;
+    
+    // 树干
+    g.strokeColor = this.sakuraBarkColor;
+    g.lineWidth = trunkWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(2, trunkHeight * 0.5, 0, trunkHeight);
+    g.stroke();
+    
+    // 主分枝
+    this.drawSakuraBranches(0, trunkHeight, branchProgress, wiltLevel, false, false);
+  }
+  
+  /**
+   * 樱花花苞期
+   */
+  private drawSakuraBuds(plant: PlantData, progress: number, wiltLevel: number, canBloom: boolean) {
+    const g = this.graphics!;
+    
+    const budProgress = (progress - 0.60) / 0.20;
+    const trunkHeight = 160;
+    const trunkWidth = 14;
+    
+    // 树干
+    g.strokeColor = this.sakuraBarkColor;
+    g.lineWidth = trunkWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(3, trunkHeight * 0.5, 0, trunkHeight);
+    g.stroke();
+    
+    // 分枝 + 花苞
+    this.drawSakuraBranches(0, trunkHeight, 1, wiltLevel, canBloom, false);
+    
+    // 如果可以开花，画花苞
+    if (canBloom) {
+      this.drawSakuraFlowerBuds(0, trunkHeight, budProgress);
+    }
+  }
+  
+  /**
+   * 樱花盛开/落樱期
+   */
+  private drawSakuraBloom(plant: PlantData, progress: number, wiltLevel: number, isFalling: boolean) {
+    const g = this.graphics!;
+    
+    const trunkHeight = 160;
+    const trunkWidth = 14;
+    
+    // 树干
+    g.strokeColor = this.sakuraBarkColor;
+    g.lineWidth = trunkWidth;
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(3, trunkHeight * 0.5, 0, trunkHeight);
+    g.stroke();
+    
+    // 分枝
+    this.drawSakuraBranches(0, trunkHeight, 1, wiltLevel, true, true);
+    
+    // 满树樱花
+    this.drawSakuraFlowers(0, trunkHeight, isFalling ? 0.5 : 1, wiltLevel);
+    
+    // 落樱效果
+    if (isFalling) {
+      this.drawFallingPetals();
+    }
+  }
+  
+  /**
+   * 画樱花分枝
+   */
+  private drawSakuraBranches(x: number, y: number, progress: number, wiltLevel: number, hasBuds: boolean, hasFlowers: boolean) {
+    const g = this.graphics!;
+    
+    const branchCount = Math.floor(4 + progress * 4);
+    
+    for (let i = 0; i < branchCount; i++) {
+      const t = 0.4 + (i / branchCount) * 0.5;
+      const by = y * t;
+      const side = i % 2 === 0 ? -1 : 1;
+      const branchLen = 30 + this.seededRandom(i * 19) * 40 * progress;
+      const angle = side * (35 + this.seededRandom(i * 31) * 25) * Math.PI / 180;
+      
+      const endX = x + Math.sin(angle) * branchLen;
+      const endY = by + Math.cos(angle) * branchLen * 0.3;
+      
+      // 枝条
+      g.strokeColor = this.sakuraBranchColor;
+      g.lineWidth = 4 - i * 0.3;
+      g.moveTo(x, by);
+      g.quadraticCurveTo(
+        x + Math.sin(angle) * branchLen * 0.5,
+        by + Math.cos(angle) * branchLen * 0.15,
+        endX, endY
+      );
+      g.stroke();
+      
+      // 小分枝
+      if (progress > 0.5) {
+        const subLen = branchLen * 0.4;
+        const subAngle = angle + side * 0.3;
+        g.lineWidth = 2;
+        g.moveTo(endX * 0.7, by + (endY - by) * 0.7);
+        g.lineTo(
+          endX * 0.7 + Math.sin(subAngle) * subLen,
+          by + (endY - by) * 0.7 + Math.cos(subAngle) * subLen * 0.2
+        );
+        g.stroke();
+      }
+    }
+    
+    // 树冠（叶簇）
+    if (!hasFlowers) {
+      g.fillColor = this.sakuraLeafColor;
+      const crownSize = 40 + progress * 30;
+      g.ellipse(x, y + crownSize * 0.3, crownSize, crownSize * 0.7);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 画花苞
+   */
+  private drawSakuraFlowerBuds(x: number, y: number, progress: number) {
+    const g = this.graphics!;
+    
+    const budCount = Math.floor(10 + progress * 20);
+    
+    g.fillColor = this.sakuraBudColor;
+    
+    for (let i = 0; i < budCount; i++) {
+      const angle = this.seededRandom(i * 13) * Math.PI * 2;
+      const r = 20 + this.seededRandom(i * 29) * 50;
+      const bx = x + Math.cos(angle) * r * 0.8;
+      const by = y + 20 + Math.sin(angle) * r * 0.4;
+      const budSize = 3 + progress * 3;
+      
+      g.ellipse(bx, by, budSize, budSize * 1.3);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 画满树樱花
+   */
+  private drawSakuraFlowers(x: number, y: number, density: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const flowerCount = Math.floor(30 * density);
+    
+    for (let i = 0; i < flowerCount; i++) {
+      const angle = this.seededRandom(i * 17) * Math.PI * 2;
+      const r = 15 + this.seededRandom(i * 31) * 60;
+      const fx = x + Math.cos(angle) * r * 0.9;
+      const fy = y + 25 + Math.sin(angle) * r * 0.5;
+      const size = 6 + this.seededRandom(i * 41) * 4;
+      
+      this.drawSakuraFlower(fx, fy, size * (1 - wiltLevel * 0.3));
+    }
+  }
+  
+  /**
+   * 画单朵樱花（5瓣）
+   */
+  private drawSakuraFlower(x: number, y: number, size: number) {
+    const g = this.graphics!;
+    
+    // 5片花瓣（粉色，有缺口）
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const px = x + Math.cos(angle) * size * 0.5;
+      const py = y + Math.sin(angle) * size * 0.5;
+      
+      // 花瓣用椭圆
+      g.fillColor = i % 2 === 0 ? this.sakuraPetalColor : this.sakuraPetalLightColor;
+      g.ellipse(px, py, size * 0.4, size * 0.55);
+      g.fill();
+    }
+    
+    // 花心（黄色）
+    g.fillColor = new Color(255, 230, 150);
+    g.circle(x, y, size * 0.15);
+    g.fill();
+  }
+  
+  /**
+   * 画飘落的花瓣
+   */
+  private drawFallingPetals() {
+    const g = this.graphics!;
+    
+    const petalCount = 15;
+    
+    for (let i = 0; i < petalCount; i++) {
+      // 用时间戳做动态效果（这里用确定性随机模拟）
+      const px = -80 + this.seededRandom(i * 23) * 160;
+      const py = 50 + this.seededRandom(i * 37) * 120;
+      const rotation = this.seededRandom(i * 43) * Math.PI;
+      
+      g.fillColor = this.sakuraPetalColor;
+      g.ellipse(px, py, 4, 6);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 死亡的樱花
+   */
+  private drawDeadSakura(plant: PlantData, progress: number) {
+    const g = this.graphics!;
+    
+    // 枯死的树
+    const trunkHeight = Math.min(progress * 500, 140);
+    
+    // 枯树干
+    g.strokeColor = new Color(60, 40, 30);
+    g.lineWidth = 10;
+    g.lineCap = Graphics.LineCap.ROUND;
+    g.moveTo(0, 0);
+    g.quadraticCurveTo(5, trunkHeight * 0.5, 3, trunkHeight);
+    g.stroke();
+    
+    // 枯枝
+    g.lineWidth = 4;
+    for (let i = 0; i < 4; i++) {
+      const t = 0.5 + i * 0.12;
+      const by = trunkHeight * t;
+      const side = i % 2 === 0 ? -1 : 1;
+      const branchLen = 20 + this.seededRandom(i * 19) * 25;
+      const angle = side * (40 + i * 5) * Math.PI / 180;
+      
+      g.moveTo(3 * t, by);
+      g.lineTo(
+        3 * t + Math.sin(angle) * branchLen,
+        by + Math.cos(angle) * branchLen * 0.2 - 5  // 下垂
+      );
+      g.stroke();
+    }
+    
+    // 地上的落叶/花瓣
+    g.fillColor = new Color(120, 90, 70);
+    for (let i = 0; i < 6; i++) {
+      const lx = -30 + this.seededRandom(i * 11) * 60;
+      const ly = -5 + this.seededRandom(i * 17) * 10;
+      g.ellipse(lx, ly, 5, 3);
+      g.fill();
+    }
   }
   
   // ==================== 通用工具 ====================
