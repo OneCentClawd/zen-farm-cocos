@@ -181,9 +181,9 @@ export class ProceduralPlantRenderer extends Component {
       // 叶子大小（越高越大）
       const leafSize = 15 + t * 25 * Math.min(1, progress * 1.5);
       
-      // 叶子方向（交替左右）
+      // 叶子方向（交替左右，用确定性伪随机）
       const side = i % 2 === 0 ? -1 : 1;
-      const leafAngle = side * (30 + Math.random() * 15);
+      const leafAngle = side * (30 + this.seededRandom(i * 17 + 7) * 15);
       
       this.drawCloverLeaf(leafX, leafY, leafSize, leafAngle * Math.PI / 180);
     }
@@ -310,5 +310,13 @@ export class ProceduralPlantRenderer extends Component {
     if (this.graphics) {
       this.graphics.clear();
     }
+  }
+  
+  /**
+   * 确定性伪随机数生成器（相同种子 = 相同结果）
+   */
+  private seededRandom(seed: number): number {
+    const x = Math.sin(seed * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
   }
 }
