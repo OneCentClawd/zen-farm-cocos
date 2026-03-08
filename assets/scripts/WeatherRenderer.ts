@@ -66,7 +66,8 @@ export class WeatherRenderer extends Component {
   private skyHeight: number = 0;  // 天空区域高度（上 2/3）
   
   private currentWeather: WeatherData | null = null;
-  private currentHour: number = 12;  // 当前小时（0-23）
+  private currentHour: number = 12;  // 当前小时（支持小数，如 14.5 = 14:30）
+  private lastWindSpeed: number = 0; // 上次风速（用于检测变化）
   
   /**
    * 初始化天气渲染器
@@ -232,11 +233,17 @@ export class WeatherRenderer extends Component {
   /**
    * 更新天气显示
    * @param weather 天气数据
-   * @param hour 当前小时（0-23），默认使用系统时间
+   * @param hour 当前小时（支持小数，如 14.5 = 14:30），默认使用系统时间
    */
   updateWeather(weather: WeatherData, hour?: number) {
     this.currentWeather = weather;
-    this.currentHour = hour ?? new Date().getHours();
+    // 支持小数时间
+    if (hour !== undefined) {
+      this.currentHour = hour;
+    } else {
+      const now = new Date();
+      this.currentHour = now.getHours() + now.getMinutes() / 60;
+    }
     
     this.updateSkyGradient();
     this.updateCelestialPositions();
@@ -415,27 +422,34 @@ export class WeatherRenderer extends Component {
     
     // 添加新云
     while (this.clouds.length < cloudCount) {
-      const isRain = Math.random() < rainCloudRatio;
-      const cloud = this.createCloud(isRain);
+      const isRain = this.seededRandom(this.clouds.length * 31 + 13) < rainCloudRatio;
+      const cloud = this.createCloud(isRain, this.clouds.length);
       this.clouds.push(cloud);
     }
     
-    // 更新云的速度（基于风速）
-    const baseSpeed = 10 + this.currentWeather.windSpeed * 1.5;
-    for (const cloud of this.clouds) {
-      cloud.speed = baseSpeed * (0.8 + Math.random() * 0.4);
+    // 仅当风速变化时更新云速度（避免随机重置）
+    const windSpeed = this.currentWeather.windSpeed;
+    if (Math.abs(windSpeed - this.lastWindSpeed) > 0.5) {
+      const baseSpeed = 10 + windSpeed * 1.5;
+      for (let i = 0; i < this.clouds.length; i++) {
+        const cloud = this.clouds[i];
+        // 使用确定性随机，基于云的索引
+        cloud.speed = baseSpeed * (0.8 + this.seededRandom(i * 17 + 5) * 0.4);
+      }
+      this.lastWindSpeed = windSpeed;
     }
   }
   
   /**
    * 创建一朵云
    */
-  private createCloud(isRainCloud: boolean): CloudData {
+  private createCloud(isRainCloud: boolean, index: number): CloudData {
     const cloudNode = new Node('Cloud');
     cloudNode.layer = this.node.layer;
     cloudNode.setParent(this.cloudsContainer!);
     
-    const size = 100 + Math.random() * 80;
+    // 使用确定性随机
+    const size = 100 + this.seededRandom(index * 23 + 7) * 80;
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
@@ -449,10 +463,10 @@ export class WeatherRenderer extends Component {
       this.drawCloudGraphics(g, size * 0.4, isRainCloud);
     }
     
-    // 随机位置
-    const x = -this.screenWidth / 2 + Math.random() * this.screenWidth;
-    const y = this.screenHeight / 2 - 80 - Math.random() * (this.skyHeight * 0.4);
-    const scale = 0.8 + Math.random() * 0.5;
+    // 使用确定性随机位置
+    const x = -this.screenWidth / 2 + this.seededRandom(index * 41 + 3) * this.screenWidth;
+    const y = this.screenHeight / 2 - 80 - this.seededRandom(index * 53 + 11) * (this.skyHeight * 0.4);
+    const scale = 0.8 + this.seededRandom(index * 67 + 19) * 0.5;
     
     cloudNode.setPosition(x, y, 0);
     cloudNode.setScale(scale, scale, 1);
@@ -547,13 +561,16 @@ export class WeatherRenderer extends Component {
    * 更新云层移动
    */
   private updateCloudsMovement(dt: number) {
-    for (const cloud of this.clouds) {
+    for (let i = 0; i < this.clouds.length; i++) {
+      const cloud = this.clouds[i];
       cloud.x += cloud.speed * dt;
       
       // 超出右边界后从左边重新进入
       if (cloud.x > this.screenWidth / 2 + 100) {
         cloud.x = -this.screenWidth / 2 - 100;
-        cloud.y = this.screenHeight / 2 - 80 - Math.random() * (this.skyHeight * 0.4);
+        // 使用确定性随机（基于时间戳取模 + 索引）
+        const timeSeed = Math.floor(Date.now() / 1000) % 10000;
+        cloud.y = this.screenHeight / 2 - 80 - this.seededRandom(timeSeed + i * 37) * (this.skyHeight * 0.4);
       }
       
       cloud.node.setPosition(cloud.x, cloud.y, 0);
@@ -606,5 +623,13 @@ export class WeatherRenderer extends Component {
    */
   isRaining(): boolean {
     return (this.currentWeather?.precipitation || 0) > 0;
+  }
+  
+  /**
+   * 确定性伪随机数生成器（相同种子 = 相同结果）
+   */
+  private seededRandom(seed: number): number {
+    const x = Math.sin(seed * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
   }
 }
