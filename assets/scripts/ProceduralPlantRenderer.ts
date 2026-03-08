@@ -768,12 +768,385 @@ export class ProceduralPlantRenderer extends Component {
     }
   }
   
-  // ==================== 草莓 (待实现) ====================
+  // ==================== 草莓 ====================
   
+  // 草莓专用颜色
+  private strawberryLeafColor = new Color(50, 140, 50);      // 锯齿叶绿
+  private strawberryFlowerColor = new Color(255, 255, 255);  // 白色花
+  private strawberryGreenColor = new Color(150, 200, 100);   // 青果绿
+  private strawberryRedColor = new Color(220, 40, 40);       // 成熟红
+  private strawberrySeedColor = new Color(255, 220, 100);    // 种子黄
+  
+  /**
+   * 渲染草莓
+   */
   private renderStrawberry(plant: PlantData, wiltLevel: number, isDead: boolean) {
-    // TODO: 实现草莓渲染
-    // 临时用幸运草占位
-    this.renderClover(plant, wiltLevel, isDead);
+    const progress = plant.growthProgress;
+    
+    this.updateStrawberryColors(wiltLevel, isDead);
+    
+    if (isDead) {
+      this.drawDeadStrawberry(plant, progress);
+    } else if (progress < 0.03) {
+      // 种子期
+      this.drawStrawberrySeed();
+    } else if (progress < 0.10) {
+      // 发芽期
+      this.drawStrawberrySprout(progress, wiltLevel);
+    } else if (progress < 0.25) {
+      // 展叶期
+      this.drawStrawberryLeaves(plant, progress, wiltLevel);
+    } else if (progress < 0.45) {
+      // 匍匐茎期
+      this.drawStrawberryRunner(plant, progress, wiltLevel);
+    } else if (progress < 0.65) {
+      // 开花期
+      this.drawStrawberryBloom(plant, progress, wiltLevel);
+    } else {
+      // 结果期（青果/红果）
+      const isRipe = progress >= 1.0;
+      this.drawStrawberryFruit(plant, progress, wiltLevel, isRipe);
+    }
+  }
+  
+  /**
+   * 草莓颜色更新
+   */
+  private updateStrawberryColors(wiltLevel: number, isDead: boolean) {
+    if (isDead) {
+      this.stemColor = new Color(100, 80, 50);
+      this.strawberryLeafColor = new Color(120, 100, 60);
+      this.strawberryRedColor = new Color(100, 60, 40);
+    } else if (wiltLevel > 0.5) {
+      const wf = (wiltLevel - 0.5) * 2;
+      this.stemColor = new Color(76 + Math.round(30 * wf), 130 - Math.round(40 * wf), 60);
+      this.strawberryLeafColor = new Color(70 + Math.round(50 * wf), 140 - Math.round(40 * wf), 50);
+    } else {
+      this.stemColor = new Color(76, 130, 60);
+      this.strawberryLeafColor = new Color(50, 140, 50);
+      this.strawberryRedColor = new Color(220, 40, 40);
+    }
+  }
+  
+  /**
+   * 草莓种子（细小）
+   */
+  private drawStrawberrySeed() {
+    const g = this.graphics!;
+    
+    // 草莓种子非常小
+    g.fillColor = new Color(80, 60, 40);
+    g.circle(0, 3, 3);
+    g.fill();
+  }
+  
+  /**
+   * 草莓发芽
+   */
+  private drawStrawberrySprout(progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const height = 8 + (progress - 0.03) * 150;
+    const droop = wiltLevel * height * 0.15;
+    
+    // 细茎
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 2;
+    g.moveTo(0, 0);
+    g.lineTo(droop, height);
+    g.stroke();
+    
+    // 子叶（圆形小叶）
+    if (progress > 0.05) {
+      const leafSize = 6 + (progress - 0.05) * 100;
+      g.fillColor = this.strawberryLeafColor;
+      g.circle(-leafSize * 0.8, height, leafSize * 0.5);
+      g.fill();
+      g.circle(leafSize * 0.8, height, leafSize * 0.5);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 草莓展叶（锯齿状三叶）
+   */
+  private drawStrawberryLeaves(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const leafProgress = (progress - 0.10) / 0.15;  // 0~1 in this stage
+    const centerHeight = 15 + leafProgress * 20;
+    
+    // 中央短茎
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 3;
+    g.moveTo(0, 0);
+    g.lineTo(0, centerHeight * 0.3);
+    g.stroke();
+    
+    // 三出复叶（草莓特征）
+    const leafCount = Math.floor(1 + leafProgress * 3);
+    for (let i = 0; i < leafCount; i++) {
+      const angle = (i - (leafCount - 1) / 2) * 40 * Math.PI / 180;
+      const leafSize = 15 + leafProgress * 15;
+      const droop = wiltLevel * 10;
+      
+      this.drawStrawberryTrifoliate(0, centerHeight * 0.3, leafSize, angle, wiltLevel);
+    }
+  }
+  
+  /**
+   * 画草莓三出复叶
+   */
+  private drawStrawberryTrifoliate(x: number, y: number, size: number, baseAngle: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const droop = wiltLevel * 15;
+    
+    // 叶柄
+    const stalkLength = size * 0.8;
+    const stalkEndX = x + Math.sin(baseAngle) * stalkLength;
+    const stalkEndY = y + Math.cos(baseAngle) * stalkLength - droop * 0.5;
+    
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 2;
+    g.moveTo(x, y);
+    g.lineTo(stalkEndX, stalkEndY);
+    g.stroke();
+    
+    // 三片小叶（锯齿用椭圆简化）
+    g.fillColor = this.strawberryLeafColor;
+    
+    // 中间叶
+    g.ellipse(stalkEndX, stalkEndY + size * 0.4 - droop, size * 0.35, size * 0.5);
+    g.fill();
+    
+    // 左叶
+    g.ellipse(stalkEndX - size * 0.35, stalkEndY + size * 0.25 - droop, size * 0.28, size * 0.4);
+    g.fill();
+    
+    // 右叶
+    g.ellipse(stalkEndX + size * 0.35, stalkEndY + size * 0.25 - droop, size * 0.28, size * 0.4);
+    g.fill();
+    
+    // 叶脉（简化）
+    g.strokeColor = new Color(30, 100, 30);
+    g.lineWidth = 1;
+    g.moveTo(stalkEndX, stalkEndY);
+    g.lineTo(stalkEndX, stalkEndY + size * 0.35 - droop);
+    g.stroke();
+  }
+  
+  /**
+   * 草莓匍匐茎期
+   */
+  private drawStrawberryRunner(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    // 先画主体叶子
+    this.drawStrawberryLeaves(plant, 0.25, wiltLevel);
+    
+    const runnerProgress = (progress - 0.25) / 0.20;  // 0~1
+    
+    // 匍匐茎（向两侧延伸）
+    g.strokeColor = this.stemColor;
+    g.lineWidth = 2;
+    
+    const runnerLength = 30 + runnerProgress * 50;
+    
+    // 左侧匍匐茎
+    g.moveTo(-5, 5);
+    g.quadraticCurveTo(-runnerLength * 0.5, 3, -runnerLength, 5);
+    g.stroke();
+    
+    // 匍匐茎末端的小苗
+    if (runnerProgress > 0.5) {
+      g.fillColor = this.strawberryLeafColor;
+      g.circle(-runnerLength, 10, 5);
+      g.fill();
+      g.circle(-runnerLength + 4, 12, 4);
+      g.fill();
+    }
+    
+    // 右侧匍匐茎
+    if (runnerProgress > 0.3) {
+      const rightLength = runnerLength * 0.7;
+      g.moveTo(5, 5);
+      g.quadraticCurveTo(rightLength * 0.5, 2, rightLength, 4);
+      g.stroke();
+      
+      if (runnerProgress > 0.7) {
+        g.fillColor = this.strawberryLeafColor;
+        g.circle(rightLength, 9, 4);
+        g.fill();
+      }
+    }
+  }
+  
+  /**
+   * 草莓开花期
+   */
+  private drawStrawberryBloom(plant: PlantData, progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    // 先画匍匐茎
+    this.drawStrawberryRunner(plant, 0.45, wiltLevel);
+    
+    const bloomProgress = (progress - 0.45) / 0.20;  // 0~1
+    
+    // 花茎从叶丛中伸出
+    const flowerCount = Math.floor(1 + bloomProgress * 3);
+    
+    for (let i = 0; i < flowerCount; i++) {
+      const angle = (i - (flowerCount - 1) / 2) * 25;
+      const stemLength = 25 + this.seededRandom(i * 17) * 15;
+      const droop = wiltLevel * 10;
+      
+      const fx = Math.sin(angle * Math.PI / 180) * stemLength * 0.3;
+      const fy = 20 + stemLength - droop;
+      
+      // 花茎
+      g.strokeColor = this.stemColor;
+      g.lineWidth = 1.5;
+      g.moveTo(0, 15);
+      g.lineTo(fx, fy);
+      g.stroke();
+      
+      // 白色小花（5瓣）
+      this.drawStrawberryFlower(fx, fy + 8, 8 * (1 - wiltLevel * 0.3));
+    }
+  }
+  
+  /**
+   * 画草莓小白花
+   */
+  private drawStrawberryFlower(x: number, y: number, size: number) {
+    const g = this.graphics!;
+    
+    // 5片白色花瓣
+    g.fillColor = this.strawberryFlowerColor;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const px = x + Math.cos(angle) * size * 0.5;
+      const py = y + Math.sin(angle) * size * 0.5;
+      g.circle(px, py, size * 0.35);
+      g.fill();
+    }
+    
+    // 黄色花心
+    g.fillColor = new Color(255, 220, 100);
+    g.circle(x, y, size * 0.25);
+    g.fill();
+  }
+  
+  /**
+   * 草莓结果期
+   */
+  private drawStrawberryFruit(plant: PlantData, progress: number, wiltLevel: number, isRipe: boolean) {
+    const g = this.graphics!;
+    
+    // 先画开花期的基础
+    this.drawStrawberryBloom(plant, 0.65, wiltLevel);
+    
+    const fruitProgress = (progress - 0.65) / 0.35;  // 0~1
+    
+    // 果实
+    const fruitCount = Math.floor(1 + fruitProgress * 3);
+    
+    for (let i = 0; i < fruitCount; i++) {
+      const angle = (i - (fruitCount - 1) / 2) * 30;
+      const stemLength = 30 + this.seededRandom(i * 23) * 10;
+      
+      const fx = Math.sin(angle * Math.PI / 180) * stemLength * 0.35;
+      const fy = 25 + stemLength;
+      
+      // 果实颜色（青→红）
+      const ripeness = isRipe ? 1 : fruitProgress;
+      const fruitColor = new Color(
+        Math.round(150 + ripeness * 70),   // 绿→红
+        Math.round(200 - ripeness * 160),  // 减绿
+        Math.round(100 - ripeness * 60),   // 减蓝
+        255
+      );
+      
+      // 果实大小
+      const fruitSize = 10 + fruitProgress * 8;
+      
+      this.drawStrawberryBerry(fx, fy, fruitSize, fruitColor, ripeness);
+    }
+  }
+  
+  /**
+   * 画草莓果实（倒心形）
+   */
+  private drawStrawberryBerry(x: number, y: number, size: number, color: Color, ripeness: number) {
+    const g = this.graphics!;
+    
+    // 果实（倒水滴形/心形）
+    g.fillColor = color;
+    
+    // 用椭圆 + 三角形近似
+    g.ellipse(x, y - size * 0.2, size * 0.6, size * 0.7);
+    g.fill();
+    
+    // 顶部凹陷（用小椭圆叠加）
+    g.ellipse(x, y + size * 0.3, size * 0.4, size * 0.3);
+    g.fill();
+    
+    // 种子点（黄色小点）
+    if (ripeness > 0.3) {
+      g.fillColor = this.strawberrySeedColor;
+      const seedCount = Math.floor(5 + ripeness * 5);
+      for (let i = 0; i < seedCount; i++) {
+        const sa = this.seededRandom(i * 13) * Math.PI * 2;
+        const sr = this.seededRandom(i * 29) * size * 0.4;
+        const sx = x + Math.cos(sa) * sr * 0.8;
+        const sy = y - size * 0.1 + Math.sin(sa) * sr;
+        g.circle(sx, sy, 1.5);
+        g.fill();
+      }
+    }
+    
+    // 萼片（绿色小叶）
+    g.fillColor = new Color(60, 140, 50);
+    for (let i = 0; i < 5; i++) {
+      const la = (i / 5) * Math.PI - Math.PI / 2;
+      const lx = x + Math.cos(la) * size * 0.3;
+      const ly = y + size * 0.5;
+      g.ellipse(lx, ly + 3, 3, 5);
+      g.fill();
+    }
+  }
+  
+  /**
+   * 死亡的草莓
+   */
+  private drawDeadStrawberry(plant: PlantData, progress: number) {
+    const g = this.graphics!;
+    
+    // 枯萎倒伏的叶子
+    g.fillColor = new Color(100, 80, 50);
+    
+    // 几片枯叶趴在地上
+    g.ellipse(-15, 3, 12, 6);
+    g.fill();
+    g.ellipse(10, 5, 10, 5);
+    g.fill();
+    g.ellipse(0, 8, 8, 4);
+    g.fill();
+    
+    // 枯萎的匍匐茎
+    g.strokeColor = new Color(80, 60, 40);
+    g.lineWidth = 1.5;
+    g.moveTo(-5, 3);
+    g.lineTo(-35, 2);
+    g.stroke();
+    
+    // 腐烂的果实（如果有）
+    if (progress > 0.65) {
+      g.fillColor = new Color(80, 40, 30);
+      g.ellipse(5, 12, 6, 7);
+      g.fill();
+    }
   }
   
   // ==================== 樱花 (待实现) ====================
