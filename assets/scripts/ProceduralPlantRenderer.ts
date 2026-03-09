@@ -5,8 +5,8 @@
  * 支持植物类型：
  * - 🍀 幸运草 (clover)
  * - 🌻 向日葵 (sunflower)
- * - 🍓 草莓 (strawberry) [待实现]
- * - 🌸 樱花 (sakura) [待实现]
+ * - 🍓 草莓 (strawberry)
+ * - 🌸 樱花 (sakura)
  */
 
 import { _decorator, Component, Node, Graphics, Color, UITransform, Vec2 } from 'cc';
@@ -18,6 +18,9 @@ const { ccclass, property } = _decorator;
 export class ProceduralPlantRenderer extends Component {
   
   private graphics: Graphics | null = null;
+  
+  // 动画时间（用于落樱等动态效果）
+  private animTime: number = 0;
   
   // 通用颜色配置
   private stemColor = new Color(76, 153, 76);      // 茎秆绿
@@ -44,9 +47,14 @@ export class ProceduralPlantRenderer extends Component {
   
   /**
    * 根据植物数据渲染
+   * @param plant 植物数据
+   * @param deltaTime 可选，帧间隔时间（秒），用于动画
    */
-  render(plant: PlantData) {
+  render(plant: PlantData, deltaTime: number = 0) {
     if (!this.graphics) return;
+    
+    // 更新动画时间
+    this.animTime += deltaTime;
     
     this.graphics.clear();
     
@@ -673,7 +681,7 @@ export class ProceduralPlantRenderer extends Component {
     const baseSize = isFullBloom ? 50 : 30;
     const size = baseSize * (1 - wiltLevel * 0.3);
     
-    // 花瓣（金黄色舌状花）
+    // 花瓣（金黄色舌状花，沿径向排列）
     if (!hasSeed || wiltLevel < 0.5) {
       const petalCount = isFullBloom ? 20 : 12;
       const petalLength = size * 0.8;
@@ -683,19 +691,31 @@ export class ProceduralPlantRenderer extends Component {
       
       for (let i = 0; i < petalCount; i++) {
         const angle = (i / petalCount) * Math.PI * 2 - Math.PI / 2;
-        const px = x + Math.cos(angle) * size * 0.5;
-        const py = y + Math.sin(angle) * size * 0.5;
         
-        // 花瓣（椭圆）
-        const petalAngle = angle;
+        // 花瓣基部（在花盘边缘）
+        const baseX = x + Math.cos(angle) * size * 0.45;
+        const baseY = y + Math.sin(angle) * size * 0.45;
+        
+        // 花瓣尖端
         const tipX = x + Math.cos(angle) * (size * 0.5 + petalLength);
         const tipY = y + Math.sin(angle) * (size * 0.5 + petalLength);
         
-        // 简化花瓣为椭圆
-        const centerX = (px + tipX) / 2;
-        const centerY = (py + tipY) / 2;
+        // 花瓣两侧（垂直于径向）
+        const perpX = Math.cos(angle + Math.PI / 2) * petalWidth;
+        const perpY = Math.sin(angle + Math.PI / 2) * petalWidth;
         
-        g.ellipse(centerX, centerY, petalLength / 2, petalWidth);
+        // 用贝塞尔曲线画花瓣（菱形/叶形）
+        g.moveTo(baseX, baseY);
+        g.quadraticCurveTo(
+          (baseX + tipX) / 2 + perpX,
+          (baseY + tipY) / 2 + perpY,
+          tipX, tipY
+        );
+        g.quadraticCurveTo(
+          (baseX + tipX) / 2 - perpX,
+          (baseY + tipY) / 2 - perpY,
+          baseX, baseY
+        );
         g.fill();
       }
     }
@@ -795,7 +815,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawStrawberrySprout(progress, wiltLevel);
     } else if (progress < 0.25) {
       // 展叶期
-      this.drawStrawberryLeaves(plant, progress, wiltLevel);
+      this.drawStrawberryLeavesCore(plant, progress, wiltLevel);
     } else if (progress < 0.45) {
       // 匍匐茎期
       this.drawStrawberryRunner(plant, progress, wiltLevel);
@@ -870,7 +890,7 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 草莓展叶（锯齿状三叶）
    */
-  private drawStrawberryLeaves(plant: PlantData, progress: number, wiltLevel: number) {
+  private drawStrawberryLeavesCore(plant: PlantData, progress: number, wiltLevel: number) {
     const g = this.graphics!;
     
     const leafProgress = (progress - 0.10) / 0.15;  // 0~1 in this stage
@@ -942,10 +962,21 @@ export class ProceduralPlantRenderer extends Component {
   private drawStrawberryRunner(plant: PlantData, progress: number, wiltLevel: number) {
     const g = this.graphics!;
     
-    // 先画主体叶子
-    this.drawStrawberryLeaves(plant, 0.25, wiltLevel);
+    // 画主体叶子（独立调用，不嵌套）
+    this.drawStrawberryLeavesCore(plant, 0.25, wiltLevel);
     
-    const runnerProgress = (progress - 0.25) / 0.20;  // 0~1
+    // 画匍匐茎部分
+    this.drawStrawberryRunnerCore(progress, wiltLevel);
+  }
+  
+  /**
+   * 匍匐茎核心绘制（不含叶子）
+   */
+  private drawStrawberryRunnerCore(progress: number, wiltLevel: number) {
+    const g = this.graphics!;
+    
+    const runnerProgress = Math.max(0, (progress - 0.25) / 0.20);  // 0~1
+    if (runnerProgress <= 0) return;
     
     // 匍匐茎（向两侧延伸）
     g.strokeColor = this.stemColor;
@@ -988,10 +1019,20 @@ export class ProceduralPlantRenderer extends Component {
   private drawStrawberryBloom(plant: PlantData, progress: number, wiltLevel: number) {
     const g = this.graphics!;
     
-    // 先画匍匐茎
-    this.drawStrawberryRunner(plant, 0.45, wiltLevel);
+    // 独立绘制各部分，不嵌套
+    this.drawStrawberryLeavesCore(plant, 0.25, wiltLevel);
+    this.drawStrawberryRunnerCore(0.45, wiltLevel);
+    this.drawStrawberryFlowersCore(progress, wiltLevel);
+  }
+  
+  /**
+   * 花朵核心绘制
+   */
+  private drawStrawberryFlowersCore(progress: number, wiltLevel: number) {
+    const g = this.graphics!;
     
-    const bloomProgress = (progress - 0.45) / 0.20;  // 0~1
+    const bloomProgress = Math.max(0, (progress - 0.45) / 0.20);  // 0~1
+    if (bloomProgress <= 0) return;
     
     // 花茎从叶丛中伸出
     const flowerCount = Math.floor(1 + bloomProgress * 3);
@@ -1044,10 +1085,21 @@ export class ProceduralPlantRenderer extends Component {
   private drawStrawberryFruit(plant: PlantData, progress: number, wiltLevel: number, isRipe: boolean) {
     const g = this.graphics!;
     
-    // 先画开花期的基础
-    this.drawStrawberryBloom(plant, 0.65, wiltLevel);
+    // 独立绘制各部分，不嵌套调用
+    this.drawStrawberryLeavesCore(plant, 0.25, wiltLevel);
+    this.drawStrawberryRunnerCore(0.45, wiltLevel);
+    // 结果期不画花，花已经变成果实了
+    this.drawStrawberryFruitsCore(progress, wiltLevel, isRipe);
+  }
+  
+  /**
+   * 果实核心绘制
+   */
+  private drawStrawberryFruitsCore(progress: number, wiltLevel: number, isRipe: boolean) {
+    const g = this.graphics!;
     
-    const fruitProgress = (progress - 0.65) / 0.35;  // 0~1
+    const fruitProgress = Math.max(0, (progress - 0.65) / 0.35);  // 0~1
+    if (fruitProgress <= 0) return;
     
     // 果实
     const fruitCount = Math.floor(1 + fruitProgress * 3);
@@ -1378,22 +1430,31 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 樱花花苞期
+   * 画樱花成熟树干（花苞期/盛开期/落樱期共用）
    */
-  private drawSakuraBuds(plant: PlantData, progress: number, wiltLevel: number, canBloom: boolean) {
+  private drawSakuraMatureTrunk(): number {
     const g = this.graphics!;
-    
-    const budProgress = (progress - 0.60) / 0.20;
     const trunkHeight = 160;
     const trunkWidth = 14;
     
-    // 树干
     g.strokeColor = this.sakuraBarkColor;
     g.lineWidth = trunkWidth;
     g.lineCap = Graphics.LineCap.ROUND;
     g.moveTo(0, 0);
     g.quadraticCurveTo(3, trunkHeight * 0.5, 0, trunkHeight);
     g.stroke();
+    
+    return trunkHeight;
+  }
+  
+  /**
+   * 樱花花苞期
+   */
+  private drawSakuraBuds(plant: PlantData, progress: number, wiltLevel: number, canBloom: boolean) {
+    const budProgress = (progress - 0.60) / 0.20;
+    
+    // 画树干
+    const trunkHeight = this.drawSakuraMatureTrunk();
     
     // 分枝 + 花苞
     this.drawSakuraBranches(0, trunkHeight, 1, wiltLevel, canBloom, false);
@@ -1408,18 +1469,8 @@ export class ProceduralPlantRenderer extends Component {
    * 樱花盛开/落樱期
    */
   private drawSakuraBloom(plant: PlantData, progress: number, wiltLevel: number, isFalling: boolean) {
-    const g = this.graphics!;
-    
-    const trunkHeight = 160;
-    const trunkWidth = 14;
-    
-    // 树干
-    g.strokeColor = this.sakuraBarkColor;
-    g.lineWidth = trunkWidth;
-    g.lineCap = Graphics.LineCap.ROUND;
-    g.moveTo(0, 0);
-    g.quadraticCurveTo(3, trunkHeight * 0.5, 0, trunkHeight);
-    g.stroke();
+    // 画树干
+    const trunkHeight = this.drawSakuraMatureTrunk();
     
     // 分枝
     this.drawSakuraBranches(0, trunkHeight, 1, wiltLevel, true, true);
@@ -1551,22 +1602,45 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 画飘落的花瓣
+   * 画飘落的花瓣（动态效果）
    */
   private drawFallingPetals() {
     const g = this.graphics!;
     
     const petalCount = 15;
+    const fallSpeed = 30;  // 下落速度
+    const swaySpeed = 2;   // 摇摆速度
+    const swayAmount = 20; // 摇摆幅度
     
     for (let i = 0; i < petalCount; i++) {
-      // 用时间戳做动态效果（这里用确定性随机模拟）
-      const px = -80 + this.seededRandom(i * 23) * 160;
-      const py = 50 + this.seededRandom(i * 37) * 120;
-      const rotation = this.seededRandom(i * 43) * Math.PI;
+      // 每片花瓣有不同的初始位置和相位
+      const initX = -80 + this.seededRandom(i * 23) * 160;
+      const initY = 180 + this.seededRandom(i * 37) * 60;  // 从树冠开始
+      const phase = this.seededRandom(i * 43) * Math.PI * 2;
+      const fallOffset = this.seededRandom(i * 51) * 100;  // 下落偏移，错开时间
       
-      g.fillColor = this.sakuraPetalColor;
-      g.ellipse(px, py, 4, 6);
-      g.fill();
+      // 根据时间计算位置（循环下落）
+      const cycleTime = (this.animTime + fallOffset / fallSpeed) % 6;  // 6秒一个周期
+      const py = initY - cycleTime * fallSpeed;
+      
+      // 左右摇摆
+      const sway = Math.sin(this.animTime * swaySpeed + phase) * swayAmount;
+      const px = initX + sway;
+      
+      // 旋转效果
+      const rotation = this.animTime * 1.5 + phase;
+      
+      // 只画在可见范围内的花瓣
+      if (py > -20 && py < 200) {
+        // 用旋转的椭圆（通过调整宽高比模拟旋转）
+        const rotFactor = Math.abs(Math.cos(rotation));
+        const petalW = 3 + rotFactor * 3;
+        const petalH = 6 - rotFactor * 2;
+        
+        g.fillColor = i % 2 === 0 ? this.sakuraPetalColor : this.sakuraPetalLightColor;
+        g.ellipse(px, py, petalW, petalH);
+        g.fill();
+      }
     }
   }
   
