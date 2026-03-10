@@ -212,11 +212,8 @@ export class SoilRenderer extends Component {
         if (targetSprite) {
           sprite.spriteFrame = targetSprite;
           
-          // 积水效果
-          if (moisture >= 90 && this.waterPuddleNode) {
-            this.waterPuddleNode.active = true;
-            this.drawWaterPuddle();
-          } else if (this.waterPuddleNode) {
+          // 素材已经包含积水效果，不需要额外画水洼
+          if (this.waterPuddleNode) {
             this.waterPuddleNode.active = false;
           }
           return;
