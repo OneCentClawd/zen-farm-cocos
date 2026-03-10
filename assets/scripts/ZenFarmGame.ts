@@ -14,6 +14,7 @@ import { saveGame, loadOrCreateGame } from './Storage';
 import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
 import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
+import { WeatherRenderer } from './WeatherRenderer';
 
 const { ccclass, property } = _decorator;
 
@@ -27,6 +28,7 @@ export class ZenFarmGame extends Component {
   private plantEmoji: Label | null = null;
   private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
   private plantNode: Node | null = null;  // 植物渲染节点
+  private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;      // 种植/挖除按钮
@@ -138,6 +140,11 @@ export class ZenFarmGame extends Component {
     
     // ========== 背景（体现天气） ==========
     this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
+    
+    // ========== 天气渲染器（太阳、月亮、云等） ==========
+    const weatherNode = new Node('WeatherRenderer');
+    this.weatherRenderer = weatherNode.addComponent(WeatherRenderer);
+    this.weatherRenderer.init(this.node, screenSize.height * 2 / 3);
     
     // ========== 顶部区域 ==========
     // 顶部半透明背景条
@@ -505,6 +512,11 @@ export class ZenFarmGame extends Component {
       
       // 更新背景颜色
       this.updateBackgroundColor();
+      
+      // 更新天气渲染器
+      if (this.weatherRenderer) {
+        this.weatherRenderer.updateWeather(this.weather);
+      }
     }
   }
   
@@ -1149,6 +1161,11 @@ export class ZenFarmGame extends Component {
    * 每帧更新
    */
   update(dt: number) {
+    // 每帧更新天气渲染器（云移动、雨滴动画等）
+    if (this.weatherRenderer) {
+      this.weatherRenderer.update(dt);
+    }
+    
     // 每帧更新植物渲染（动画效果）
     if (this.plantRenderer && this.plantNode?.active && this.gameData) {
       const plot = this.gameData.plots[this.selectedPlot];
