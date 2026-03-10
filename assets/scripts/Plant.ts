@@ -4,7 +4,7 @@
 
 import { 
   PlantType, PlantData, HealthState, StressType, StageConfig,
-  PLANT_CONFIGS, PlantConfig 
+  PLANT_CONFIGS, PlantConfig, RootBranch 
 } from './PlantTypes';
 import { WeatherData, updateSoilMoisture } from './Environment';
 
@@ -13,6 +13,26 @@ import { WeatherData, updateSoilMoisture } from './Environment';
  */
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+/**
+ * 生成初始根系结构（独一无二）
+ */
+function generateInitialRoots(): RootBranch[] {
+  const branches: RootBranch[] = [];
+  // 生成 3-6 条初始侧根"基因"
+  const count = 3 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    branches.push({
+      angle: (i % 2 === 0 ? 1 : -1) * (20 + Math.random() * 40) * Math.PI / 180,
+      length: 0.4 + Math.random() * 0.5,  // 40%~90% 的最大宽度
+      depth: 0.1 + (i / count) * 0.6,     // 分布在不同深度
+      thickness: 0.5 + Math.random() * 0.5,
+      subBranches: Math.floor(1 + Math.random() * 3),
+      createdAt: 0.02 + Math.random() * 0.1,  // 在早期就"决定"要长出来
+    });
+  }
+  return branches;
 }
 
 /**
@@ -37,6 +57,8 @@ export function createPlant(type: PlantType, hardMode: boolean = false): PlantDa
     height: 0,
     leafCount: 0,
     rootDepth: 0,
+    rootSpread: 0,
+    rootStructure: generateInitialRoots(),  // 独一无二的根系"基因"
     stemWidth: 0,
     tiltAngle: 0,
     tiltDirection: Math.random() * 360,  // 初始随机方向
@@ -413,6 +435,7 @@ export function simulateDay(
       rootMultiplier = 0.6;  // 水多，根系不需要深
     }
     updated.rootDepth += baseHeightGrowth * 0.5 * rootMultiplier * (0.8 + Math.random() * 0.4);
+    updated.rootSpread += baseHeightGrowth * 0.3 * (0.8 + Math.random() * 0.4);  // 根系也横向生长
     
     // 叶色：阳光充足颜色深，缺光颜色浅
     const targetColor = weather.sunlight > 0.5 ? updated.growthProgress * 1.2 : updated.growthProgress * 0.8;

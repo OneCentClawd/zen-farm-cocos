@@ -11,7 +11,7 @@
 
 import { _decorator, Component, Node, Graphics, Color, UITransform, Vec2 } from 'cc';
 import { PlantData, getCurrentStage } from './Plant';
-import { PlantType } from './PlantTypes';
+import { PlantType, RootBranch } from './PlantTypes';
 const { ccclass, property } = _decorator;
 
 @ccclass('ProceduralPlantRenderer')
@@ -102,7 +102,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawSeed();
     } else if (progress < 0.15) {
       // 发芽期
-      this.drawSprout(progress, wiltLevel);
+      this.drawSprout(progress, wiltLevel, plant);
     } else {
       // 生长期及以后
       this.drawFullPlant(traits, progress, stage.index >= 3, wiltLevel);
@@ -168,9 +168,11 @@ export class ProceduralPlantRenderer extends Component {
    * 画根系
    * @param depth 根系深度
    * @param spread 根系宽度
-   * @param complexity 复杂度（分支数）
+   * @param complexity 复杂度（分支数）- 仅用于没有 rootStructure 时的备用
+   * @param rootStructure 根系结构（来自植物数据）
+   * @param progress 当前生长进度（用于渐进显示根系）
    */
-  private drawRoots(depth: number, spread: number, complexity: number = 3) {
+  private drawRoots(depth: number, spread: number, complexity: number = 3, rootStructure?: RootBranch[], progress: number = 1) {
     const g = this.graphics!;
     
     g.strokeColor = this.rootColor;
@@ -181,47 +183,73 @@ export class ProceduralPlantRenderer extends Component {
     g.lineTo(0, -depth * 0.6);
     g.stroke();
     
-    // 侧根
-    g.lineWidth = 1.5;
-    for (let i = 0; i < complexity; i++) {
-      const y = -depth * 0.2 - (i * depth * 0.3 / complexity);
-      const angle = (i % 2 === 0 ? 1 : -1) * (30 + i * 10) * Math.PI / 180;
-      const length = spread * (0.5 + Math.random() * 0.3);
-      
-      g.moveTo(0, y);
-      g.lineTo(Math.sin(angle) * length, y - Math.cos(angle) * length * 0.5);
-      g.stroke();
-      
-      // 细根
-      g.strokeColor = this.rootLightColor;
-      g.lineWidth = 1;
-      const endX = Math.sin(angle) * length;
-      const endY = y - Math.cos(angle) * length * 0.5;
-      g.moveTo(endX, endY);
-      g.lineTo(endX + Math.sin(angle) * length * 0.3, endY - length * 0.2);
-      g.stroke();
-      
-      g.strokeColor = this.rootColor;
-      g.lineWidth = 1.5;
-    }
-    
     // 主根尖端
     g.lineWidth = 1;
     g.moveTo(0, -depth * 0.6);
     g.lineTo(0, -depth);
     g.stroke();
+    
+    // 使用植物数据里的根系结构
+    if (rootStructure && rootStructure.length > 0) {
+      for (const branch of rootStructure) {
+        // 只显示已经"长出来"的根
+        if (progress < branch.createdAt) continue;
+        
+        // 根据进度计算显示比例（刚长出来小，慢慢变大）
+        const growthRatio = Math.min(1, (progress - branch.createdAt) / 0.3);
+        
+        const y = -depth * branch.depth;
+        const length = spread * branch.length * growthRatio;
+        const thickness = 1 + branch.thickness * growthRatio;
+        
+        // 侧根
+        g.strokeColor = this.rootColor;
+        g.lineWidth = thickness;
+        g.moveTo(0, y);
+        const endX = Math.sin(branch.angle) * length;
+        const endY = y - Math.cos(branch.angle) * length * 0.5;
+        g.lineTo(endX, endY);
+        g.stroke();
+        
+        // 细根
+        if (growthRatio > 0.5) {
+          g.strokeColor = this.rootLightColor;
+          g.lineWidth = Math.max(0.5, thickness * 0.5);
+          for (let i = 0; i < branch.subBranches; i++) {
+            const subAngle = branch.angle + (i - branch.subBranches / 2) * 0.3;
+            const subLength = length * 0.3 * growthRatio;
+            g.moveTo(endX, endY);
+            g.lineTo(endX + Math.sin(subAngle) * subLength, endY - subLength * 0.3);
+            g.stroke();
+          }
+        }
+      }
+    } else {
+      // 备用：没有根系数据时用简单逻辑
+      g.lineWidth = 1.5;
+      for (let i = 0; i < complexity; i++) {
+        const y = -depth * 0.2 - (i * depth * 0.3 / complexity);
+        const angle = (i % 2 === 0 ? 1 : -1) * (30 + i * 10) * Math.PI / 180;
+        const length = spread * 0.6;
+        
+        g.strokeColor = this.rootColor;
+        g.moveTo(0, y);
+        g.lineTo(Math.sin(angle) * length, y - Math.cos(angle) * length * 0.5);
+        g.stroke();
+      }
+    }
   }
   
   /**
    * 画发芽（带根系）
    */
-  private drawSprout(progress: number, wiltLevel: number = 0) {
+  private drawSprout(progress: number, wiltLevel: number = 0, plant?: PlantData) {
     const g = this.graphics!;
     
     // 先画根系（在茎下方）
-    const rootDepth = 20 + (progress - 0.05) * 200;  // 根随生长加深
-    const rootSpread = 15 + (progress - 0.05) * 100;
-    this.drawRoots(rootDepth, rootSpread, 2);
+    const rootDepth = plant?.rootDepth || (20 + (progress - 0.05) * 200);
+    const rootSpread = plant?.rootSpread || (15 + (progress - 0.05) * 100);
+    this.drawRoots(rootDepth, rootSpread, 2, plant?.rootStructure, progress);
     
     // 发芽高度随 progress 增长
     const sproutHeight = 10 + (progress - 0.05) * 300;
@@ -266,10 +294,10 @@ export class ProceduralPlantRenderer extends Component {
   private drawFullPlant(traits: PlantData, progress: number, hasFlower: boolean, wiltLevel: number = 0) {
     const g = this.graphics!;
     
-    // 先画根系
-    const rootDepth = 40 + traits.height * 0.5;
-    const rootSpread = 30 + traits.leafCount * 5;
-    this.drawRoots(rootDepth, rootSpread, Math.min(5, traits.leafCount));
+    // 先画根系（使用植物数据里的根系）
+    const rootDepth = traits.rootDepth || (40 + traits.height * 0.5);
+    const rootSpread = traits.rootSpread || (30 + traits.leafCount * 5);
+    this.drawRoots(rootDepth, rootSpread, Math.min(5, traits.leafCount), traits.rootStructure, progress);
     
     // 计算实际尺寸
     const stemHeight = traits.height * 3;  // 放大显示
@@ -518,7 +546,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawSunflowerSeed();
     } else if (progress < 0.08) {
       // 破土/幼苗
-      this.drawSunflowerSprout(progress, wiltLevel);
+      this.drawSunflowerSprout(progress, wiltLevel, plant);
     } else if (progress < 0.50) {
       // 抽茎期（茎秆长高，叶子增多）
       this.drawSunflowerStem(traits, progress, wiltLevel);
@@ -575,13 +603,13 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 向日葵发芽（带根系）
    */
-  private drawSunflowerSprout(progress: number, wiltLevel: number) {
+  private drawSunflowerSprout(progress: number, wiltLevel: number, plant?: PlantData) {
     const g = this.graphics!;
     
     // 先画根系
-    const rootDepth = 25 + (progress - 0.03) * 300;
-    const rootSpread = 20 + (progress - 0.03) * 150;
-    this.drawRoots(rootDepth, rootSpread, 3);
+    const rootDepth = plant?.rootDepth || (25 + (progress - 0.03) * 300);
+    const rootSpread = plant?.rootSpread || (20 + (progress - 0.03) * 150);
+    this.drawRoots(rootDepth, rootSpread, 3, plant?.rootStructure, progress);
     
     const height = 15 + (progress - 0.03) * 400;
     const droop = wiltLevel * 0.2;
@@ -617,9 +645,9 @@ export class ProceduralPlantRenderer extends Component {
     const g = this.graphics!;
     
     // 先画根系
-    const rootDepth = 50 + traits.height * 0.8;
-    const rootSpread = 40 + traits.leafCount * 8;
-    this.drawRoots(rootDepth, rootSpread, 4);
+    const rootDepth = traits.rootDepth || (50 + traits.height * 0.8);
+    const rootSpread = traits.rootSpread || (40 + traits.leafCount * 8);
+    this.drawRoots(rootDepth, rootSpread, 4, traits.rootStructure, progress);
     
     // 茎秆高度随进度增长
     const maxHeight = traits.height * 2;
@@ -883,7 +911,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawStrawberrySeed();
     } else if (progress < 0.10) {
       // 发芽期
-      this.drawStrawberrySprout(progress, wiltLevel);
+      this.drawStrawberrySprout(progress, wiltLevel, plant);
     } else if (progress < 0.25) {
       // 展叶期
       this.drawStrawberryLeavesCore(plant, progress, wiltLevel);
@@ -934,13 +962,13 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 草莓发芽（带根系）
    */
-  private drawStrawberrySprout(progress: number, wiltLevel: number) {
+  private drawStrawberrySprout(progress: number, wiltLevel: number, plant?: PlantData) {
     const g = this.graphics!;
     
     // 先画根系
-    const rootDepth = 15 + (progress - 0.03) * 100;
-    const rootSpread = 12 + (progress - 0.03) * 80;
-    this.drawRoots(rootDepth, rootSpread, 2);
+    const rootDepth = plant?.rootDepth || (15 + (progress - 0.03) * 100);
+    const rootSpread = plant?.rootSpread || (12 + (progress - 0.03) * 80);
+    this.drawRoots(rootDepth, rootSpread, 2, plant?.rootStructure, progress);
     
     const height = 8 + (progress - 0.03) * 150;
     const droop = wiltLevel * height * 0.15;
@@ -1302,7 +1330,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawSakuraSeed();
     } else if (progress < 0.05) {
       // 发芽期
-      this.drawSakuraSprout(progress, wiltLevel);
+      this.drawSakuraSprout(progress, wiltLevel, plant);
     } else if (progress < 0.15) {
       // 幼苗期
       this.drawSakuraSeedling(plant, progress, wiltLevel);
@@ -1374,13 +1402,13 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 樱花发芽（带根系）
    */
-  private drawSakuraSprout(progress: number, wiltLevel: number) {
+  private drawSakuraSprout(progress: number, wiltLevel: number, plant?: PlantData) {
     const g = this.graphics!;
     
     // 先画根系
-    const rootDepth = 20 + (progress - 0.02) * 200;
-    const rootSpread = 15 + (progress - 0.02) * 120;
-    this.drawRoots(rootDepth, rootSpread, 2);
+    const rootDepth = plant?.rootDepth || (20 + (progress - 0.02) * 200);
+    const rootSpread = plant?.rootSpread || (15 + (progress - 0.02) * 120);
+    this.drawRoots(rootDepth, rootSpread, 2, plant?.rootStructure, progress);
     
     const height = 5 + (progress - 0.02) * 300;
     const droop = wiltLevel * height * 0.1;
@@ -1410,9 +1438,9 @@ export class ProceduralPlantRenderer extends Component {
     const g = this.graphics!;
     
     // 先画根系
-    const rootDepth = 30 + (progress - 0.05) * 300;
-    const rootSpread = 25 + (progress - 0.05) * 200;
-    this.drawRoots(rootDepth, rootSpread, 3);
+    const rootDepth = plant.rootDepth || (30 + (progress - 0.05) * 300);
+    const rootSpread = plant.rootSpread || (25 + (progress - 0.05) * 200);
+    this.drawRoots(rootDepth, rootSpread, 3, plant.rootStructure, progress);
     
     const seedlingProgress = (progress - 0.05) / 0.10;
     const height = 15 + seedlingProgress * 40;

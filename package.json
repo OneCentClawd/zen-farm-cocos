@@ -5,6 +5,7 @@
     "version": "3.8.8"
   },
   "devDependencies": {
-    "canvas": "^3.2.1"
+    "canvas": "^3.2.1",
+    "typescript": "^5.9.3"
   }
 }

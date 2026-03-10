@@ -55,6 +55,18 @@ export interface Milestone {
 }
 
 /**
+ * 根系分支 - 记录每条侧根的形态
+ */
+export interface RootBranch {
+  angle: number;         // 生长角度（弧度）
+  length: number;        // 相对长度（0~1，实际长度 = rootSpread * length）
+  depth: number;         // 生长深度比例（0~1，从哪个深度开始）
+  thickness: number;     // 粗细（0~1）
+  subBranches: number;   // 细根数量
+  createdAt: number;     // 创建进度（当时的 growthProgress）
+}
+
+/**
  * 植物实例数据 - 每棵植物独一无二
  */
 export interface PlantData {
@@ -74,6 +86,8 @@ export interface PlantData {
   height: number;                 // 高度 cm
   leafCount: number;              // 叶片数量
   rootDepth: number;              // 根系深度 cm
+  rootSpread: number;             // 根系宽度 cm
+  rootStructure: RootBranch[];    // 根系结构（持久化）
   stemWidth: number;              // 茎秆粗度 mm
   tiltAngle: number;              // 倾斜角度（度），0=笔直
   tiltDirection: number;          // 倾斜方向（0-360度，0=北，90=东）
