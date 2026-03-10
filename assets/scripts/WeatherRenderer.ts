@@ -232,7 +232,7 @@ export class WeatherRenderer extends Component {
     this.moonNode.setParent(this.node);
     
     const moonTransform = this.moonNode.addComponent(UITransform);
-    moonTransform.setContentSize(60, 60);  // 月亮适中大小
+    moonTransform.setContentSize(100, 100);  // 月亮大一点
     
     if (this.moonSprite) {
       const sprite = this.moonNode.addComponent(Sprite);
@@ -454,8 +454,8 @@ export class WeatherRenderer extends Component {
     
     const hour = this.currentHour;
     const halfW = this.screenWidth / 2;
-    const topY = this.screenHeight / 2 - 60;  // 天空顶部
-    const bottomY = topY - this.skyHeight + 80;  // 地平线
+    const topY = this.screenHeight / 2 - 40;  // 天空顶部，再高一点
+    const bottomY = this.screenHeight / 6;     // 地平线在屏幕中部偏下
     
     // 太阳：6:00 升起，18:00 落下
     // 计算太阳在天空中的弧线位置
