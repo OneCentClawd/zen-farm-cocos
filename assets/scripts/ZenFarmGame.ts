@@ -23,7 +23,6 @@ const { ccclass, property } = _decorator;
 export class ZenFarmGame extends Component {
   
   // UI 引用
-  private backgroundNode: Node | null = null;   // 背景节点
   private weatherLabel: Label | null = null;
   private plotLabel: Label | null = null;
   private plantEmoji: Label | null = null;
@@ -140,13 +139,10 @@ export class ZenFarmGame extends Component {
     parentTransform.anchorX = 0.5;
     parentTransform.anchorY = 0.5;
     
-    // ========== 背景（体现天气） ==========
-    this.backgroundNode = this.createBackground(screenSize.width, screenSize.height);
-    
-    // ========== 天气渲染器（太阳、月亮、云等） ==========
+    // ========== 天气渲染器（天空背景、太阳、月亮、云等） ==========
     const weatherNode = new Node('WeatherRenderer');
     this.weatherRenderer = weatherNode.addComponent(WeatherRenderer);
-    this.weatherRenderer.init(this.node, screenSize.height * 2 / 3);
+    this.weatherRenderer.init(this.node);  // 不需要传 skyHeight，铺满整个屏幕
     
     // ========== 顶部区域 ==========
     // 顶部半透明背景条
@@ -314,110 +310,6 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 创建背景（体现天气）
-   */
-  private createBackground(width: number, height: number): Node {
-    const bgNode = new Node('Background');
-    bgNode.layer = this.node.layer;
-    bgNode.setParent(this.node);
-    
-    // 把背景放到最底层
-    bgNode.setSiblingIndex(0);
-    
-    const transform = bgNode.addComponent(UITransform);
-    transform.setContentSize(width, height);
-    transform.anchorX = 0.5;
-    transform.anchorY = 0.5;
-    
-    // 用 Graphics 画渐变背景（天空+泥土）
-    const graphics = bgNode.addComponent(Graphics);
-    this.drawBackgroundGradient(graphics, width, height, 145, 215, 250);  // 默认晴天蓝
-    
-    return bgNode;
-  }
-  
-  /**
-   * 画渐变背景（天空+泥土）
-   */
-  private drawBackgroundGradient(graphics: Graphics, width: number, height: number, skyR: number, skyG: number, skyB: number) {
-    graphics.clear();
-    
-    const halfW = width / 2;
-    const halfH = height / 2;
-    const groundHeight = height / 3;  // 下 1/3 是泥土
-    
-    // 天空（上 2/3）- 用多条横线模拟渐变
-    const skyHeight = height - groundHeight;
-    const skySteps = 20;
-    for (let i = 0; i < skySteps; i++) {
-      const t = i / skySteps;
-      const y = halfH - (i * skyHeight / skySteps);
-      const h = skyHeight / skySteps + 1;
-      // 从天空色渐变到稍亮
-      const r = Math.round(skyR + (255 - skyR) * t * 0.3);
-      const g = Math.round(skyG + (255 - skyG) * t * 0.2);
-      const b = Math.round(skyB + (255 - skyB) * t * 0.1);
-      graphics.fillColor = new Color(r, g, b, 255);
-      graphics.rect(-halfW, y - h, width, h);
-      graphics.fill();
-    }
-    
-    // 土地（下 1/3）- 棕色泥土渐变
-    const soilSteps = 10;
-    for (let i = 0; i < soilSteps; i++) {
-      const t = i / soilSteps;
-      const y = -halfH + (i * groundHeight / soilSteps);
-      const h = groundHeight / soilSteps + 1;
-      // 从深棕色渐变到浅棕色
-      const r = Math.round(100 + (140 - 100) * t);
-      const g = Math.round(70 + (100 - 70) * t);
-      const b = Math.round(40 + (60 - 40) * t);
-      graphics.fillColor = new Color(r, g, b, 255);
-      graphics.rect(-halfW, y, width, h);
-      graphics.fill();
-    }
-  }
-  
-  /**
-   * 根据天气更新背景颜色
-   */
-  private updateBackgroundColor() {
-    if (!this.backgroundNode || !this.weather) return;
-    
-    const graphics = this.backgroundNode.getComponent(Graphics);
-    if (!graphics) return;
-    
-    const screenSize = view.getVisibleSize();
-    const width = screenSize.width;
-    const height = screenSize.height;
-    
-    const sunlight = this.weather.sunlight;
-    const precip = this.weather.precipitation;
-    
-    let r = 145, g = 215, b = 250;  // 默认晴天蓝
-    
-    if (precip > 5) {
-      // 大雨 - 灰蓝
-      r = 140; g = 160; b = 180;
-    } else if (precip > 0) {
-      // 小雨 - 浅灰蓝
-      r = 170; g = 195; b = 220;
-    } else if (sunlight > 0.8) {
-      // 大晴天 - 明亮天蓝
-      r = 135; g = 210; b = 255;
-    } else if (sunlight > 0.5) {
-      // 多云 - 淡天蓝
-      r = 170; g = 205; b = 235;
-    } else {
-      // 阴天 - 淡灰蓝
-      r = 185; g = 200; b = 215;
-    }
-    
-    // 重绘渐变背景
-    this.drawBackgroundGradient(graphics, width, height, r, g, b);
-  }
-  
-  /**
    * 初始化游戏
    */
   async initGame() {
@@ -500,9 +392,6 @@ export class ZenFarmGame extends Component {
       const rain = this.weather.precipitation.toFixed(1);
       this.weatherLabel.string = `${weatherEmoji} ${temp}°C  ☀️${sunPercent}%  🌧️${rain}mm  🌬️${wind}km/h`;
       console.log(`${weatherEmoji} 天气: ${temp}°C, 阳光: ${sunPercent}%, 降雨: ${rain}mm, 风速: ${wind}km/h`);
-      
-      // 更新背景颜色
-      this.updateBackgroundColor();
       
       // 更新天气渲染器
       if (this.weatherRenderer) {
