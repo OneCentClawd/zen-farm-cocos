@@ -704,7 +704,7 @@ export class ZenFarmGame extends Component {
         this.updateUI();
       } else {
         // 有植物时变成挖除
-        this.doRemove();
+        this.showRemoveConfirm();
       }
     } else {
       // 空地 - 显示种植选择
