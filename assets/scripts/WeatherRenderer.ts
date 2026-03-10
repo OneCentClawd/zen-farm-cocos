@@ -554,7 +554,7 @@ export class WeatherRenderer extends Component {
     cloudNode.setParent(this.cloudsContainer!);
     
     // 使用确定性随机，云调小
-    const size = 60 + this.seededRandom(index * 23 + 7) * 40;  // 60-100
+    const size = 80 + this.seededRandom(index * 23 + 7) * 60;  // 80-140
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
@@ -574,7 +574,7 @@ export class WeatherRenderer extends Component {
     // 使用确定性随机位置
     const x = -this.screenWidth / 2 + this.seededRandom(index * 41 + 3) * this.screenWidth;
     const y = this.screenHeight / 2 - 80 - this.seededRandom(index * 53 + 11) * (this.skyHeight * 0.4);
-    const scale = 0.6 + this.seededRandom(index * 67 + 19) * 0.4;  // 0.6-1.0
+    const scale = 0.8 + this.seededRandom(index * 67 + 19) * 0.5;  // 0.8-1.3
     
     cloudNode.setPosition(x, y, 0);
     cloudNode.setScale(scale, scale, 1);
