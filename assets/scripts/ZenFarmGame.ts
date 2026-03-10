@@ -493,11 +493,10 @@ export class ZenFarmGame extends Component {
         }
       }
     } else {
-      // 空地 - 隐藏程序化渲染器，显示 emoji
+      // 空地 - 隐藏程序化渲染器和 emoji
       if (this.plantNode) this.plantNode.active = false;
       if (this.plantEmoji) {
-        this.plantEmoji.node.active = true;
-        this.plantEmoji.string = '🕳️';
+        this.plantEmoji.node.active = false;  // 空地不显示任何东西
       }
       if (this.stageLabel) this.stageLabel.string = '🌱 空地';
       if (this.statusLabel) this.statusLabel.string = '等待播种';
