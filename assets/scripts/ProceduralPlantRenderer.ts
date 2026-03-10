@@ -28,6 +28,8 @@ export class ProceduralPlantRenderer extends Component {
   private leafDarkColor = new Color(34, 139, 34);  // 深绿（阴影）
   private flowerColor = new Color(255, 255, 255);  // 白色花
   private flowerCenterColor = new Color(255, 223, 186); // 花心
+  private rootColor = new Color(139, 90, 43);      // 根系棕色
+  private rootLightColor = new Color(160, 120, 80); // 浅根色
   
   // 向日葵专用颜色
   private sunflowerPetalColor = new Color(255, 200, 50);    // 花瓣金黄
@@ -144,28 +146,82 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 画种子
+   * 画种子（埋在土里）
    */
   private drawSeed() {
     const g = this.graphics!;
     
+    // 种子埋在土里（y 为负值表示在地面以下）
     g.fillColor = new Color(139, 90, 43);  // 棕色种子
-    g.ellipse(0, 5, 8, 5);
+    g.ellipse(0, -15, 8, 5);
     g.fill();
     
     // 种子纹理
     g.strokeColor = new Color(100, 60, 30);
     g.lineWidth = 1;
-    g.moveTo(-3, 5);
-    g.lineTo(3, 5);
+    g.moveTo(-3, -15);
+    g.lineTo(3, -15);
     g.stroke();
   }
   
   /**
-   * 画发芽
+   * 画根系
+   * @param depth 根系深度
+   * @param spread 根系宽度
+   * @param complexity 复杂度（分支数）
+   */
+  private drawRoots(depth: number, spread: number, complexity: number = 3) {
+    const g = this.graphics!;
+    
+    g.strokeColor = this.rootColor;
+    g.lineWidth = 2;
+    
+    // 主根
+    g.moveTo(0, 0);
+    g.lineTo(0, -depth * 0.6);
+    g.stroke();
+    
+    // 侧根
+    g.lineWidth = 1.5;
+    for (let i = 0; i < complexity; i++) {
+      const y = -depth * 0.2 - (i * depth * 0.3 / complexity);
+      const angle = (i % 2 === 0 ? 1 : -1) * (30 + i * 10) * Math.PI / 180;
+      const length = spread * (0.5 + Math.random() * 0.3);
+      
+      g.moveTo(0, y);
+      g.lineTo(Math.sin(angle) * length, y - Math.cos(angle) * length * 0.5);
+      g.stroke();
+      
+      // 细根
+      g.strokeColor = this.rootLightColor;
+      g.lineWidth = 1;
+      const endX = Math.sin(angle) * length;
+      const endY = y - Math.cos(angle) * length * 0.5;
+      g.moveTo(endX, endY);
+      g.lineTo(endX + Math.sin(angle) * length * 0.3, endY - length * 0.2);
+      g.stroke();
+      
+      g.strokeColor = this.rootColor;
+      g.lineWidth = 1.5;
+    }
+    
+    // 主根尖端
+    g.lineWidth = 1;
+    g.moveTo(0, -depth * 0.6);
+    g.lineTo(0, -depth);
+    g.stroke();
+  }
+  
+  /**
+   * 画发芽（带根系）
    */
   private drawSprout(progress: number, wiltLevel: number = 0) {
     const g = this.graphics!;
+    
+    // 先画根系（在茎下方）
+    const rootDepth = 20 + (progress - 0.05) * 200;  // 根随生长加深
+    const rootSpread = 15 + (progress - 0.05) * 100;
+    this.drawRoots(rootDepth, rootSpread, 2);
     
     // 发芽高度随 progress 增长
     const sproutHeight = 10 + (progress - 0.05) * 300;
@@ -209,6 +265,11 @@ export class ProceduralPlantRenderer extends Component {
    */
   private drawFullPlant(traits: PlantData, progress: number, hasFlower: boolean, wiltLevel: number = 0) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 40 + traits.height * 0.5;
+    const rootSpread = 30 + traits.leafCount * 5;
+    this.drawRoots(rootDepth, rootSpread, Math.min(5, traits.leafCount));
     
     // 计算实际尺寸
     const stemHeight = traits.height * 3;  // 放大显示
@@ -493,29 +554,34 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 向日葵种子
+   * 向日葵种子（埋在土里）
    */
   private drawSunflowerSeed() {
     const g = this.graphics!;
     
-    // 葵花籽（黑白条纹的椭圆）
+    // 葵花籽（埋在土里）
     g.fillColor = new Color(40, 30, 20);
-    g.ellipse(0, 5, 10, 6);
+    g.ellipse(0, -15, 10, 6);
     g.fill();
     
     // 条纹
     g.strokeColor = new Color(200, 200, 200);
     g.lineWidth = 1;
-    g.moveTo(-4, 5);
-    g.lineTo(4, 5);
+    g.moveTo(-4, -15);
+    g.lineTo(4, -15);
     g.stroke();
   }
   
   /**
-   * 向日葵发芽
+   * 向日葵发芽（带根系）
    */
   private drawSunflowerSprout(progress: number, wiltLevel: number) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 25 + (progress - 0.03) * 300;
+    const rootSpread = 20 + (progress - 0.03) * 150;
+    this.drawRoots(rootDepth, rootSpread, 3);
     
     const height = 15 + (progress - 0.03) * 400;
     const droop = wiltLevel * 0.2;
@@ -545,10 +611,15 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 向日葵抽茎期
+   * 向日葵抽茎期（带根系）
    */
   private drawSunflowerStem(traits: PlantData, progress: number, wiltLevel: number) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 50 + traits.height * 0.8;
+    const rootSpread = 40 + traits.leafCount * 8;
+    this.drawRoots(rootDepth, rootSpread, 4);
     
     // 茎秆高度随进度增长
     const maxHeight = traits.height * 2;
@@ -849,22 +920,27 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 草莓种子（细小）
+   * 草莓种子（埋在土里）
    */
   private drawStrawberrySeed() {
     const g = this.graphics!;
     
-    // 草莓种子非常小
+    // 草莓种子非常小（埋在土里）
     g.fillColor = new Color(80, 60, 40);
-    g.circle(0, 3, 3);
+    g.circle(0, -12, 3);
     g.fill();
   }
   
   /**
-   * 草莓发芽
+   * 草莓发芽（带根系）
    */
   private drawStrawberrySprout(progress: number, wiltLevel: number) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 15 + (progress - 0.03) * 100;
+    const rootSpread = 12 + (progress - 0.03) * 80;
+    this.drawRoots(rootDepth, rootSpread, 2);
     
     const height = 8 + (progress - 0.03) * 150;
     const droop = wiltLevel * height * 0.15;
@@ -1282,24 +1358,29 @@ export class ProceduralPlantRenderer extends Component {
   private drawSakuraSeed() {
     const g = this.graphics!;
     
-    // 樱桃核（椭圆形，棕色，有纹理）
+    // 樱桃核（埋在土里）
     g.fillColor = new Color(120, 80, 60);
-    g.ellipse(0, 5, 8, 6);
+    g.ellipse(0, -15, 8, 6);
     g.fill();
     
     // 纹理线
     g.strokeColor = new Color(80, 50, 35);
     g.lineWidth = 1;
-    g.moveTo(-3, 3);
-    g.lineTo(3, 7);
+    g.moveTo(-3, -17);
+    g.lineTo(3, -13);
     g.stroke();
   }
   
   /**
-   * 樱花发芽
+   * 樱花发芽（带根系）
    */
   private drawSakuraSprout(progress: number, wiltLevel: number) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 20 + (progress - 0.02) * 200;
+    const rootSpread = 15 + (progress - 0.02) * 120;
+    this.drawRoots(rootDepth, rootSpread, 2);
     
     const height = 5 + (progress - 0.02) * 300;
     const droop = wiltLevel * height * 0.1;
@@ -1323,10 +1404,15 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 樱花幼苗
+   * 樱花幼苗（带根系）
    */
   private drawSakuraSeedling(plant: PlantData, progress: number, wiltLevel: number) {
     const g = this.graphics!;
+    
+    // 先画根系
+    const rootDepth = 30 + (progress - 0.05) * 300;
+    const rootSpread = 25 + (progress - 0.05) * 200;
+    this.drawRoots(rootDepth, rootSpread, 3);
     
     const seedlingProgress = (progress - 0.05) / 0.10;
     const height = 15 + seedlingProgress * 40;
