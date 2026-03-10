@@ -226,6 +226,14 @@ export class ZenFarmGame extends Component {
     const waterTransform = this.waterLabel.node.getComponent(UITransform);
     if (waterTransform) waterTransform.setContentSize(150, 50);
     
+    // 设施按钮（在收获上面）
+    btnY -= btnGap;
+    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 32);
+    this.facilityLabel.node.setPosition(btnX, btnY, 0);
+    this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
+    const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
+    if (facilityTransform) facilityTransform.setContentSize(150, 50);
+    
     // 收获按钮
     btnY -= btnGap;
     this.harvestLabel = this.createLabel('Harvest', '🌾 收获', 32);
@@ -233,14 +241,6 @@ export class ZenFarmGame extends Component {
     this.harvestLabel.node.on(Node.EventType.TOUCH_END, this.onHarvestTap, this);
     const harvestTransform = this.harvestLabel.node.getComponent(UITransform);
     if (harvestTransform) harvestTransform.setContentSize(150, 50);
-    
-    // 设施按钮
-    btnY -= btnGap;
-    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 32);
-    this.facilityLabel.node.setPosition(btnX, btnY, 0);
-    this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
-    const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
-    if (facilityTransform) facilityTransform.setContentSize(150, 50);
     
     // ========== 滑动切换地块 ==========
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
