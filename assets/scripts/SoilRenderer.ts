@@ -110,7 +110,18 @@ export class SoilRenderer extends Component {
     const transform = this.soilNode.addComponent(UITransform);
     transform.setContentSize(this.soilWidth, this.soilHeight);
     
-    this.soilGraphics = this.soilNode.addComponent(Graphics);
+    // 优先用素材
+    if (this.soilDrySprite || this.soilWetSprite || this.soilWaterloggedSprite) {
+      const sprite = this.soilNode.addComponent(Sprite);
+      sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+      // 初始显示干燥土壤
+      if (this.soilDrySprite) {
+        sprite.spriteFrame = this.soilDrySprite;
+      }
+    } else {
+      // 没有素材才用 Graphics
+      this.soilGraphics = this.soilNode.addComponent(Graphics);
+    }
   }
   
   /**
@@ -185,41 +196,31 @@ export class SoilRenderer extends Component {
     
     // 优先使用素材
     if (this.soilNode) {
-      // 移除旧的 Sprite（如果有）
-      const oldSprite = this.soilNode.getComponent(Sprite);
-      if (oldSprite) {
-        oldSprite.destroy();
-      }
+      const sprite = this.soilNode.getComponent(Sprite);
       
-      // 根据湿度选择素材
-      let targetSprite: SpriteFrame | null = null;
-      if (moisture >= 90 && this.soilWaterloggedSprite) {
-        targetSprite = this.soilWaterloggedSprite;
-      } else if (moisture >= 40 && this.soilWetSprite) {
-        targetSprite = this.soilWetSprite;
-      } else if (this.soilDrySprite) {
-        targetSprite = this.soilDrySprite;
-      }
-      
-      if (targetSprite) {
-        // 用素材渲染
-        const sprite = this.soilNode.addComponent(Sprite);
-        sprite.spriteFrame = targetSprite;
-        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
-        
-        // 隐藏 Graphics
-        if (this.soilGraphics) {
-          this.soilGraphics.clear();
+      if (sprite) {
+        // 根据湿度选择素材
+        let targetSprite: SpriteFrame | null = null;
+        if (moisture >= 90 && this.soilWaterloggedSprite) {
+          targetSprite = this.soilWaterloggedSprite;
+        } else if (moisture >= 40 && this.soilWetSprite) {
+          targetSprite = this.soilWetSprite;
+        } else if (this.soilDrySprite) {
+          targetSprite = this.soilDrySprite;
         }
         
-        // 积水效果
-        if (moisture >= 90 && this.waterPuddleNode) {
-          this.waterPuddleNode.active = true;
-          this.drawWaterPuddle();
-        } else if (this.waterPuddleNode) {
-          this.waterPuddleNode.active = false;
+        if (targetSprite) {
+          sprite.spriteFrame = targetSprite;
+          
+          // 积水效果
+          if (moisture >= 90 && this.waterPuddleNode) {
+            this.waterPuddleNode.active = true;
+            this.drawWaterPuddle();
+          } else if (this.waterPuddleNode) {
+            this.waterPuddleNode.active = false;
+          }
+          return;
         }
-        return;
       }
     }
     
