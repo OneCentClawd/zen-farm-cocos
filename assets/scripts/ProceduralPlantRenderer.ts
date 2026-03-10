@@ -98,8 +98,8 @@ export class ProceduralPlantRenderer extends Component {
       // 死亡状态：枯萎的植物
       this.drawDeadPlant(traits, progress);
     } else if (progress < 0.05) {
-      // 种子期
-      this.drawSeed();
+      // 种子期（根系已经开始长）
+      this.drawSeed(plant);
     } else if (progress < 0.15) {
       // 发芽期
       this.drawSprout(progress, wiltLevel, plant);
@@ -148,8 +148,45 @@ export class ProceduralPlantRenderer extends Component {
   /**
    * 画种子（埋在土里）
    */
-  private drawSeed() {
+  private drawSeed(plant?: PlantData) {
     const g = this.graphics!;
+    const progress = plant?.growthProgress || 0;
+    
+    // 种子阶段就开始长根（从种子底部开始）
+    if (plant && progress > 0.01) {
+      // 根系从种子位置（-15）开始往下长
+      const rootProgress = progress / 0.05;  // 在种子期内的进度 (0~1)
+      const rootDepth = 5 + rootProgress * 20;  // 从很短慢慢变长
+      const rootSpread = 3 + rootProgress * 10;
+      
+      // 保存当前变换，移动到种子底部
+      g.strokeColor = this.rootColor;
+      g.lineWidth = 1.5;
+      
+      // 主根（从种子底部 -20 开始往下）
+      const seedBottom = -20;
+      g.moveTo(0, seedBottom);
+      g.lineTo(0, seedBottom - rootDepth);
+      g.stroke();
+      
+      // 早期侧根（用植物的根系基因，但只显示前几条）
+      if (plant.rootStructure && rootProgress > 0.3) {
+        const visibleCount = Math.min(2, Math.floor(rootProgress * 3));
+        for (let i = 0; i < visibleCount; i++) {
+          const branch = plant.rootStructure[i];
+          if (!branch) continue;
+          
+          const branchGrowth = (rootProgress - 0.3) / 0.7;  // 0~1
+          const y = seedBottom - rootDepth * branch.depth * 0.5;
+          const length = rootSpread * branch.length * branchGrowth * 0.5;
+          
+          g.lineWidth = 1;
+          g.moveTo(0, y);
+          g.lineTo(Math.sin(branch.angle) * length, y - Math.cos(branch.angle) * length * 0.3);
+          g.stroke();
+        }
+      }
+    }
     
     // 种子埋在土里（y 为负值表示在地面以下）
     g.fillColor = new Color(139, 90, 43);  // 棕色种子
@@ -543,7 +580,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawDeadSunflower(traits, progress);
     } else if (progress < 0.03) {
       // 种子期
-      this.drawSunflowerSeed();
+      this.drawSunflowerSeed(plant);
     } else if (progress < 0.08) {
       // 破土/幼苗
       this.drawSunflowerSprout(progress, wiltLevel, plant);
@@ -582,10 +619,43 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 向日葵种子（埋在土里）
+   * 向日葵种子（埋在土里，根系从种子长出）
    */
-  private drawSunflowerSeed() {
+  private drawSunflowerSeed(plant?: PlantData) {
     const g = this.graphics!;
+    const progress = plant?.growthProgress || 0;
+    
+    // 种子阶段就开始长根
+    if (plant && progress > 0.005) {
+      const rootProgress = progress / 0.03;
+      const rootDepth = 5 + rootProgress * 25;
+      const rootSpread = 4 + rootProgress * 12;
+      
+      g.strokeColor = this.rootColor;
+      g.lineWidth = 1.5;
+      
+      const seedBottom = -21;
+      g.moveTo(0, seedBottom);
+      g.lineTo(0, seedBottom - rootDepth);
+      g.stroke();
+      
+      if (plant.rootStructure && rootProgress > 0.3) {
+        const visibleCount = Math.min(2, Math.floor(rootProgress * 3));
+        for (let i = 0; i < visibleCount; i++) {
+          const branch = plant.rootStructure[i];
+          if (!branch) continue;
+          
+          const branchGrowth = (rootProgress - 0.3) / 0.7;
+          const y = seedBottom - rootDepth * branch.depth * 0.5;
+          const length = rootSpread * branch.length * branchGrowth * 0.5;
+          
+          g.lineWidth = 1;
+          g.moveTo(0, y);
+          g.lineTo(Math.sin(branch.angle) * length, y - Math.cos(branch.angle) * length * 0.3);
+          g.stroke();
+        }
+      }
+    }
     
     // 葵花籽（埋在土里）
     g.fillColor = new Color(40, 30, 20);
@@ -908,7 +978,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawDeadStrawberry(plant, progress);
     } else if (progress < 0.03) {
       // 种子期
-      this.drawStrawberrySeed();
+      this.drawStrawberrySeed(plant);
     } else if (progress < 0.10) {
       // 发芽期
       this.drawStrawberrySprout(progress, wiltLevel, plant);
@@ -948,10 +1018,43 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 草莓种子（埋在土里）
+   * 草莓种子（埋在土里，根系从种子长出）
    */
-  private drawStrawberrySeed() {
+  private drawStrawberrySeed(plant?: PlantData) {
     const g = this.graphics!;
+    const progress = plant?.growthProgress || 0;
+    
+    // 种子阶段就开始长根
+    if (plant && progress > 0.005) {
+      const rootProgress = progress / 0.03;
+      const rootDepth = 3 + rootProgress * 15;
+      const rootSpread = 2 + rootProgress * 8;
+      
+      g.strokeColor = this.rootColor;
+      g.lineWidth = 1;
+      
+      const seedBottom = -15;
+      g.moveTo(0, seedBottom);
+      g.lineTo(0, seedBottom - rootDepth);
+      g.stroke();
+      
+      if (plant.rootStructure && rootProgress > 0.4) {
+        const visibleCount = Math.min(2, Math.floor(rootProgress * 2));
+        for (let i = 0; i < visibleCount; i++) {
+          const branch = plant.rootStructure[i];
+          if (!branch) continue;
+          
+          const branchGrowth = (rootProgress - 0.4) / 0.6;
+          const y = seedBottom - rootDepth * branch.depth * 0.5;
+          const length = rootSpread * branch.length * branchGrowth * 0.4;
+          
+          g.lineWidth = 0.8;
+          g.moveTo(0, y);
+          g.lineTo(Math.sin(branch.angle) * length, y - Math.cos(branch.angle) * length * 0.3);
+          g.stroke();
+        }
+      }
+    }
     
     // 草莓种子非常小（埋在土里）
     g.fillColor = new Color(80, 60, 40);
@@ -1327,7 +1430,7 @@ export class ProceduralPlantRenderer extends Component {
       this.drawDeadSakura(plant, progress);
     } else if (progress < 0.02) {
       // 种子期（樱桃核）
-      this.drawSakuraSeed();
+      this.drawSakuraSeed(plant);
     } else if (progress < 0.05) {
       // 发芽期
       this.drawSakuraSprout(progress, wiltLevel, plant);
@@ -1381,10 +1484,43 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 樱花种子（樱桃核）
+   * 樱花种子（樱桃核，根系从种子长出）
    */
-  private drawSakuraSeed() {
+  private drawSakuraSeed(plant?: PlantData) {
     const g = this.graphics!;
+    const progress = plant?.growthProgress || 0;
+    
+    // 种子阶段就开始长根
+    if (plant && progress > 0.003) {
+      const rootProgress = progress / 0.02;
+      const rootDepth = 4 + rootProgress * 20;
+      const rootSpread = 3 + rootProgress * 10;
+      
+      g.strokeColor = this.rootColor;
+      g.lineWidth = 1.5;
+      
+      const seedBottom = -21;
+      g.moveTo(0, seedBottom);
+      g.lineTo(0, seedBottom - rootDepth);
+      g.stroke();
+      
+      if (plant.rootStructure && rootProgress > 0.3) {
+        const visibleCount = Math.min(2, Math.floor(rootProgress * 2));
+        for (let i = 0; i < visibleCount; i++) {
+          const branch = plant.rootStructure[i];
+          if (!branch) continue;
+          
+          const branchGrowth = (rootProgress - 0.3) / 0.7;
+          const y = seedBottom - rootDepth * branch.depth * 0.5;
+          const length = rootSpread * branch.length * branchGrowth * 0.5;
+          
+          g.lineWidth = 1;
+          g.moveTo(0, y);
+          g.lineTo(Math.sin(branch.angle) * length, y - Math.cos(branch.angle) * length * 0.3);
+          g.stroke();
+        }
+      }
+    }
     
     // 樱桃核（埋在土里）
     g.fillColor = new Color(120, 80, 60);
