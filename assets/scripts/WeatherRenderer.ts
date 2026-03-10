@@ -10,7 +10,7 @@
 
 import { 
   _decorator, Component, Node, Graphics, Color, UITransform, 
-  Sprite, SpriteFrame, Vec3, tween, view
+  Sprite, SpriteFrame, Vec3, tween, view, resources, ImageAsset, Texture2D
 } from 'cc';
 import { WeatherData } from './Environment';
 
@@ -91,12 +91,52 @@ export class WeatherRenderer extends Component {
     }
     transform.setContentSize(this.screenWidth, this.screenHeight);
     
-    this.createSky();
-    this.createCelestialBodies();
-    this.createCloudsContainer();
-    this.createRainLayer();
-    
-    console.log('🌤️ WeatherRenderer 初始化完成');
+    // 先加载素材，再创建节点
+    this.loadSprites().then(() => {
+      this.createSky();
+      this.createCelestialBodies();
+      this.createCloudsContainer();
+      this.createRainLayer();
+      console.log('🌤️ WeatherRenderer 初始化完成');
+    });
+  }
+  
+  /**
+   * 动态加载天气素材
+   */
+  private loadSprites(): Promise<void> {
+    return new Promise((resolve) => {
+      let loaded = 0;
+      const total = 4;
+      const checkDone = () => {
+        loaded++;
+        if (loaded >= total) resolve();
+      };
+      
+      // 加载太阳
+      resources.load('textures/weather/sun/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.sunSprite = sf;
+        checkDone();
+      });
+      
+      // 加载月亮
+      resources.load('textures/weather/moon_full/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.moonSprite = sf;
+        checkDone();
+      });
+      
+      // 加载白云
+      resources.load('textures/weather/cloud_white/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.cloudWhiteSprite = sf;
+        checkDone();
+      });
+      
+      // 加载雨云
+      resources.load('textures/weather/cloud_rain/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.cloudRainSprite = sf;
+        checkDone();
+      });
+    });
   }
   
   /**

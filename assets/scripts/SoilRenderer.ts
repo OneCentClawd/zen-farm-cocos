@@ -9,7 +9,7 @@
 
 import { 
   _decorator, Component, Node, Graphics, Color, UITransform, 
-  Sprite, SpriteFrame, Vec3, view
+  Sprite, SpriteFrame, Vec3, view, resources
 } from 'cc';
 
 const { ccclass, property } = _decorator;
@@ -17,15 +17,10 @@ const { ccclass, property } = _decorator;
 @ccclass('SoilRenderer')
 export class SoilRenderer extends Component {
   
-  // 素材（可选，在编辑器中拖入）
-  @property(SpriteFrame)
-  soilDrySprite: SpriteFrame | null = null;
-  
-  @property(SpriteFrame)
-  soilWetSprite: SpriteFrame | null = null;
-  
-  @property(SpriteFrame)
-  soilWaterloggedSprite: SpriteFrame | null = null;
+  // 素材（动态加载）
+  private soilDrySprite: SpriteFrame | null = null;
+  private soilWetSprite: SpriteFrame | null = null;
+  private soilWaterloggedSprite: SpriteFrame | null = null;
   
   // 内部状态
   private soilNode: Node | null = null;
@@ -64,11 +59,43 @@ export class SoilRenderer extends Component {
     }
     transform.setContentSize(width, height);
     
-    this.createSoilLayer();
-    this.createWaterPuddleLayer();
-    this.generateCracks();
-    
-    console.log('🟫 SoilRenderer 初始化完成');
+    // 先加载素材，再创建节点
+    this.loadSprites().then(() => {
+      this.createSoilLayer();
+      this.createWaterPuddleLayer();
+      this.generateCracks();
+      this.render();
+      console.log('🟫 SoilRenderer 初始化完成');
+    });
+  }
+  
+  /**
+   * 动态加载土壤素材
+   */
+  private loadSprites(): Promise<void> {
+    return new Promise((resolve) => {
+      let loaded = 0;
+      const total = 3;
+      const checkDone = () => {
+        loaded++;
+        if (loaded >= total) resolve();
+      };
+      
+      resources.load('textures/weather/soil_dry/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.soilDrySprite = sf;
+        checkDone();
+      });
+      
+      resources.load('textures/weather/soil_wet/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.soilWetSprite = sf;
+        checkDone();
+      });
+      
+      resources.load('textures/weather/soil_waterlogged/spriteFrame', SpriteFrame, (err, sf) => {
+        if (!err && sf) this.soilWaterloggedSprite = sf;
+        checkDone();
+      });
+    });
   }
   
   /**
