@@ -13,6 +13,7 @@ import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot, 
 import { saveGame, loadOrCreateGame } from './Storage';
 import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
+import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
 
 const { ccclass, property } = _decorator;
 
@@ -24,6 +25,8 @@ export class ZenFarmGame extends Component {
   private weatherLabel: Label | null = null;
   private plotLabel: Label | null = null;
   private plantEmoji: Label | null = null;
+  private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
+  private plantNode: Node | null = null;  // 植物渲染节点
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;      // 种植/挖除按钮
@@ -195,9 +198,19 @@ export class ZenFarmGame extends Component {
     soilGraphics.ellipse(0, 12, 90, 25);
     soilGraphics.fill();
     
-    // 植物 emoji（从泥土中间长出来）
-    this.plantEmoji = this.createLabel('PlantEmoji', '🌱', 320);
-    this.plantEmoji.node.setPosition(0, groundCenterY + 100, 0);  // 植物根部在泥土中心
+    // 植物 emoji（备用，空地时显示）
+    this.plantEmoji = this.createLabel('PlantEmoji', '🕳️', 120);
+    this.plantEmoji.node.setPosition(0, groundCenterY + 60, 0);
+    
+    // 程序化植物渲染节点
+    this.plantNode = new Node('PlantRenderer');
+    this.plantNode.layer = this.node.layer;
+    this.plantNode.setParent(this.node);
+    this.plantNode.setPosition(0, groundCenterY + 150, 0);  // 植物从泥土上方长出
+    const plantTransform = this.plantNode.addComponent(UITransform);
+    plantTransform.setContentSize(300, 400);
+    this.plantRenderer = this.plantNode.addComponent(ProceduralPlantRenderer);
+    this.plantNode.active = false;  // 初始隐藏
     
     // ========== 操作区（信息区下方，靠右纵向排列）==========
     const btnX = halfW - 100;
@@ -520,7 +533,13 @@ export class ZenFarmGame extends Component {
       const stage = getCurrentStage(plot.plant);
       const isHardMode = plot.plant.hardMode;
       
-      if (this.plantEmoji) this.plantEmoji.string = emoji;
+      // 使用程序化渲染器显示植物
+      if (this.plantRenderer && this.plantNode) {
+        this.plantNode.active = true;
+        this.plantRenderer.render(plot.plant, 0);
+      }
+      // 隐藏 emoji
+      if (this.plantEmoji) this.plantEmoji.node.active = false;
       
       // 阶段信息
       if (this.stageLabel) {
@@ -582,8 +601,12 @@ export class ZenFarmGame extends Component {
         }
       }
     } else {
-      // 空地
-      if (this.plantEmoji) this.plantEmoji.string = '🕳️';
+      // 空地 - 隐藏程序化渲染器，显示 emoji
+      if (this.plantNode) this.plantNode.active = false;
+      if (this.plantEmoji) {
+        this.plantEmoji.node.active = true;
+        this.plantEmoji.string = '🕳️';
+      }
       if (this.stageLabel) this.stageLabel.string = '🌱 空地';
       if (this.statusLabel) this.statusLabel.string = '等待播种';
       if (this.actionLabel) this.actionLabel.string = '🌱 种植';
@@ -1126,6 +1149,14 @@ export class ZenFarmGame extends Component {
    * 每帧更新
    */
   update(dt: number) {
+    // 每帧更新植物渲染（动画效果）
+    if (this.plantRenderer && this.plantNode?.active && this.gameData) {
+      const plot = this.gameData.plots[this.selectedPlot];
+      if (plot?.plant) {
+        this.plantRenderer.render(plot.plant, dt);
+      }
+    }
+    
     // 自动保存（每 30 秒）
     this.saveTimer += dt;
     if (this.saveTimer >= 30) {
