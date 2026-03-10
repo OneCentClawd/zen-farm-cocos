@@ -187,10 +187,10 @@ export class ZenFarmGame extends Component {
     const groundHeight = screenSize.height / 3;
     const groundCenterY = -halfH + groundHeight / 2;  // 土地正中间
     
-    // ========== 土壤渲染器 ==========
+    // ========== 土壤渲染器（铺满下1/3） ==========
     const soilNode = new Node('SoilRenderer');
     this.soilRenderer = soilNode.addComponent(SoilRenderer);
-    this.soilRenderer.init(this.node, 280, 120, groundCenterY);
+    this.soilRenderer.init(this.node, screenSize.width, groundHeight, groundCenterY);
     
     // 植物 emoji（备用，空地时显示）
     this.plantEmoji = this.createLabel('PlantEmoji', '🕳️', 120);
