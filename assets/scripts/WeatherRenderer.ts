@@ -499,24 +499,24 @@ export class WeatherRenderer extends Component {
   private updateClouds() {
     if (!this.cloudsContainer || !this.currentWeather) return;
     
-    // 根据天气代码决定云量
+    // 根据天气代码决定云量（数量翻倍）
     const code = this.currentWeather.weatherCode;
     let cloudCount = 0;
     let rainCloudRatio = 0;  // 雨云比例
     
     if (code === 0) {
-      cloudCount = 0;  // 晴天无云
+      cloudCount = 2;  // 晴天也有几朵云
     } else if (code === 1) {
-      cloudCount = 2;  // 少云
+      cloudCount = 5;  // 少云
     } else if (code === 2) {
-      cloudCount = 4;  // 多云
+      cloudCount = 8;  // 多云
     } else if (code === 3) {
-      cloudCount = 6;  // 阴天
+      cloudCount = 12;  // 阴天
     } else if (code >= 51 && code <= 99) {
-      cloudCount = 5;  // 降水天气
+      cloudCount = 10;  // 降水天气
       rainCloudRatio = 0.8;
     } else {
-      cloudCount = 3;
+      cloudCount = 6;
     }
     
     // 清除多余的云
@@ -554,7 +554,7 @@ export class WeatherRenderer extends Component {
     cloudNode.setParent(this.cloudsContainer!);
     
     // 使用确定性随机，云调小
-    const size = 80 + this.seededRandom(index * 23 + 7) * 60;  // 80-140
+    const size = 150 + this.seededRandom(index * 23 + 7) * 100;  // 150-250
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
