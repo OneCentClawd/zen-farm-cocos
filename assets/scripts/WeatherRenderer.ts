@@ -198,7 +198,7 @@ export class WeatherRenderer extends Component {
     this.moonNode.setParent(this.node);
     
     const moonTransform = this.moonNode.addComponent(UITransform);
-    moonTransform.setContentSize(50, 50);  // 调小一点
+    moonTransform.setContentSize(35, 35);  // 月亮调小
     
     if (this.moonSprite) {
       const sprite = this.moonNode.addComponent(Sprite);
@@ -506,8 +506,8 @@ export class WeatherRenderer extends Component {
     cloudNode.layer = this.node.layer;
     cloudNode.setParent(this.cloudsContainer!);
     
-    // 使用确定性随机
-    const size = 100 + this.seededRandom(index * 23 + 7) * 80;
+    // 使用确定性随机，云调小
+    const size = 50 + this.seededRandom(index * 23 + 7) * 40;  // 50-90，比之前小
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
@@ -527,7 +527,7 @@ export class WeatherRenderer extends Component {
     // 使用确定性随机位置
     const x = -this.screenWidth / 2 + this.seededRandom(index * 41 + 3) * this.screenWidth;
     const y = this.screenHeight / 2 - 80 - this.seededRandom(index * 53 + 11) * (this.skyHeight * 0.4);
-    const scale = 0.8 + this.seededRandom(index * 67 + 19) * 0.5;
+    const scale = 0.6 + this.seededRandom(index * 67 + 19) * 0.4;  // 0.6-1.0，比之前小
     
     cloudNode.setPosition(x, y, 0);
     cloudNode.setScale(scale, scale, 1);
@@ -626,9 +626,10 @@ export class WeatherRenderer extends Component {
       const cloud = this.clouds[i];
       cloud.x += cloud.speed * dt;
       
-      // 超出右边界后从左边重新进入
-      if (cloud.x > this.screenWidth / 2 + 100) {
-        cloud.x = -this.screenWidth / 2 - 100;
+      // 超出右边界后从左边重新进入（边界要大于云的最大尺寸）
+      const cloudBuffer = 200;  // 云最大约 180 * 1.3 ≈ 234，用 200 安全边距
+      if (cloud.x > this.screenWidth / 2 + cloudBuffer) {
+        cloud.x = -this.screenWidth / 2 - cloudBuffer;
         // 使用确定性随机（基于时间戳取模 + 索引）
         const timeSeed = Math.floor(Date.now() / 1000) % 10000;
         cloud.y = this.screenHeight / 2 - 80 - this.seededRandom(timeSeed + i * 37) * (this.skyHeight * 0.4);
