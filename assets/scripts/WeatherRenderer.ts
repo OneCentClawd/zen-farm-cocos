@@ -187,11 +187,13 @@ export class WeatherRenderer extends Component {
     this.skyNode = new Node('Sky');
     this.skyNode.layer = this.node.layer;
     this.skyNode.setParent(this.node);
-    this.skyNode.setPosition(0, 0, 0);  // 居中
+    
+    // 天空占上 2/3，位置偏上
+    const skyHeight = this.screenHeight * 2 / 3;
+    this.skyNode.setPosition(0, this.screenHeight / 2 - skyHeight / 2, 0);
     
     const transform = this.skyNode.addComponent(UITransform);
-    // 铺满整个屏幕
-    transform.setContentSize(this.screenWidth, this.screenHeight);
+    transform.setContentSize(this.screenWidth, skyHeight);
     
     // 优先用素材
     if (this.skyDaySprite || this.skyNightSprite) {
@@ -212,7 +214,7 @@ export class WeatherRenderer extends Component {
     this.sunNode.setParent(this.node);
     
     const sunTransform = this.sunNode.addComponent(UITransform);
-    sunTransform.setContentSize(45, 45);  // 太阳调小
+    sunTransform.setContentSize(60, 60);  // 太阳适中大小
     
     if (this.sunSprite) {
       const sprite = this.sunNode.addComponent(Sprite);
@@ -230,7 +232,7 @@ export class WeatherRenderer extends Component {
     this.moonNode.setParent(this.node);
     
     const moonTransform = this.moonNode.addComponent(UITransform);
-    moonTransform.setContentSize(30, 30);  // 月亮调小
+    moonTransform.setContentSize(60, 60);  // 月亮适中大小
     
     if (this.moonSprite) {
       const sprite = this.moonNode.addComponent(Sprite);
@@ -552,7 +554,7 @@ export class WeatherRenderer extends Component {
     cloudNode.setParent(this.cloudsContainer!);
     
     // 使用确定性随机，云调小
-    const size = 30 + this.seededRandom(index * 23 + 7) * 25;  // 30-55，更小
+    const size = 60 + this.seededRandom(index * 23 + 7) * 40;  // 60-100
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
@@ -572,7 +574,7 @@ export class WeatherRenderer extends Component {
     // 使用确定性随机位置
     const x = -this.screenWidth / 2 + this.seededRandom(index * 41 + 3) * this.screenWidth;
     const y = this.screenHeight / 2 - 80 - this.seededRandom(index * 53 + 11) * (this.skyHeight * 0.4);
-    const scale = 0.4 + this.seededRandom(index * 67 + 19) * 0.3;  // 0.4-0.7，更小
+    const scale = 0.6 + this.seededRandom(index * 67 + 19) * 0.4;  // 0.6-1.0
     
     cloudNode.setPosition(x, y, 0);
     cloudNode.setScale(scale, scale, 1);
