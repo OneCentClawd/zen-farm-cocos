@@ -115,24 +115,28 @@ export class WeatherRenderer extends Component {
       
       // 加载太阳
       resources.load('textures/weather/sun/spriteFrame', SpriteFrame, (err, sf) => {
+        if (err) console.warn('加载 sun 失败:', err);
         if (!err && sf) this.sunSprite = sf;
         checkDone();
       });
       
       // 加载月亮
       resources.load('textures/weather/moon_full/spriteFrame', SpriteFrame, (err, sf) => {
+        if (err) console.warn('加载 moon 失败:', err);
         if (!err && sf) this.moonSprite = sf;
         checkDone();
       });
       
       // 加载白云
       resources.load('textures/weather/cloud_white/spriteFrame', SpriteFrame, (err, sf) => {
+        if (err) console.warn('加载 cloud_white 失败:', err);
         if (!err && sf) this.cloudWhiteSprite = sf;
         checkDone();
       });
       
       // 加载雨云
       resources.load('textures/weather/cloud_rain/spriteFrame', SpriteFrame, (err, sf) => {
+        if (err) console.warn('加载 cloud_rain 失败:', err);
         if (!err && sf) this.cloudRainSprite = sf;
         checkDone();
       });
