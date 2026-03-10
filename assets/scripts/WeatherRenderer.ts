@@ -187,10 +187,11 @@ export class WeatherRenderer extends Component {
     this.skyNode = new Node('Sky');
     this.skyNode.layer = this.node.layer;
     this.skyNode.setParent(this.node);
-    this.skyNode.setPosition(0, this.screenHeight / 2 - this.skyHeight / 2, 0);
+    this.skyNode.setPosition(0, 0, 0);  // 居中
     
     const transform = this.skyNode.addComponent(UITransform);
-    transform.setContentSize(this.screenWidth, this.skyHeight);
+    // 铺满整个屏幕
+    transform.setContentSize(this.screenWidth, this.screenHeight);
     
     // 优先用素材
     if (this.skyDaySprite || this.skyNightSprite) {
