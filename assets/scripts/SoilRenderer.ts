@@ -64,7 +64,7 @@ export class SoilRenderer extends Component {
       this.createSoilLayer();
       this.createWaterPuddleLayer();
       this.generateCracks();
-      this.render();
+      this.renderSoil();
       console.log('🟫 SoilRenderer 初始化完成');
     });
   }
