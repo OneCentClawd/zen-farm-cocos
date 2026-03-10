@@ -744,12 +744,6 @@ export class ProceduralPlantRenderer extends Component {
       g.stroke();
     }
   }
-    g.strokeColor = new Color(200, 200, 200);
-    g.lineWidth = 1;
-    g.moveTo(-4, -15);
-    g.lineTo(4, -15);
-    g.stroke();
-  }
   
   /**
    * 向日葵发芽（带根系）
