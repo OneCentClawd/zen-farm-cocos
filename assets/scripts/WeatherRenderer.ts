@@ -205,9 +205,6 @@ export class WeatherRenderer extends Component {
       sprite.spriteFrame = this.moonSprite;
       sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 使用 UITransform 的尺寸
     } else {
-      const sprite = this.moonNode.addComponent(Sprite);
-      sprite.spriteFrame = this.moonSprite;
-    } else {
       // 没有素材时用 Graphics 画月亮
       const g = this.moonNode.addComponent(Graphics);
       this.drawMoonGraphics(g, 30);
