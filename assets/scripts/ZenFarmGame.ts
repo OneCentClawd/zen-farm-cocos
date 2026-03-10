@@ -482,14 +482,14 @@ export class ZenFarmGame extends Component {
         this.waterLabel.string = '💧 浇水';
       }
       
-      // 收获按钮 - 根据成熟状态
+      // 收获按钮 - 仅成熟时显示
       if (this.harvestLabel) {
         if (plot.plant.growthProgress >= 1.0 && plot.plant.healthState !== HealthState.DEAD) {
+          this.harvestLabel.node.active = true;
           this.harvestLabel.string = '🌾 收获';
           this.harvestLabel.color = new Color(255, 255, 255, 255);
         } else {
-          this.harvestLabel.string = '🌾 未成熟';
-          this.harvestLabel.color = new Color(150, 150, 150, 255);
+          this.harvestLabel.node.active = false;  // 未成熟时隐藏
         }
       }
     } else {
@@ -503,8 +503,7 @@ export class ZenFarmGame extends Component {
       if (this.actionLabel) this.actionLabel.string = '🌱 种植';
       if (this.waterLabel) this.waterLabel.string = '💧 浇水';
       if (this.harvestLabel) {
-        this.harvestLabel.string = '🌾 收获';
-        this.harvestLabel.color = new Color(150, 150, 150, 255);
+        this.harvestLabel.node.active = false;  // 空地时隐藏
       }
       
       // 土壤（空地时显示）
