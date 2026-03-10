@@ -114,30 +114,44 @@ export class WeatherRenderer extends Component {
       };
       
       // 加载太阳
-      resources.load('textures/weather/sun/spriteFrame', SpriteFrame, (err, sf) => {
-        if (err) console.warn('加载 sun 失败:', err);
-        if (!err && sf) this.sunSprite = sf;
+      resources.load('textures/weather/sun', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 sun 失败:', err);
+        } else if (imageAsset) {
+          const texture = new Texture2D();
+          texture.image = imageAsset;
+          this.sunSprite = SpriteFrame.createWithImage(imageAsset);
+        }
         checkDone();
       });
       
       // 加载月亮
-      resources.load('textures/weather/moon_full/spriteFrame', SpriteFrame, (err, sf) => {
-        if (err) console.warn('加载 moon 失败:', err);
-        if (!err && sf) this.moonSprite = sf;
+      resources.load('textures/weather/moon_full', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 moon 失败:', err);
+        } else if (imageAsset) {
+          this.moonSprite = SpriteFrame.createWithImage(imageAsset);
+        }
         checkDone();
       });
       
       // 加载白云
-      resources.load('textures/weather/cloud_white/spriteFrame', SpriteFrame, (err, sf) => {
-        if (err) console.warn('加载 cloud_white 失败:', err);
-        if (!err && sf) this.cloudWhiteSprite = sf;
+      resources.load('textures/weather/cloud_white', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 cloud_white 失败:', err);
+        } else if (imageAsset) {
+          this.cloudWhiteSprite = SpriteFrame.createWithImage(imageAsset);
+        }
         checkDone();
       });
       
       // 加载雨云
-      resources.load('textures/weather/cloud_rain/spriteFrame', SpriteFrame, (err, sf) => {
-        if (err) console.warn('加载 cloud_rain 失败:', err);
-        if (!err && sf) this.cloudRainSprite = sf;
+      resources.load('textures/weather/cloud_rain', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 cloud_rain 失败:', err);
+        } else if (imageAsset) {
+          this.cloudRainSprite = SpriteFrame.createWithImage(imageAsset);
+        }
         checkDone();
       });
     });

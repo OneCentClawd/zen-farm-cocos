@@ -9,7 +9,7 @@
 
 import { 
   _decorator, Component, Node, Graphics, Color, UITransform, 
-  Sprite, SpriteFrame, Vec3, view, resources
+  Sprite, SpriteFrame, Vec3, view, resources, ImageAsset
 } from 'cc';
 
 const { ccclass, property } = _decorator;
@@ -81,18 +81,18 @@ export class SoilRenderer extends Component {
         if (loaded >= total) resolve();
       };
       
-      resources.load('textures/weather/soil_dry/spriteFrame', SpriteFrame, (err, sf) => {
-        if (!err && sf) this.soilDrySprite = sf;
+      resources.load('textures/weather/soil_dry', ImageAsset, (err, imageAsset) => {
+        if (!err && imageAsset) this.soilDrySprite = SpriteFrame.createWithImage(imageAsset);
         checkDone();
       });
       
-      resources.load('textures/weather/soil_wet/spriteFrame', SpriteFrame, (err, sf) => {
-        if (!err && sf) this.soilWetSprite = sf;
+      resources.load('textures/weather/soil_wet', ImageAsset, (err, imageAsset) => {
+        if (!err && imageAsset) this.soilWetSprite = SpriteFrame.createWithImage(imageAsset);
         checkDone();
       });
       
-      resources.load('textures/weather/soil_waterlogged/spriteFrame', SpriteFrame, (err, sf) => {
-        if (!err && sf) this.soilWaterloggedSprite = sf;
+      resources.load('textures/weather/soil_waterlogged', ImageAsset, (err, imageAsset) => {
+        if (!err && imageAsset) this.soilWaterloggedSprite = SpriteFrame.createWithImage(imageAsset);
         checkDone();
       });
     });
