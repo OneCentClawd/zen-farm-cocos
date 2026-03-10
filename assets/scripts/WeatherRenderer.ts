@@ -511,14 +511,17 @@ export class WeatherRenderer extends Component {
     const transform = cloudNode.addComponent(UITransform);
     transform.setContentSize(size, size * 0.6);
     
-    const sprite = isRainCloud ? this.cloudRainSprite : this.cloudWhiteSprite;
+    // 随机选择云类型（两种云随机出现，更自然）
+    const useRainCloudSprite = this.seededRandom(index * 31 + 13) > 0.5;
+    const sprite = useRainCloudSprite ? this.cloudRainSprite : this.cloudWhiteSprite;
     if (sprite) {
       const sp = cloudNode.addComponent(Sprite);
       sp.spriteFrame = sprite;
+      sp.sizeMode = Sprite.SizeMode.CUSTOM;
     } else {
       // 备用：用 Graphics 画云
       const g = cloudNode.addComponent(Graphics);
-      this.drawCloudGraphics(g, size * 0.4, isRainCloud);
+      this.drawCloudGraphics(g, size * 0.4, useRainCloudSprite);
     }
     
     // 使用确定性随机位置
