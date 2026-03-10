@@ -182,15 +182,16 @@ export class WeatherRenderer extends Component {
     this.sunNode.setParent(this.node);
     
     const sunTransform = this.sunNode.addComponent(UITransform);
-    sunTransform.setContentSize(80, 80);
+    sunTransform.setContentSize(60, 60);  // 调小一点
     
     if (this.sunSprite) {
       const sprite = this.sunNode.addComponent(Sprite);
       sprite.spriteFrame = this.sunSprite;
+      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 使用 UITransform 的尺寸
     } else {
       // 没有素材时用 Graphics 画太阳
       const g = this.sunNode.addComponent(Graphics);
-      this.drawSunGraphics(g, 40);
+      this.drawSunGraphics(g, 30);
     }
     
     // 月亮
@@ -199,9 +200,13 @@ export class WeatherRenderer extends Component {
     this.moonNode.setParent(this.node);
     
     const moonTransform = this.moonNode.addComponent(UITransform);
-    moonTransform.setContentSize(60, 60);
+    moonTransform.setContentSize(50, 50);  // 调小一点
     
     if (this.moonSprite) {
+      const sprite = this.moonNode.addComponent(Sprite);
+      sprite.spriteFrame = this.moonSprite;
+      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 使用 UITransform 的尺寸
+    } else {
       const sprite = this.moonNode.addComponent(Sprite);
       sprite.spriteFrame = this.moonSprite;
     } else {

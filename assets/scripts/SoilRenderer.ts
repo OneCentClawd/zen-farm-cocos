@@ -181,6 +181,49 @@ export class SoilRenderer extends Component {
    * 渲染土壤
    */
   private renderSoil() {
+    const moisture = this.currentMoisture;
+    
+    // 优先使用素材
+    if (this.soilNode) {
+      // 移除旧的 Sprite（如果有）
+      const oldSprite = this.soilNode.getComponent(Sprite);
+      if (oldSprite) {
+        oldSprite.destroy();
+      }
+      
+      // 根据湿度选择素材
+      let targetSprite: SpriteFrame | null = null;
+      if (moisture >= 90 && this.soilWaterloggedSprite) {
+        targetSprite = this.soilWaterloggedSprite;
+      } else if (moisture >= 40 && this.soilWetSprite) {
+        targetSprite = this.soilWetSprite;
+      } else if (this.soilDrySprite) {
+        targetSprite = this.soilDrySprite;
+      }
+      
+      if (targetSprite) {
+        // 用素材渲染
+        const sprite = this.soilNode.addComponent(Sprite);
+        sprite.spriteFrame = targetSprite;
+        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        
+        // 隐藏 Graphics
+        if (this.soilGraphics) {
+          this.soilGraphics.clear();
+        }
+        
+        // 积水效果
+        if (moisture >= 90 && this.waterPuddleNode) {
+          this.waterPuddleNode.active = true;
+          this.drawWaterPuddle();
+        } else if (this.waterPuddleNode) {
+          this.waterPuddleNode.active = false;
+        }
+        return;
+      }
+    }
+    
+    // 备用：用 Graphics 绘制
     if (!this.soilGraphics) return;
     
     const g = this.soilGraphics;
@@ -188,7 +231,6 @@ export class SoilRenderer extends Component {
     
     const halfW = this.soilWidth / 2;
     const halfH = this.soilHeight / 2;
-    const moisture = this.currentMoisture;
     
     // 根据湿度计算土壤颜色
     let baseColor: Color;
