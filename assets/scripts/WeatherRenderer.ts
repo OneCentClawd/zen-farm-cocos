@@ -196,8 +196,8 @@ export class WeatherRenderer extends Component {
     // 优先用素材
     if (this.skyDaySprite || this.skyNightSprite) {
       this.skySprite = this.skyNode.addComponent(Sprite);
-      this.skySprite.spriteFrame = this.skyDaySprite;  // 默认白天
       this.skySprite.sizeMode = Sprite.SizeMode.CUSTOM;
+      this.skySprite.spriteFrame = this.skyDaySprite;  // 默认白天
     }
     // 备用：在 updateSkyGradient 中用 Graphics 绘制
   }
@@ -216,8 +216,8 @@ export class WeatherRenderer extends Component {
     
     if (this.sunSprite) {
       const sprite = this.sunNode.addComponent(Sprite);
-      sprite.spriteFrame = this.sunSprite;
-      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 使用 UITransform 的尺寸
+      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 先设置 sizeMode
+      sprite.spriteFrame = this.sunSprite;       // 再设置 spriteFrame
     } else {
       // 没有素材时用 Graphics 画太阳
       const g = this.sunNode.addComponent(Graphics);
@@ -234,12 +234,12 @@ export class WeatherRenderer extends Component {
     
     if (this.moonSprite) {
       const sprite = this.moonNode.addComponent(Sprite);
-      sprite.spriteFrame = this.moonSprite;
-      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 使用 UITransform 的尺寸
+      sprite.sizeMode = Sprite.SizeMode.CUSTOM;  // 先设置 sizeMode
+      sprite.spriteFrame = this.moonSprite;      // 再设置 spriteFrame
     } else {
       // 没有素材时用 Graphics 画月亮
       const g = this.moonNode.addComponent(Graphics);
-      this.drawMoonGraphics(g, 30);
+      this.drawMoonGraphics(g, 15);  // 也调小
     }
     
     this.moonNode.active = false;  // 默认隐藏
@@ -561,8 +561,8 @@ export class WeatherRenderer extends Component {
     const sprite = useRainCloudSprite ? this.cloudRainSprite : this.cloudWhiteSprite;
     if (sprite) {
       const sp = cloudNode.addComponent(Sprite);
-      sp.spriteFrame = sprite;
       sp.sizeMode = Sprite.SizeMode.CUSTOM;
+      sp.spriteFrame = sprite;
     } else {
       // 备用：用 Graphics 画云
       const g = cloudNode.addComponent(Graphics);
