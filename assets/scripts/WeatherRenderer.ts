@@ -232,7 +232,7 @@ export class WeatherRenderer extends Component {
     this.moonNode.setParent(this.node);
     
     const moonTransform = this.moonNode.addComponent(UITransform);
-    moonTransform.setContentSize(100, 100);  // 月亮大一点
+    moonTransform.setContentSize(130, 130);  // 月亮再大一点
     
     if (this.moonSprite) {
       const sprite = this.moonNode.addComponent(Sprite);
