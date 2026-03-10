@@ -576,11 +576,6 @@ export class ZenFarmGame extends Component {
         }
       }
       
-      // 更新土壤渲染器
-      if (this.soilRenderer) {
-        this.soilRenderer.updateMoisture(plot.soilMoisture);
-      }
-      
       // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
@@ -629,11 +624,6 @@ export class ZenFarmGame extends Component {
         const bar = this.getMoistureBar(plot.soilMoisture);
         this.soilLabel.string = `💧 土壤: ${bar} ${plot.soilMoisture.toFixed(0)}%`;
       }
-      
-      // 更新土壤渲染器
-      if (this.soilRenderer) {
-        this.soilRenderer.updateMoisture(plot.soilMoisture);
-      }
     }
     
     // 设施状态
@@ -644,6 +634,11 @@ export class ZenFarmGame extends Component {
       this.facilityLabel.string = facilities.length > 0 
         ? `设施: ${facilities.join(' ')}` 
         : '🏠 设施';
+    }
+    
+    // 更新土壤渲染器（统一调用一次）
+    if (this.soilRenderer) {
+      this.soilRenderer.updateMoisture(plot.soilMoisture);
     }
   }
   

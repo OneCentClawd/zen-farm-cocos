@@ -10,7 +10,7 @@
 
 import { 
   _decorator, Component, Node, Graphics, Color, UITransform, 
-  Sprite, SpriteFrame, Vec3, tween, view, resources, ImageAsset, Texture2D
+  Sprite, SpriteFrame, Vec3, tween, view, resources, ImageAsset
 } from 'cc';
 import { WeatherData } from './Environment';
 
@@ -118,8 +118,6 @@ export class WeatherRenderer extends Component {
         if (err) {
           console.warn('加载 sun 失败:', err);
         } else if (imageAsset) {
-          const texture = new Texture2D();
-          texture.image = imageAsset;
           this.sunSprite = SpriteFrame.createWithImage(imageAsset);
         }
         checkDone();
