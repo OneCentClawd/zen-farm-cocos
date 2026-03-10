@@ -214,7 +214,7 @@ export class WeatherRenderer extends Component {
     this.sunNode.setParent(this.node);
     
     const sunTransform = this.sunNode.addComponent(UITransform);
-    sunTransform.setContentSize(60, 60);  // 太阳适中大小
+    sunTransform.setContentSize(130, 130);  // 太阳和月亮一样大
     
     if (this.sunSprite) {
       const sprite = this.sunNode.addComponent(Sprite);
