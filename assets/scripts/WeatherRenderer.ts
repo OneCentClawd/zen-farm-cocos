@@ -50,6 +50,11 @@ export class WeatherRenderer extends Component {
   @property(SpriteFrame)
   cloudRainSprite: SpriteFrame | null = null;
   
+  // 天空背景素材
+  private skyDaySprite: SpriteFrame | null = null;
+  private skyNightSprite: SpriteFrame | null = null;
+  private skySprite: Sprite | null = null;
+  
   // 内部状态
   private skyNode: Node | null = null;
   private sunNode: Node | null = null;
@@ -107,7 +112,7 @@ export class WeatherRenderer extends Component {
   private loadSprites(): Promise<void> {
     return new Promise((resolve) => {
       let loaded = 0;
-      const total = 4;
+      const total = 6;  // 4 + 2 天空背景
       const checkDone = () => {
         loaded++;
         if (loaded >= total) resolve();
@@ -152,11 +157,31 @@ export class WeatherRenderer extends Component {
         }
         checkDone();
       });
+      
+      // 加载白天天空
+      resources.load('textures/weather/sky_day', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 sky_day 失败:', err);
+        } else if (imageAsset) {
+          this.skyDaySprite = SpriteFrame.createWithImage(imageAsset);
+        }
+        checkDone();
+      });
+      
+      // 加载夜晚天空
+      resources.load('textures/weather/sky_night', ImageAsset, (err, imageAsset) => {
+        if (err) {
+          console.warn('加载 sky_night 失败:', err);
+        } else if (imageAsset) {
+          this.skyNightSprite = SpriteFrame.createWithImage(imageAsset);
+        }
+        checkDone();
+      });
     });
   }
   
   /**
-   * 创建天空背景渐变
+   * 创建天空背景
    */
   private createSky() {
     this.skyNode = new Node('Sky');
@@ -167,7 +192,13 @@ export class WeatherRenderer extends Component {
     const transform = this.skyNode.addComponent(UITransform);
     transform.setContentSize(this.screenWidth, this.skyHeight);
     
-    // 初始天空颜色在 updateSkyGradient 中绘制
+    // 优先用素材
+    if (this.skyDaySprite || this.skyNightSprite) {
+      this.skySprite = this.skyNode.addComponent(Sprite);
+      this.skySprite.spriteFrame = this.skyDaySprite;  // 默认白天
+      this.skySprite.sizeMode = Sprite.SizeMode.CUSTOM;
+    }
+    // 备用：在 updateSkyGradient 中用 Graphics 绘制
   }
   
   /**
@@ -310,18 +341,31 @@ export class WeatherRenderer extends Component {
   }
   
   /**
-   * 更新天空渐变颜色
+   * 更新天空背景
    */
   private updateSkyGradient() {
     if (!this.skyNode) return;
     
+    const hour = this.currentHour;
+    const isNight = hour < 6 || hour >= 19;
+    
+    // 优先用素材
+    if (this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
+      if (isNight && this.skyNightSprite) {
+        this.skySprite.spriteFrame = this.skyNightSprite;
+      } else if (!isNight && this.skyDaySprite) {
+        this.skySprite.spriteFrame = this.skyDaySprite;
+      }
+      return;  // 用素材时不需要 Graphics 绘制
+    }
+    
+    // 备用：用 Graphics 绘制渐变
     let g = this.skyNode.getComponent(Graphics);
     if (!g) {
       g = this.skyNode.addComponent(Graphics);
     }
     g.clear();
     
-    const hour = this.currentHour;
     const halfW = this.screenWidth / 2;
     const halfH = this.skyHeight / 2;
     
