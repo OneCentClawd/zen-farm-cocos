@@ -15,6 +15,7 @@ import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
 import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
 import { WeatherRenderer } from './WeatherRenderer';
+import { SoilRenderer } from './SoilRenderer';
 
 const { ccclass, property } = _decorator;
 
@@ -29,6 +30,7 @@ export class ZenFarmGame extends Component {
   private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
   private plantNode: Node | null = null;  // 植物渲染节点
   private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
+  private soilRenderer: SoilRenderer | null = null;  // 土壤渲染器
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;      // 种植/挖除按钮
@@ -189,21 +191,10 @@ export class ZenFarmGame extends Component {
     const groundHeight = screenSize.height / 3;
     const groundCenterY = -halfH + groundHeight / 2;  // 土地正中间
     
-    const soilNode = new Node('SoilArea');
-    soilNode.layer = this.node.layer;
-    soilNode.setParent(this.node);
-    soilNode.setPosition(0, groundCenterY, 0);  // 泥土在土地正中间
-    const soilTransform = soilNode.addComponent(UITransform);
-    soilTransform.setContentSize(280, 120);
-    const soilGraphics = soilNode.addComponent(Graphics);
-    // 画椭圆形泥土
-    soilGraphics.fillColor = new Color(160, 120, 60, 255);  // 棕色泥土
-    soilGraphics.ellipse(0, 0, 130, 45);
-    soilGraphics.fill();
-    // 泥土高光
-    soilGraphics.fillColor = new Color(185, 150, 90, 255);  // 高光浅棕色
-    soilGraphics.ellipse(0, 12, 90, 25);
-    soilGraphics.fill();
+    // ========== 土壤渲染器 ==========
+    const soilNode = new Node('SoilRenderer');
+    this.soilRenderer = soilNode.addComponent(SoilRenderer);
+    this.soilRenderer.init(this.node, 280, 120, groundCenterY);
     
     // 植物 emoji（备用，空地时显示）
     this.plantEmoji = this.createLabel('PlantEmoji', '🕳️', 120);
@@ -585,6 +576,11 @@ export class ZenFarmGame extends Component {
         }
       }
       
+      // 更新土壤渲染器
+      if (this.soilRenderer) {
+        this.soilRenderer.updateMoisture(plot.soilMoisture);
+      }
+      
       // 天气 - 硬核模式隐藏适宜范围
       // （天气本身还是显示的，只是不告诉你是否适宜）
       
@@ -632,6 +628,11 @@ export class ZenFarmGame extends Component {
       if (this.soilLabel) {
         const bar = this.getMoistureBar(plot.soilMoisture);
         this.soilLabel.string = `💧 土壤: ${bar} ${plot.soilMoisture.toFixed(0)}%`;
+      }
+      
+      // 更新土壤渲染器
+      if (this.soilRenderer) {
+        this.soilRenderer.updateMoisture(plot.soilMoisture);
       }
     }
     
@@ -1164,6 +1165,11 @@ export class ZenFarmGame extends Component {
     // 每帧更新天气渲染器（云移动、雨滴动画等）
     if (this.weatherRenderer) {
       this.weatherRenderer.update(dt);
+    }
+    
+    // 每帧更新土壤渲染器（水波纹动画）
+    if (this.soilRenderer) {
+      this.soilRenderer.update(dt);
     }
     
     // 每帧更新植物渲染（动画效果）
