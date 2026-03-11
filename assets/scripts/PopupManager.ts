@@ -1,5 +1,5 @@
 /**
- * 🎨 弹窗管理器 - 统一管理弹窗样式
+ * 🎨 弹窗管理器 - 简洁现代风格
  */
 
 import { Node, UITransform, view, Color, Graphics, Label, UIOpacity, tween } from 'cc';
@@ -11,30 +11,14 @@ export interface PopupConfig {
   title?: string;
   width?: number;      // 0-1 表示屏幕比例，>1 表示像素
   height?: number;
-  bgColor?: Color;     // 遮罩颜色
-  panelColor?: Color;  // 面板颜色
-  borderColor?: Color; // 边框颜色
-  borderRadius?: number;
-  closeOnMask?: boolean; // 点击遮罩关闭
+  closeOnMask?: boolean;
 }
 
 const DEFAULT_CONFIG: PopupConfig = {
-  width: 0.85,
-  height: 0.6,
-  bgColor: new Color(0, 0, 0, 150),
-  panelColor: new Color(45, 52, 65, 250),     // 深蓝灰色
-  borderColor: new Color(80, 140, 120, 200),  // 淡绿边框
-  borderRadius: 24,
+  width: 0.8,
+  height: 0.45,
   closeOnMask: true,
 };
-
-/**
- * 弹窗返回值
- */
-export interface PopupResult {
-  popup: Node;    // 主容器
-  panel: Node;    // 内容面板（按钮应该加到这里）
-}
 
 /**
  * 弹窗管理器
@@ -51,17 +35,15 @@ export class PopupManager {
    * 显示弹窗
    */
   show(name: string, config: PopupConfig = {}): Node {
-    // 关闭已有弹窗
     this.close();
     
     const cfg = { ...DEFAULT_CONFIG, ...config };
     const screenSize = view.getVisibleSize();
     
-    // 计算实际尺寸
     const panelW = cfg.width! <= 1 ? screenSize.width * cfg.width! : cfg.width!;
     const panelH = cfg.height! <= 1 ? screenSize.height * cfg.height! : cfg.height!;
     
-    // 创建主容器
+    // 主容器
     const popup = new Node(name);
     popup.layer = this.parentNode.layer;
     popup.setParent(this.parentNode);
@@ -70,160 +52,86 @@ export class PopupManager {
     const popupTransform = popup.addComponent(UITransform);
     popupTransform.setContentSize(screenSize.width, screenSize.height);
     
-    // 遮罩背景
+    // 遮罩
     const maskNode = new Node('Mask');
     maskNode.layer = this.parentNode.layer;
     maskNode.setParent(popup);
-    maskNode.setPosition(0, 0, 0);
     
     const maskTransform = maskNode.addComponent(UITransform);
     maskTransform.setContentSize(screenSize.width, screenSize.height);
     
     const maskGraphics = maskNode.addComponent(Graphics);
-    maskGraphics.fillColor = cfg.bgColor!;
+    maskGraphics.fillColor = new Color(0, 0, 0, 120);
     maskGraphics.rect(-screenSize.width / 2, -screenSize.height / 2, screenSize.width, screenSize.height);
     maskGraphics.fill();
     
-    // 遮罩淡入动画
+    // 遮罩淡入
     const maskOpacity = maskNode.addComponent(UIOpacity);
     maskOpacity.opacity = 0;
-    tween(maskOpacity).to(0.15, { opacity: 255 }).start();
+    tween(maskOpacity).to(0.12, { opacity: 255 }).start();
     
-    // 遮罩点击事件：关闭弹窗或拦截穿透
     maskNode.on(Node.EventType.TOUCH_END, (event: any) => {
       event.propagationStopped = true;
-      if (cfg.closeOnMask) {
-        this.close();
-      }
+      if (cfg.closeOnMask) this.close();
     });
     
-    // 内容面板
+    // 面板
     const panelNode = new Node('Panel');
     panelNode.layer = this.parentNode.layer;
     panelNode.setParent(popup);
-    panelNode.setPosition(0, 0, 0);
     
     const panelTransform = panelNode.addComponent(UITransform);
     panelTransform.setContentSize(panelW, panelH);
     
-    const panelGraphics = panelNode.addComponent(Graphics);
+    const g = panelNode.addComponent(Graphics);
+    this.drawPanel(g, panelW, panelH);
     
-    // 绘制面板（带阴影效果）
-    this.drawPanel(panelGraphics, panelW, panelH, cfg);
-    
-    // 面板弹出动画
-    panelNode.setScale(0.85, 0.85, 1);
+    // 弹出动画
+    panelNode.setScale(0.9, 0.9, 1);
     const panelOpacity = panelNode.addComponent(UIOpacity);
     panelOpacity.opacity = 0;
-    tween(panelNode).to(0.2, { scale: { x: 1, y: 1, z: 1 } }, { easing: 'backOut' }).start();
-    tween(panelOpacity).to(0.15, { opacity: 255 }).start();
+    tween(panelNode).to(0.15, { scale: { x: 1, y: 1, z: 1 } }, { easing: 'backOut' }).start();
+    tween(panelOpacity).to(0.12, { opacity: 255 }).start();
     
-    // 面板拦截点击（防止点面板也关闭）
     panelNode.on(Node.EventType.TOUCH_END, (event: any) => {
       event.propagationStopped = true;
     });
     
     // 标题
     if (cfg.title) {
-      const titleNode = new Node('Title');
-      titleNode.layer = this.parentNode.layer;
-      titleNode.setParent(panelNode);
-      titleNode.setPosition(0, panelH / 2 - 45, 0);
-      
-      const titleTransform = titleNode.addComponent(UITransform);
-      titleTransform.setContentSize(panelW, 60);
-      
-      const titleLabel = titleNode.addComponent(Label);
-      titleLabel.string = cfg.title;
-      titleLabel.fontSize = 36;
-      titleLabel.lineHeight = 45;
-      titleLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
-      titleLabel.color = new Color(255, 255, 255, 255);
-      
-      // 标题下划线
-      const lineNode = new Node('TitleLine');
-      lineNode.layer = this.parentNode.layer;
-      lineNode.setParent(panelNode);
-      lineNode.setPosition(0, panelH / 2 - 75, 0);
-      
-      const lineGraphics = lineNode.addComponent(Graphics);
-      lineGraphics.strokeColor = new Color(80, 140, 120, 150);
-      lineGraphics.lineWidth = 1;
-      lineGraphics.moveTo(-panelW * 0.4, 0);
-      lineGraphics.lineTo(panelW * 0.4, 0);
-      lineGraphics.stroke();
+      const titleLabel = PopupManager.createLabel(panelNode, 'Title', cfg.title, 32, new Color(255, 255, 255, 255));
+      titleLabel.node.setPosition(0, panelH / 2 - 40, 0);
     }
     
     this.activePopup = popup;
-    
     return panelNode;
   }
   
   /**
-   * 绘制面板（带装饰效果）
+   * 绘制面板 - 毛玻璃风格
    */
-  private drawPanel(g: Graphics, w: number, h: number, cfg: PopupConfig) {
-    const r = cfg.borderRadius!;
+  private drawPanel(g: Graphics, w: number, h: number) {
+    const r = 16;
     
-    // 外发光/阴影效果（多层半透明矩形）
-    for (let i = 3; i > 0; i--) {
-      const offset = i * 4;
-      const alpha = 30 - i * 8;
-      g.fillColor = new Color(0, 0, 0, Math.max(0, alpha));
-      g.roundRect(-w / 2 - offset, -h / 2 - offset, w + offset * 2, h + offset * 2, r + offset);
-      g.fill();
-    }
+    // 主背景 - 半透明深色
+    g.fillColor = new Color(35, 40, 50, 230);
+    g.roundRect(-w / 2, -h / 2, w, h, r);
+    g.fill();
     
-    // 主面板渐变背景（上深下浅）
-    const topColor = cfg.panelColor!;
-    const bottomColor = new Color(
-      Math.min(255, topColor.r + 15),
-      Math.min(255, topColor.g + 18),
-      Math.min(255, topColor.b + 25),
-      topColor.a
-    );
-    
-    // 分段绘制模拟渐变
-    const segments = 10;
-    const segH = h / segments;
-    for (let i = 0; i < segments; i++) {
-      const t = i / segments;
-      const color = new Color(
-        Math.round(topColor.r + (bottomColor.r - topColor.r) * t),
-        Math.round(topColor.g + (bottomColor.g - topColor.g) * t),
-        Math.round(topColor.b + (bottomColor.b - topColor.b) * t),
-        topColor.a
-      );
-      g.fillColor = color;
-      
-      if (i === 0) {
-        // 顶部圆角
-        g.roundRect(-w / 2, h / 2 - segH, w, segH, r);
-      } else if (i === segments - 1) {
-        // 底部圆角
-        g.roundRect(-w / 2, -h / 2, w, segH, r);
-      } else {
-        g.rect(-w / 2, h / 2 - (i + 1) * segH, w, segH);
-      }
-      g.fill();
-    }
-    
-    // 内边框高光
-    g.strokeColor = new Color(255, 255, 255, 30);
+    // 顶部高光线
+    g.strokeColor = new Color(255, 255, 255, 40);
     g.lineWidth = 1;
-    g.roundRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4, r - 2);
+    g.moveTo(-w / 2 + r, h / 2 - 1);
+    g.lineTo(w / 2 - r, h / 2 - 1);
     g.stroke();
     
-    // 外边框
-    g.strokeColor = cfg.borderColor!;
-    g.lineWidth = 2;
+    // 边框
+    g.strokeColor = new Color(255, 255, 255, 20);
+    g.lineWidth = 1;
     g.roundRect(-w / 2, -h / 2, w, h, r);
     g.stroke();
   }
   
-  /**
-   * 关闭当前弹窗
-   */
   close() {
     if (this.activePopup) {
       this.activePopup.destroy();
@@ -231,77 +139,107 @@ export class PopupManager {
     }
   }
   
-  /**
-   * 获取当前弹窗
-   */
   getActive(): Node | null {
     return this.activePopup;
   }
   
-  /**
-   * 是否有弹窗显示
-   */
   isShowing(): boolean {
     return this.activePopup !== null;
   }
   
   /**
-   * 创建按钮（带背景）
+   * 创建按钮 - 简洁风格
    */
   static createButton(
     parent: Node,
     name: string,
     text: string,
-    fontSize: number = 32,
+    fontSize: number = 28,
     onClick?: () => void,
-    bgColor?: Color
+    style: 'primary' | 'secondary' | 'danger' = 'primary'
   ): Label {
     const node = new Node(name);
     node.layer = parent.layer;
     node.setParent(parent);
     
     const transform = node.addComponent(UITransform);
-    transform.setContentSize(260, 55);
-    transform.anchorX = 0.5;
-    transform.anchorY = 0.5;
+    transform.setContentSize(220, 48);
     
-    // 按钮背景
-    const btnBg = bgColor || new Color(70, 130, 110, 220);
-    const graphics = node.addComponent(Graphics);
-    graphics.fillColor = btnBg;
-    graphics.roundRect(-130, -27, 260, 54, 12);
-    graphics.fill();
+    // 按钮颜色
+    const colors = {
+      primary: new Color(76, 175, 80, 255),    // 绿色
+      secondary: new Color(100, 100, 110, 255), // 灰色
+      danger: new Color(244, 67, 54, 255),      // 红色
+    };
     
-    // 按钮高光边框
-    graphics.strokeColor = new Color(255, 255, 255, 60);
-    graphics.lineWidth = 1;
-    graphics.roundRect(-130, -27, 260, 54, 12);
-    graphics.stroke();
+    const g = node.addComponent(Graphics);
+    g.fillColor = colors[style];
+    g.roundRect(-110, -24, 220, 48, 8);
+    g.fill();
     
     const label = node.addComponent(Label);
     label.string = text;
     label.fontSize = fontSize;
-    label.lineHeight = fontSize + 8;
+    label.lineHeight = fontSize + 6;
     label.horizontalAlign = Label.HorizontalAlign.CENTER;
     label.verticalAlign = Label.VerticalAlign.CENTER;
     label.color = new Color(255, 255, 255, 255);
     
     if (onClick) {
-      node.on(Node.EventType.TOUCH_END, (event: any) => {
-        event.propagationStopped = true;
+      node.on(Node.EventType.TOUCH_END, (e: any) => {
+        e.propagationStopped = true;
         onClick();
       });
-      
-      // 按下效果
-      node.on(Node.EventType.TOUCH_START, () => {
-        node.setScale(0.95, 0.95, 1);
+      node.on(Node.EventType.TOUCH_START, () => node.setScale(0.96, 0.96, 1));
+      node.on(Node.EventType.TOUCH_END, () => node.setScale(1, 1, 1));
+      node.on(Node.EventType.TOUCH_CANCEL, () => node.setScale(1, 1, 1));
+    }
+    
+    return label;
+  }
+  
+  /**
+   * 创建选项按钮 - 可选中状态
+   */
+  static createOption(
+    parent: Node,
+    name: string,
+    text: string,
+    fontSize: number = 26,
+    onClick?: () => void
+  ): Label {
+    const node = new Node(name);
+    node.layer = parent.layer;
+    node.setParent(parent);
+    
+    const transform = node.addComponent(UITransform);
+    transform.setContentSize(240, 52);
+    
+    const g = node.addComponent(Graphics);
+    g.fillColor = new Color(60, 65, 75, 200);
+    g.roundRect(-120, -26, 240, 52, 10);
+    g.fill();
+    g.strokeColor = new Color(255, 255, 255, 30);
+    g.lineWidth = 1;
+    g.roundRect(-120, -26, 240, 52, 10);
+    g.stroke();
+    
+    const label = node.addComponent(Label);
+    label.string = text;
+    label.fontSize = fontSize;
+    label.lineHeight = fontSize + 6;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
+    label.verticalAlign = Label.VerticalAlign.CENTER;
+    label.color = new Color(230, 230, 230, 255);
+    
+    if (onClick) {
+      node.on(Node.EventType.TOUCH_END, (e: any) => {
+        e.propagationStopped = true;
+        onClick();
       });
-      node.on(Node.EventType.TOUCH_END, () => {
-        node.setScale(1, 1, 1);
-      });
-      node.on(Node.EventType.TOUCH_CANCEL, () => {
-        node.setScale(1, 1, 1);
-      });
+      node.on(Node.EventType.TOUCH_START, () => node.setScale(0.97, 0.97, 1));
+      node.on(Node.EventType.TOUCH_END, () => node.setScale(1, 1, 1));
+      node.on(Node.EventType.TOUCH_CANCEL, () => node.setScale(1, 1, 1));
     }
     
     return label;
@@ -314,7 +252,7 @@ export class PopupManager {
     parent: Node,
     name: string,
     text: string,
-    fontSize: number = 28,
+    fontSize: number = 24,
     color?: Color
   ): Label {
     const node = new Node(name);
@@ -322,36 +260,16 @@ export class PopupManager {
     node.setParent(parent);
     
     const transform = node.addComponent(UITransform);
-    transform.setContentSize(500, fontSize + 16);
-    transform.anchorX = 0.5;
-    transform.anchorY = 0.5;
+    transform.setContentSize(400, fontSize + 12);
     
     const label = node.addComponent(Label);
     label.string = text;
     label.fontSize = fontSize;
-    label.lineHeight = fontSize + 8;
+    label.lineHeight = fontSize + 6;
     label.horizontalAlign = Label.HorizontalAlign.CENTER;
     label.verticalAlign = Label.VerticalAlign.CENTER;
-    label.color = color || new Color(230, 230, 235, 255);
+    label.color = color || new Color(200, 200, 205, 255);
     
     return label;
-  }
-  
-  /**
-   * 创建分隔线
-   */
-  static createDivider(parent: Node, name: string, width: number = 200): Node {
-    const node = new Node(name);
-    node.layer = parent.layer;
-    node.setParent(parent);
-    
-    const graphics = node.addComponent(Graphics);
-    graphics.strokeColor = new Color(100, 100, 120, 100);
-    graphics.lineWidth = 1;
-    graphics.moveTo(-width / 2, 0);
-    graphics.lineTo(width / 2, 0);
-    graphics.stroke();
-    
-    return node;
   }
 }
