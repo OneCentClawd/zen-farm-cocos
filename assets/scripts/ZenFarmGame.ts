@@ -544,65 +544,93 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 生成智能提示
+   * 生成智能提示（显示植物状态和环境问题）
    */
   private generateTip(plot: PlotData): string {
-    // 空地提示
+    // 空地
     if (!plot.plant) {
-      return '💡 点击「种植」开始种植吧~';
+      return '';  // 空地不显示提示
     }
     
     const plant = plot.plant;
     const config = PLANT_CONFIGS[plant.type];
     const moisture = plot.soilMoisture;
+    const weather = this.weather;
     
-    // 死亡提示
+    // 收集所有问题
+    const problems: string[] = [];
+    
+    // 死亡
     if (plant.healthState === HealthState.DEAD) {
-      return '💀 植物已经枯死了，点击「挖除」清理吧';
+      return '💀 植物已枯死';
     }
     
-    // 成熟提示（最高优先级）
+    // 成熟
     if (plant.growthProgress >= 1.0) {
-      return '🎉 已成熟！点击「收获」采摘吧~';
+      return '🎉 可以收获了！';
     }
     
-    // 缺水警告（紧急）
+    // 水分问题
     if (moisture < config.moistureMin) {
-      return '⚠️ 土壤太干了！快点击「浇水」救救它~';
+      const severity = config.moistureMin - moisture;
+      if (severity > 20) {
+        problems.push('🏜️ 严重干旱！');
+      } else {
+        problems.push('💧 土壤干燥');
+      }
+    } else if (moisture > config.moistureMax) {
+      const severity = moisture - config.moistureMax;
+      if (severity > 20) {
+        problems.push('🌊 水涝严重！');
+      } else {
+        problems.push('💦 土壤过湿');
+      }
     }
     
-    // 水太多警告
-    if (moisture > config.moistureMax) {
-      return '💦 水太多了！等土壤干一些再浇水';
+    // 温度问题
+    if (weather) {
+      const temp = weather.temperature;
+      if (temp < config.tempMin) {
+        const severity = config.tempMin - temp;
+        if (severity > 10) {
+          problems.push('🥶 严重低温！');
+        } else {
+          problems.push('❄️ 温度偏低');
+        }
+      } else if (temp > config.tempMax) {
+        const severity = temp - config.tempMax;
+        if (severity > 10) {
+          problems.push('🔥 严重高温！');
+        } else {
+          problems.push('☀️ 温度偏高');
+        }
+      }
     }
     
-    // 即将缺水提示
-    if (moisture < config.moistureMin + 15) {
-      return '💧 土壤有点干，可以浇浇水了';
+    // 光照问题（如果有天气数据）
+    if (weather) {
+      const sunlight = weather.sunlight;
+      if (sunlight < config.sunlightMin) {
+        problems.push('🌑 光照不足');
+      } else if (sunlight > config.sunlightMax) {
+        problems.push('☀️ 光照过强');
+      }
     }
     
-    // 健康状态提示
-    if (plant.healthState === HealthState.STRESSED) {
-      return '😰 植物有些不适，注意观察~';
-    }
-    
+    // 健康状态
     if (plant.healthState === HealthState.WILTING) {
-      return '🥀 植物正在枯萎，快检查水分！';
+      problems.push('🥀 正在枯萎');
+    } else if (plant.healthState === HealthState.STRESSED) {
+      problems.push('😰 生长受阻');
     }
     
-    // 正常生长提示
-    const progress = Math.round(plant.growthProgress * 100);
-    if (progress < 10) {
-      return '🌱 种子正在发芽，耐心等待~';
-    } else if (progress < 30) {
-      return '🌿 小苗在努力生长中~';
-    } else if (progress < 60) {
-      return '🪴 长势不错，继续保持~';
-    } else if (progress < 90) {
-      return '✨ 快要成熟了，再等等~';
-    } else {
-      return '🌸 即将成熟，准备收获吧！';
+    // 返回问题或正常状态
+    if (problems.length > 0) {
+      return problems.join(' · ');
     }
+    
+    // 一切正常
+    return '✨ 状态良好';
   }
   
   /**
