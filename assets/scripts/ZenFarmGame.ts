@@ -39,6 +39,9 @@ export class ZenFarmGame extends Component {
   private stageLabel: Label | null = null;       // 阶段信息
   private tipLabel: Label | null = null;         // 智能提示
   
+  // 状态栏展开/收起
+  private statusBarExpanded: boolean = true;
+  
   // 种植选择
   private pendingPlantType: PlantType | null = null;
   private pendingHardMode: boolean = false;
@@ -155,30 +158,30 @@ export class ZenFarmGame extends Component {
     topBarTransform.setContentSize(screenSize.width, 160);
     // 去掉背景，保持透明
     
-    // 地块信息（顶部居中，可点击切换）
-    this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 44);
-    this.plotLabel.node.setPosition(0, halfH - 55, 0);
-    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
+    // 地块信息（顶部居中，点击切换状态栏展开/收起）
+    this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 36);
+    this.plotLabel.node.setPosition(0, halfH - 45, 0);
+    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
-      plotTransform.setContentSize(500, 80);
+      plotTransform.setContentSize(500, 60);
     }
     
     // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 28);
-    this.weatherLabel.node.setPosition(0, halfH - 100, 0);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
+    this.weatherLabel.node.setPosition(0, halfH - 85, 0);
     
     // 土壤湿度（天气下方）
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 28);
-    this.soilLabel.node.setPosition(0, halfH - 135, 0);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 24);
+    this.soilLabel.node.setPosition(0, halfH - 115, 0);
     
     // 植物阶段信息（土壤下方）
-    this.stageLabel = this.createLabel('Stage', '🌱 空地', 28);
-    this.stageLabel.node.setPosition(0, halfH - 170, 0);
+    this.stageLabel = this.createLabel('Stage', '🌱 空地', 24);
+    this.stageLabel.node.setPosition(0, halfH - 145, 0);
     
     // 植物状态/健康（阶段下方）
-    this.statusLabel = this.createLabel('Status', '等待播种', 28);
-    this.statusLabel.node.setPosition(0, halfH - 205, 0);
+    this.statusLabel = this.createLabel('Status', '等待播种', 24);
+    this.statusLabel.node.setPosition(0, halfH - 175, 0);
     
     // ========== 中央植物区 ==========
     // 土地区域是下1/3，泥土放在土地正中间
@@ -241,8 +244,8 @@ export class ZenFarmGame extends Component {
     if (harvestTransform) harvestTransform.setContentSize(150, 50);
     
     // ========== 智能提示（状态栏下方） ==========
-    this.tipLabel = this.createLabel('Tip', '', 24);
-    this.tipLabel.node.setPosition(0, halfH - 240, 0);  // statusLabel(-205) 下方
+    this.tipLabel = this.createLabel('Tip', '', 26);
+    this.tipLabel.node.setPosition(0, halfH - 210, 0);  // statusLabel 下方
     this.tipLabel.color = new Color(255, 220, 150, 255);  // 暖黄色
     this.tipLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
     const tipTransform = this.tipLabel.node.getComponent(UITransform);
@@ -653,6 +656,33 @@ export class ZenFarmGame extends Component {
   private getMoistureBar(moisture: number): string {
     const filled = Math.round(moisture / 20);
     return '💧'.repeat(Math.min(5, filled)) + '○'.repeat(Math.max(0, 5 - filled));
+  }
+  
+  /**
+  /**
+   * 切换状态栏展开/收起
+   */
+  toggleStatusBar() {
+    this.statusBarExpanded = !this.statusBarExpanded;
+    
+    // 这些标签在收起时隐藏
+    if (this.weatherLabel) this.weatherLabel.node.active = this.statusBarExpanded;
+    if (this.soilLabel) this.soilLabel.node.active = this.statusBarExpanded;
+    if (this.stageLabel) this.stageLabel.node.active = this.statusBarExpanded;
+    if (this.statusLabel) this.statusLabel.node.active = this.statusBarExpanded;
+    
+    // 收起时，提示移到标题下方
+    if (this.tipLabel) {
+      const screenSize = view.getVisibleSize();
+      const halfH = screenSize.height / 2;
+      if (this.statusBarExpanded) {
+        this.tipLabel.node.setPosition(0, halfH - 210, 0);
+      } else {
+        this.tipLabel.node.setPosition(0, halfH - 85, 0);
+      }
+    }
+    
+    console.log(`📊 状态栏: ${this.statusBarExpanded ? '展开' : '收起'}`);
   }
   
   /**
