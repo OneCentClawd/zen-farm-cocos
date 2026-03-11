@@ -16,7 +16,7 @@ export interface PopupConfig {
 
 const DEFAULT_CONFIG: PopupConfig = {
   width: 0.6,
-  height: 0.45,
+  height: 0.35,
   closeOnMask: true,
 };
 
