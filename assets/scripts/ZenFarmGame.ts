@@ -153,10 +153,7 @@ export class ZenFarmGame extends Component {
     topBar.setPosition(0, halfH - 90, 0);
     const topBarTransform = topBar.addComponent(UITransform);
     topBarTransform.setContentSize(screenSize.width, 160);
-    const topBarGraphics = topBar.addComponent(Graphics);
-    topBarGraphics.fillColor = new Color(0, 0, 0, 80);
-    topBarGraphics.rect(-screenSize.width / 2, -80, screenSize.width, 160);
-    topBarGraphics.fill();
+    // 去掉背景，保持透明
     
     // 地块信息（顶部居中，可点击切换）
     this.plotLabel = this.createLabel('Plot', '◀ 地块 1/4 ▶', 44);
