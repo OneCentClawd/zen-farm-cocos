@@ -81,6 +81,23 @@ export function getLocation(): Promise<{ lat: number; lon: number }> {
   }
 }
 
+/**
+ * 获取顶部安全区高度（避开微信胶囊按钮）
+ */
+export function getTopSafeArea(): number {
+  if (isWechatGame()) {
+    try {
+      const menuButton = wx.getMenuButtonBoundingClientRect();
+      // 胶囊底部 + 一点间距
+      return menuButton.bottom + 10;
+    } catch (e) {
+      // 默认安全高度
+      return 90;
+    }
+  }
+  return 0;  // 浏览器不需要
+}
+
 // 微信小游戏全局类型声明
 declare const wx: {
   request: (options: any) => void;
@@ -88,4 +105,5 @@ declare const wx: {
   setStorageSync: (key: string, data: any) => void;
   getStorageSync: (key: string) => any;
   removeStorageSync: (key: string) => void;
+  getMenuButtonBoundingClientRect: () => { top: number; bottom: number; left: number; right: number; width: number; height: number };
 };

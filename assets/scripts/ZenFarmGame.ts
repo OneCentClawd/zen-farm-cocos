@@ -13,6 +13,7 @@ import { GameSaveData, PlotData, waterPlot, plantSeed, harvestPlot, updatePlot, 
 import { saveGame, loadOrCreateGame } from './Storage';
 import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
+import { getTopSafeArea } from './Platform';
 import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
 import { WeatherRenderer } from './WeatherRenderer';
 import { SoilRenderer } from './SoilRenderer';
@@ -43,6 +44,9 @@ export class ZenFarmGame extends Component {
   
   // 状态栏展开/收起
   private statusBarExpanded: boolean = true;
+  
+  // 顶部安全区高度（微信胶囊按钮）
+  private topSafeArea: number = 0;
   
   // 种植选择
   private pendingPlantType: PlantType | null = null;
@@ -150,19 +154,23 @@ export class ZenFarmGame extends Component {
     this.weatherRenderer = weatherNode.addComponent(WeatherRenderer);
     this.weatherRenderer.init(this.node);  // 不需要传 skyHeight，铺满整个屏幕
     
+    // ========== 顶部安全区 ==========
+    const topSafe = getTopSafeArea();  // 微信胶囊按钮高度
+    this.topSafeArea = topSafe;
+    
     // ========== 顶部区域 ==========
     // 顶部半透明背景条
     const topBar = new Node('TopBar');
     topBar.layer = this.node.layer;
     topBar.setParent(this.node);
-    topBar.setPosition(0, halfH - 90, 0);
+    topBar.setPosition(0, halfH - 90 - topSafe, 0);
     const topBarTransform = topBar.addComponent(UITransform);
     topBarTransform.setContentSize(screenSize.width, 160);
     // 去掉背景，保持透明
     
     // 标题（顶部居中）
     this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 36);
-    this.plotLabel.node.setPosition(0, halfH - 45, 0);
+    this.plotLabel.node.setPosition(0, halfH - 45 - topSafe, 0);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
       plotTransform.setContentSize(300, 60);
@@ -170,26 +178,26 @@ export class ZenFarmGame extends Component {
     
     // 展开/收起按钮（标题右边的三角形）
     this.expandLabel = this.createLabel('Expand', '▲', 24);
-    this.expandLabel.node.setPosition(160, halfH - 45, 0);
+    this.expandLabel.node.setPosition(160, halfH - 45 - topSafe, 0);
     this.expandLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
     const expandTransform = this.expandLabel.node.getComponent(UITransform);
     if (expandTransform) expandTransform.setContentSize(50, 50);
     
     // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
     this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
-    this.weatherLabel.node.setPosition(0, halfH - 85, 0);
+    this.weatherLabel.node.setPosition(0, halfH - 85 - topSafe, 0);
     
     // 土壤湿度（天气下方）
     this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 24);
-    this.soilLabel.node.setPosition(0, halfH - 115, 0);
+    this.soilLabel.node.setPosition(0, halfH - 115 - topSafe, 0);
     
     // 植物阶段信息（土壤下方）
     this.stageLabel = this.createLabel('Stage', '🌱 空地', 24);
-    this.stageLabel.node.setPosition(0, halfH - 145, 0);
+    this.stageLabel.node.setPosition(0, halfH - 145 - topSafe, 0);
     
     // 植物状态/健康（阶段下方）
     this.statusLabel = this.createLabel('Status', '等待播种', 24);
-    this.statusLabel.node.setPosition(0, halfH - 175, 0);
+    this.statusLabel.node.setPosition(0, halfH - 175 - topSafe, 0);
     
     // ========== 中央植物区 ==========
     // 土地区域是下1/3，泥土放在土地正中间
@@ -253,7 +261,7 @@ export class ZenFarmGame extends Component {
     
     // 地块切换按钮（左上角，多地块时显示）
     this.plotSwitchLabel = this.createLabel('PlotSwitch', '◀ ▶', 28);
-    this.plotSwitchLabel.node.setPosition(-halfW + 60, halfH - 45, 0);
+    this.plotSwitchLabel.node.setPosition(-halfW + 60, halfH - 45 - topSafe, 0);
     this.plotSwitchLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
     const plotSwitchTransform = this.plotSwitchLabel.node.getComponent(UITransform);
     if (plotSwitchTransform) plotSwitchTransform.setContentSize(80, 50);
@@ -261,7 +269,7 @@ export class ZenFarmGame extends Component {
     
     // ========== 智能提示（状态栏下方） ==========
     this.tipLabel = this.createLabel('Tip', '', 26);
-    this.tipLabel.node.setPosition(0, halfH - 210, 0);  // statusLabel 下方
+    this.tipLabel.node.setPosition(0, halfH - 210 - topSafe, 0);  // statusLabel 下方
     this.tipLabel.color = new Color(255, 220, 150, 255);  // 暖黄色
     this.tipLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
     const tipTransform = this.tipLabel.node.getComponent(UITransform);
@@ -701,9 +709,9 @@ export class ZenFarmGame extends Component {
       const screenSize = view.getVisibleSize();
       const halfH = screenSize.height / 2;
       if (this.statusBarExpanded) {
-        this.tipLabel.node.setPosition(0, halfH - 210, 0);
+        this.tipLabel.node.setPosition(0, halfH - 210 - this.topSafeArea, 0);
       } else {
-        this.tipLabel.node.setPosition(0, halfH - 85, 0);
+        this.tipLabel.node.setPosition(0, halfH - 85 - this.topSafeArea, 0);
       }
     }
     
