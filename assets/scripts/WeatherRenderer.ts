@@ -180,28 +180,41 @@ export class WeatherRenderer extends Component {
     });
   }
   
+  // 天空 Graphics 节点（用于渐变）
+  private skyGradientNode: Node | null = null;
+  
   /**
    * 创建天空背景
    */
   private createSky() {
+    // 天空占上 2/3，位置偏上
+    const skyHeight = this.screenHeight * 2 / 3;
+    const skyY = this.screenHeight / 2 - skyHeight / 2;
+    
+    // 创建 Graphics 节点（渐变天空，在下面）
+    this.skyGradientNode = new Node('SkyGradient');
+    this.skyGradientNode.layer = this.node.layer;
+    this.skyGradientNode.setParent(this.node);
+    this.skyGradientNode.setPosition(0, skyY, 0);
+    
+    const gradientTransform = this.skyGradientNode.addComponent(UITransform);
+    gradientTransform.setContentSize(this.screenWidth, skyHeight);
+    
+    // 创建 Sprite 节点（素材天空，在上面）
     this.skyNode = new Node('Sky');
     this.skyNode.layer = this.node.layer;
     this.skyNode.setParent(this.node);
-    
-    // 天空占上 2/3，位置偏上
-    const skyHeight = this.screenHeight * 2 / 3;
-    this.skyNode.setPosition(0, this.screenHeight / 2 - skyHeight / 2, 0);
+    this.skyNode.setPosition(0, skyY, 0);
     
     const transform = this.skyNode.addComponent(UITransform);
     transform.setContentSize(this.screenWidth, skyHeight);
     
-    // 优先用素材
+    // 有素材时添加 Sprite 组件
     if (this.skyDaySprite || this.skyNightSprite) {
       this.skySprite = this.skyNode.addComponent(Sprite);
       this.skySprite.sizeMode = Sprite.SizeMode.CUSTOM;
       this.skySprite.spriteFrame = this.skyDaySprite;  // 默认白天
     }
-    // 备用：在 updateSkyGradient 中用 Graphics 绘制
   }
   
   /**
@@ -347,7 +360,7 @@ export class WeatherRenderer extends Component {
    * 更新天空背景
    */
   private updateSkyGradient() {
-    if (!this.skyNode) return;
+    if (!this.skyGradientNode) return;
     
     const hour = this.currentHour;
     
@@ -355,32 +368,34 @@ export class WeatherRenderer extends Component {
     const isTransition = (hour >= 5 && hour < 8) ||   // 黎明/日出
                          (hour >= 16 && hour < 20);    // 傍晚/日落/黄昏
     
-    // 过渡时段用 Graphics 绘制渐变，其他时段可以用素材
+    // 过渡时段用 Graphics 绘制渐变，其他时段用素材
     if (!isTransition && this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
       const isNight = hour < 5 || hour >= 20;
       if (isNight && this.skyNightSprite) {
         this.skySprite.spriteFrame = this.skyNightSprite;
-        // 隐藏 Graphics
-        const g = this.skyNode.getComponent(Graphics);
+        this.skyNode!.active = true;  // 显示素材节点
+        // 清空渐变
+        const g = this.skyGradientNode.getComponent(Graphics);
         if (g) g.clear();
         return;
       } else if (!isNight && this.skyDaySprite) {
         this.skySprite.spriteFrame = this.skyDaySprite;
-        const g = this.skyNode.getComponent(Graphics);
+        this.skyNode!.active = true;  // 显示素材节点
+        const g = this.skyGradientNode.getComponent(Graphics);
         if (g) g.clear();
         return;
       }
     }
     
-    // 隐藏素材，用 Graphics 绘制渐变
-    if (this.skySprite) {
-      this.skySprite.spriteFrame = null;
+    // 隐藏素材节点，用 Graphics 绘制渐变
+    if (this.skyNode) {
+      this.skyNode.active = false;
     }
     
-    // 用 Graphics 绘制渐变
-    let g = this.skyNode.getComponent(Graphics);
+    // 用 Graphics 绘制渐变（在 skyGradientNode 上）
+    let g = this.skyGradientNode.getComponent(Graphics);
     if (!g) {
-      g = this.skyNode.addComponent(Graphics);
+      g = this.skyGradientNode.addComponent(Graphics);
     }
     g.clear();
     
