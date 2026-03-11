@@ -99,8 +99,8 @@ export class PopupManager {
     
     // 标题
     if (cfg.title) {
-      const titleLabel = PopupManager.createLabel(panelNode, 'Title', cfg.title, 32, new Color(255, 255, 255, 255));
-      titleLabel.node.setPosition(0, panelH / 2 - 40, 0);
+      const titleLabel = PopupManager.createLabel(panelNode, 'Title', cfg.title, 38, new Color(255, 255, 255, 255));
+      titleLabel.node.setPosition(0, panelH / 2 - 45, 0);
     }
     
     this.activePopup = popup;
@@ -154,7 +154,7 @@ export class PopupManager {
     parent: Node,
     name: string,
     text: string,
-    fontSize: number = 28,
+    fontSize: number = 32,
     onClick?: () => void,
     style: 'primary' | 'secondary' | 'danger' = 'primary'
   ): Label {
@@ -215,7 +215,7 @@ export class PopupManager {
     parent: Node,
     name: string,
     text: string,
-    fontSize: number = 26,
+    fontSize: number = 30,
     onClick?: () => void
   ): Label {
     const node = new Node(name);
@@ -274,7 +274,7 @@ export class PopupManager {
     parent: Node,
     name: string,
     text: string,
-    fontSize: number = 24,
+    fontSize: number = 28,
     color?: Color
   ): Label {
     const node = new Node(name);
