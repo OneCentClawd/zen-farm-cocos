@@ -364,30 +364,20 @@ export class WeatherRenderer extends Component {
     
     const hour = this.currentHour;
     
-    // 判断是否在过渡时段（需要渐变效果）
-    const isTransition = (hour >= 5 && hour < 8) ||   // 黎明/日出
-                         (hour >= 16 && hour < 20);    // 傍晚/日落/黄昏
+    // 只有夜晚(20-5点)用素材，其他时段都用渐变
+    const isNight = hour < 5 || hour >= 20;
     
-    // 过渡时段用 Graphics 绘制渐变，其他时段用素材
-    if (!isTransition && this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
-      const isNight = hour < 5 || hour >= 20;
-      if (isNight && this.skyNightSprite) {
-        this.skySprite.spriteFrame = this.skyNightSprite;
-        this.skyNode!.active = true;  // 显示素材节点
-        // 清空渐变
-        const g = this.skyGradientNode.getComponent(Graphics);
-        if (g) g.clear();
-        return;
-      } else if (!isNight && this.skyDaySprite) {
-        this.skySprite.spriteFrame = this.skyDaySprite;
-        this.skyNode!.active = true;  // 显示素材节点
-        const g = this.skyGradientNode.getComponent(Graphics);
-        if (g) g.clear();
-        return;
-      }
+    if (isNight && this.skySprite && this.skyNightSprite) {
+      // 夜晚用素材
+      this.skySprite.spriteFrame = this.skyNightSprite;
+      this.skyNode!.active = true;
+      // 清空渐变
+      const g = this.skyGradientNode.getComponent(Graphics);
+      if (g) g.clear();
+      return;
     }
     
-    // 隐藏素材节点，用 Graphics 绘制渐变
+    // 白天/傍晚等时段：隐藏素材节点，用 Graphics 绘制渐变
     if (this.skyNode) {
       this.skyNode.active = false;
     }
