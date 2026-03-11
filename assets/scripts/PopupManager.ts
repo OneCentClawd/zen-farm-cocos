@@ -172,12 +172,24 @@ export class PopupManager {
       danger: new Color(244, 67, 54, 255),      // 红色
     };
     
-    const g = node.addComponent(Graphics);
+    // 背景节点（Graphics）
+    const bgNode = new Node('Bg');
+    bgNode.layer = parent.layer;
+    bgNode.setParent(node);
+    const bgTransform = bgNode.addComponent(UITransform);
+    bgTransform.setContentSize(220, 48);
+    const g = bgNode.addComponent(Graphics);
     g.fillColor = colors[style];
     g.roundRect(-110, -24, 220, 48, 8);
     g.fill();
     
-    const label = node.addComponent(Label);
+    // 文字节点（Label）
+    const labelNode = new Node('Label');
+    labelNode.layer = parent.layer;
+    labelNode.setParent(node);
+    const labelTransform = labelNode.addComponent(UITransform);
+    labelTransform.setContentSize(220, 48);
+    const label = labelNode.addComponent(Label);
     label.string = text;
     label.fontSize = fontSize;
     label.lineHeight = fontSize + 6;
@@ -215,7 +227,13 @@ export class PopupManager {
     const transform = node.addComponent(UITransform);
     transform.setContentSize(240, 52);
     
-    const g = node.addComponent(Graphics);
+    // 背景节点
+    const bgNode = new Node('Bg');
+    bgNode.layer = parent.layer;
+    bgNode.setParent(node);
+    const bgTransform = bgNode.addComponent(UITransform);
+    bgTransform.setContentSize(240, 52);
+    const g = bgNode.addComponent(Graphics);
     g.fillColor = new Color(60, 65, 75, 200);
     g.roundRect(-120, -26, 240, 52, 10);
     g.fill();
@@ -224,7 +242,13 @@ export class PopupManager {
     g.roundRect(-120, -26, 240, 52, 10);
     g.stroke();
     
-    const label = node.addComponent(Label);
+    // 文字节点
+    const labelNode = new Node('Label');
+    labelNode.layer = parent.layer;
+    labelNode.setParent(node);
+    const labelTransform = labelNode.addComponent(UITransform);
+    labelTransform.setContentSize(240, 52);
+    const label = labelNode.addComponent(Label);
     label.string = text;
     label.fontSize = fontSize;
     label.lineHeight = fontSize + 6;
