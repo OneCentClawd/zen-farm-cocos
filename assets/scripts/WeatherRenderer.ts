@@ -112,7 +112,7 @@ export class WeatherRenderer extends Component {
   private loadSprites(): Promise<void> {
     return new Promise((resolve) => {
       let loaded = 0;
-      const total = 6;  // 4 + 2 天空背景
+      const total = 5;  // sun + moon + 2 clouds + sky_night（sky_day 用渐变）
       const checkDone = () => {
         loaded++;
         if (loaded >= total) resolve();

@@ -97,13 +97,3 @@ export function getTopSafeArea(): number {
   }
   return 0;  // 浏览器不需要
 }
-
-// 微信小游戏全局类型声明
-declare const wx: {
-  request: (options: any) => void;
-  getLocation: (options: any) => void;
-  setStorageSync: (key: string, data: any) => void;
-  getStorageSync: (key: string) => any;
-  removeStorageSync: (key: string) => void;
-  getMenuButtonBoundingClientRect: () => { top: number; bottom: number; left: number; right: number; width: number; height: number };
-};
