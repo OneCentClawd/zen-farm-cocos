@@ -39,6 +39,7 @@ export class ZenFarmGame extends Component {
   private stageLabel: Label | null = null;       // 阶段信息
   private tipLabel: Label | null = null;         // 智能提示
   private plotSwitchLabel: Label | null = null;  // 地块切换按钮
+  private expandLabel: Label | null = null;      // 展开/收起按钮
   
   // 状态栏展开/收起
   private statusBarExpanded: boolean = true;
@@ -159,15 +160,20 @@ export class ZenFarmGame extends Component {
     topBarTransform.setContentSize(screenSize.width, 160);
     // 去掉背景，保持透明
     
-    // 地块信息（顶部居中）
-    // 单击：切换地块  双击：展开/收起状态栏
+    // 标题（顶部居中）
     this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 36);
     this.plotLabel.node.setPosition(0, halfH - 45, 0);
-    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.onPlotLabelTap, this);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
-      plotTransform.setContentSize(500, 60);
+      plotTransform.setContentSize(300, 60);
     }
+    
+    // 展开/收起按钮（标题右边的三角形）
+    this.expandLabel = this.createLabel('Expand', '▼', 24);
+    this.expandLabel.node.setPosition(130, halfH - 45, 0);
+    this.expandLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
+    const expandTransform = this.expandLabel.node.getComponent(UITransform);
+    if (expandTransform) expandTransform.setContentSize(50, 50);
     
     // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
     this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
@@ -674,17 +680,15 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 标题点击：展开/收起状态栏
-   */
-  private onPlotLabelTap() {
-    this.toggleStatusBar();
-  }
-  
-  /**
    * 切换状态栏展开/收起
    */
   private toggleStatusBar() {
     this.statusBarExpanded = !this.statusBarExpanded;
+    
+    // 更新三角形方向
+    if (this.expandLabel) {
+      this.expandLabel.string = this.statusBarExpanded ? '▼' : '▶';
+    }
     
     // 这些标签在收起时隐藏
     if (this.weatherLabel) this.weatherLabel.node.active = this.statusBarExpanded;
