@@ -243,14 +243,13 @@ export class ZenFarmGame extends Component {
     const harvestTransform = this.harvestLabel.node.getComponent(UITransform);
     if (harvestTransform) harvestTransform.setContentSize(150, 50);
     
-    // ========== 智能提示（土壤上方） ==========
-    this.tipLabel = this.createLabel('Tip', '', 26);
-    // 土壤占底部 1/3，提示放在土壤上方一点
-    this.tipLabel.node.setPosition(0, -this.screenHeight / 6 + 30, 0);
-    this.tipLabel.color = new Color(255, 255, 220, 255);  // 淡黄色
+    // ========== 智能提示（状态栏下方） ==========
+    this.tipLabel = this.createLabel('Tip', '', 24);
+    this.tipLabel.node.setPosition(0, this.screenHeight / 2 - 240, 0);  // statusLabel 下方
+    this.tipLabel.color = new Color(255, 220, 150, 255);  // 暖黄色
     this.tipLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
     const tipTransform = this.tipLabel.node.getComponent(UITransform);
-    if (tipTransform) tipTransform.setContentSize(this.screenWidth - 40, 50);
+    if (tipTransform) tipTransform.setContentSize(this.screenWidth - 40, 40);
     
     // ========== 滑动切换地块 ==========
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
