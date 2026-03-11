@@ -536,7 +536,9 @@ export class ZenFarmGame extends Component {
     
     // ========== 智能提示 ==========
     if (this.tipLabel) {
-      this.tipLabel.string = this.generateTip(plot);
+      const tip = this.generateTip(plot);
+      this.tipLabel.string = tip;
+      console.log('💡 状态提示:', tip);
     }
   }
   
@@ -546,7 +548,7 @@ export class ZenFarmGame extends Component {
   private generateTip(plot: PlotData): string {
     // 空地
     if (!plot.plant) {
-      return '';  // 空地不显示提示
+      return '💡 点击「种植」开始吧~';  // 空地提示
     }
     
     const plant = plot.plant;
