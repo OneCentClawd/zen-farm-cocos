@@ -154,7 +154,7 @@ export function updateSoilMoisture(
   }
   
   // 3. 蒸发减少湿度
-  const baseEvaporation = 0.5;  // 基础蒸发 %/小时
+  const baseEvaporation = 2.0;  // 基础蒸发 %/小时（调快4倍）
   
   // 温度因子：温度越高蒸发越快
   const tempFactor = Math.max(0.5, 1 + (weather.temperature - 20) / 30);
