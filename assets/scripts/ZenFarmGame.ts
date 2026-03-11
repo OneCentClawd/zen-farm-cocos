@@ -223,9 +223,9 @@ export class ZenFarmGame extends Component {
     this.plantRenderer = this.plantNode.addComponent(ProceduralPlantRenderer);
     this.plantNode.active = false;  // 初始隐藏
     
-    // ========== 操作区（信息区下方，靠右纵向排列）==========
-    const btnX = halfW - 100;
-    let btnY = halfH - 250;
+    // ========== 操作区（靠左纵向排列）==========
+    const btnX = -halfW + 80;
+    let btnY = halfH - 250 - topSafe;
     const btnGap = 55;
     
     // 种植/挖除按钮
