@@ -169,7 +169,7 @@ export class ZenFarmGame extends Component {
     }
     
     // 展开/收起按钮（标题右边的三角形）
-    this.expandLabel = this.createLabel('Expand', '▼', 24);
+    this.expandLabel = this.createLabel('Expand', '▲', 24);
     this.expandLabel.node.setPosition(130, halfH - 45, 0);
     this.expandLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
     const expandTransform = this.expandLabel.node.getComponent(UITransform);
@@ -685,9 +685,9 @@ export class ZenFarmGame extends Component {
   private toggleStatusBar() {
     this.statusBarExpanded = !this.statusBarExpanded;
     
-    // 更新三角形方向
+    // 更新三角形方向：展开时向上，收起时向下
     if (this.expandLabel) {
-      this.expandLabel.string = this.statusBarExpanded ? '▼' : '▶';
+      this.expandLabel.string = this.statusBarExpanded ? '▲' : '▼';
     }
     
     // 这些标签在收起时隐藏
