@@ -44,12 +44,12 @@ export function httpGet(url: string): Promise<any> {
 }
 
 /**
- * 获取用户位置（微信需要授权）
+ * 获取用户位置（微信用模糊定位，不需要特殊资质）
  */
 export function getLocation(): Promise<{ lat: number; lon: number }> {
   if (isWechatGame()) {
-    return new Promise((resolve, reject) => {
-      wx.getLocation({
+    return new Promise((resolve) => {
+      wx.getFuzzyLocation({
         type: 'wgs84',
         success: (res: any) => {
           resolve({ lat: res.latitude, lon: res.longitude });

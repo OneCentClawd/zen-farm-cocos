@@ -7,11 +7,11 @@
     "downloadFile": 10000
   },
   "permission": {
-    "scope.userLocation": {
-      "desc": "获取您的位置以提供真实天气数据"
+    "scope.userFuzzyLocation": {
+      "desc": "获取您的大致位置以提供当地天气数据"
     }
   },
-  "requiredPrivateInfos": ["getLocation"],
+  "requiredPrivateInfos": ["getFuzzyLocation"],
   "subpackages": [
     {
       "name": "resources",

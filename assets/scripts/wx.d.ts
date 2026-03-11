@@ -20,6 +20,13 @@ declare const wx: {
     fail?: (err: any) => void;
   }) => void;
   
+  // 模糊定位（不需要特殊资质）
+  getFuzzyLocation: (options: {
+    type?: 'wgs84' | 'gcj02';
+    success?: (res: { latitude: number; longitude: number }) => void;
+    fail?: (err: any) => void;
+  }) => void;
+  
   // 存储
   setStorageSync: (key: string, data: any) => void;
   getStorageSync: (key: string) => any;
