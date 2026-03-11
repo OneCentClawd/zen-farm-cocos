@@ -148,7 +148,7 @@ export class PopupManager {
   }
   
   /**
-   * 创建按钮 - 简洁风格
+   * 创建按钮 - 纯文字风格
    */
   static createButton(
     parent: Node,
@@ -165,37 +165,20 @@ export class PopupManager {
     const transform = node.addComponent(UITransform);
     transform.setContentSize(220, 48);
     
-    // 按钮颜色
+    // 文字颜色
     const colors = {
-      primary: new Color(76, 175, 80, 255),    // 绿色
-      secondary: new Color(100, 100, 110, 255), // 灰色
-      danger: new Color(244, 67, 54, 255),      // 红色
+      primary: new Color(100, 200, 120, 255),   // 绿色
+      secondary: new Color(180, 180, 190, 255), // 灰色
+      danger: new Color(255, 100, 100, 255),    // 红色
     };
     
-    // 背景节点（Graphics）
-    const bgNode = new Node('Bg');
-    bgNode.layer = parent.layer;
-    bgNode.setParent(node);
-    const bgTransform = bgNode.addComponent(UITransform);
-    bgTransform.setContentSize(220, 48);
-    const g = bgNode.addComponent(Graphics);
-    g.fillColor = colors[style];
-    g.roundRect(-110, -24, 220, 48, 8);
-    g.fill();
-    
-    // 文字节点（Label）
-    const labelNode = new Node('Label');
-    labelNode.layer = parent.layer;
-    labelNode.setParent(node);
-    const labelTransform = labelNode.addComponent(UITransform);
-    labelTransform.setContentSize(220, 48);
-    const label = labelNode.addComponent(Label);
+    const label = node.addComponent(Label);
     label.string = text;
     label.fontSize = fontSize;
     label.lineHeight = fontSize + 6;
     label.horizontalAlign = Label.HorizontalAlign.CENTER;
     label.verticalAlign = Label.VerticalAlign.CENTER;
-    label.color = new Color(255, 255, 255, 255);
+    label.color = colors[style];
     
     if (onClick) {
       node.on(Node.EventType.TOUCH_END, (e: any) => {
