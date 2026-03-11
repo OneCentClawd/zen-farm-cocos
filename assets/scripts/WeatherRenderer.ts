@@ -674,9 +674,17 @@ export class WeatherRenderer extends Component {
   }
   
   /**
-   * 每帧更新（移动云和雨滴）
+   * 每帧更新（移动云和雨滴、更新天色）
    */
   update(dt: number) {
+    // 更新当前时间
+    const now = new Date();
+    this.currentHour = now.getHours() + now.getMinutes() / 60;
+    
+    // 更新天空颜色（每帧，实现平滑过渡）
+    this.updateSkyGradient();
+    this.updateCelestialPositions();
+    
     this.updateCloudsMovement(dt);
     this.updateRainMovement(dt);
   }

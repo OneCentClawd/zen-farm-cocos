@@ -1039,6 +1039,8 @@ export class ZenFarmGame extends Component {
   
   // 植物更新计时器
   private updateTimer: number = 0;
+  // 天色更新计时器
+  private skyTimer: number = 0;
   
   /**
    * 每帧更新
@@ -1047,6 +1049,15 @@ export class ZenFarmGame extends Component {
     // 每帧更新天气渲染器（云移动、雨滴动画等）
     if (this.weatherRenderer) {
       this.weatherRenderer.update(dt);
+    }
+    
+    // 每分钟更新天色（随实际时间变化）
+    this.skyTimer += dt;
+    if (this.skyTimer >= 60) {
+      this.skyTimer = 0;
+      if (this.weatherRenderer && this.weather) {
+        this.weatherRenderer.updateWeather(this.weather);  // 重新计算天色
+      }
     }
     
     // 每帧更新土壤渲染器（水波纹动画）
