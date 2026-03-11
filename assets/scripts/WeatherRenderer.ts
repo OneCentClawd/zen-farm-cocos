@@ -350,7 +350,7 @@ export class WeatherRenderer extends Component {
     if (!this.skyNode) return;
     
     const hour = this.currentHour;
-    const isNight = hour < 6 || hour >= 19;
+    const isNight = hour < 5 || hour >= 20;  // 20点后为夜晚
     
     // 优先用素材
     if (this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
@@ -373,25 +373,41 @@ export class WeatherRenderer extends Component {
     const halfH = this.skyHeight / 2;
     
     // 根据时间计算天空颜色
+    // 时段：黎明(5-6) → 日出(6-8) → 上午(8-12) → 下午(12-16) → 傍晚(16-18) → 日落(18-19) → 黄昏(19-20) → 夜晚(20-5)
     let topColor: Color;
     let bottomColor: Color;
     
-    if (hour >= 6 && hour < 8) {
+    if (hour >= 5 && hour < 6) {
+      // 黎明：天边微亮
+      const t = hour - 5;  // 0~1
+      topColor = new Color(30 + 70 * t, 40 + 80 * t, 80 + 100 * t, 255);
+      bottomColor = new Color(60 + 120 * t, 80 + 80 * t, 100 + 50 * t, 255);
+    } else if (hour >= 6 && hour < 8) {
       // 日出：橙红渐变
       topColor = new Color(135, 180, 230, 255);
       bottomColor = new Color(255, 180, 120, 255);
-    } else if (hour >= 8 && hour < 17) {
-      // 白天：蓝天
+    } else if (hour >= 8 && hour < 12) {
+      // 上午：清澈蓝天
+      topColor = new Color(90, 140, 220, 255);
+      bottomColor = new Color(150, 195, 240, 255);
+    } else if (hour >= 12 && hour < 16) {
+      // 下午：明亮蓝天
       topColor = new Color(100, 150, 220, 255);
       bottomColor = new Color(160, 200, 240, 255);
-    } else if (hour >= 17 && hour < 19) {
+    } else if (hour >= 16 && hour < 18) {
+      // 傍晚：金黄暖色
+      const t = (hour - 16) / 2;  // 0~1
+      topColor = new Color(100 + 30 * t, 150 - 30 * t, 220 - 60 * t, 255);
+      bottomColor = new Color(200 + 55 * t, 180 - 20 * t, 150 - 30 * t, 255);
+    } else if (hour >= 18 && hour < 19) {
       // 日落：橙紫渐变
-      topColor = new Color(100, 100, 180, 255);
-      bottomColor = new Color(255, 150, 100, 255);
-    } else if (hour >= 19 && hour < 21) {
+      topColor = new Color(130, 120, 160, 255);
+      bottomColor = new Color(255, 160, 120, 255);
+    } else if (hour >= 19 && hour < 20) {
       // 黄昏：深蓝紫
-      topColor = new Color(40, 50, 100, 255);
-      bottomColor = new Color(80, 80, 140, 255);
+      const t = hour - 19;  // 0~1
+      topColor = new Color(80 - 40 * t, 80 - 30 * t, 140 - 40 * t, 255);
+      bottomColor = new Color(130 - 50 * t, 100 - 20 * t, 140 - 30 * t, 255);
     } else {
       // 夜晚：深蓝黑
       topColor = new Color(15, 20, 40, 255);
@@ -724,7 +740,7 @@ export class WeatherRenderer extends Component {
    * 获取当前是否为夜晚
    */
   isNight(): boolean {
-    return this.currentHour < 6 || this.currentHour >= 18;
+    return this.currentHour < 5 || this.currentHour >= 20;
   }
   
   /**
