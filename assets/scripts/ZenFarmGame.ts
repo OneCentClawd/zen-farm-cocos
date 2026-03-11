@@ -808,7 +808,7 @@ export class ZenFarmGame extends Component {
     hintLabel.node.setPosition(0, 15, 0);
     
     // 确认按钮（危险操作用红色）
-    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 26, () => {
+    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '确认挖除', 26, () => {
       this.doRemovePlant();
       this.popupManager?.close();
     }, 'danger');
