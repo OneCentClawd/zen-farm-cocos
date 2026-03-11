@@ -786,10 +786,10 @@ export class ZenFarmGame extends Component {
     removeBtn.node.setPosition(0, yPos, 0);
     yPos -= 80;
     
-    // 取消按钮
-    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 36, () => {
+    // 取消按钮（灰色）
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 28, () => {
       this.popupManager?.close();
-    });
+    }, 'secondary');
     cancelBtn.node.setPosition(0, yPos, 0);
   }
   
@@ -801,24 +801,24 @@ export class ZenFarmGame extends Component {
     
     const popup = this.popupManager.show('RemoveConfirm', {
       title: '⚠️ 确认挖除',
-      height: 0.4,
+      height: 0.35,
     });
     
-    const hintLabel = PopupManager.createLabel(popup, 'Hint', '挖除后无法恢复！', 28);
-    hintLabel.node.setPosition(0, 20, 0);
+    const hintLabel = PopupManager.createLabel(popup, 'Hint', '挖除后无法恢复！', 26);
+    hintLabel.node.setPosition(0, 30, 0);
     
-    // 确认按钮
-    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 40, () => {
+    // 确认按钮（危险操作用红色）
+    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 28, () => {
       this.doRemovePlant();
       this.popupManager?.close();
-    });
-    confirmBtn.node.setPosition(0, -60, 0);
+    }, 'danger');
+    confirmBtn.node.setPosition(0, -30, 0);
     
-    // 取消按钮
-    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 36, () => {
+    // 取消按钮（灰色）
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 26, () => {
       this.popupManager?.close();
-    });
-    cancelBtn.node.setPosition(0, -140, 0);
+    }, 'secondary');
+    cancelBtn.node.setPosition(0, -95, 0);
   }
   
   /**
@@ -881,10 +881,10 @@ export class ZenFarmGame extends Component {
     const dehumHint = PopupManager.createLabel(popup, 'DehumHint', '每小时降低 2% 土壤湿度', 22);
     dehumHint.node.setPosition(0, -110, 0);
     
-    // 关闭按钮
-    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 关闭', 36, () => {
+    // 关闭按钮（灰色）
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 关闭', 28, () => {
       this.popupManager?.close();
-    });
+    }, 'secondary');
     cancelBtn.node.setPosition(0, -190, 0);
   }
   
