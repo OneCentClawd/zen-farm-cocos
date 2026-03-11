@@ -181,13 +181,28 @@ export class PopupManager {
     label.color = colors[style];
     
     if (onClick) {
+      const originalColor = colors[style].clone();
+      const pressedColor = new Color(
+        Math.round(originalColor.r * 0.7),
+        Math.round(originalColor.g * 0.7),
+        Math.round(originalColor.b * 0.7),
+        255
+      );
+      
+      node.on(Node.EventType.TOUCH_START, () => {
+        node.setScale(0.95, 0.95, 1);
+        label.color = pressedColor;
+      });
       node.on(Node.EventType.TOUCH_END, (e: any) => {
         e.propagationStopped = true;
+        node.setScale(1, 1, 1);
+        label.color = originalColor;
         onClick();
       });
-      node.on(Node.EventType.TOUCH_START, () => node.setScale(0.96, 0.96, 1));
-      node.on(Node.EventType.TOUCH_END, () => node.setScale(1, 1, 1));
-      node.on(Node.EventType.TOUCH_CANCEL, () => node.setScale(1, 1, 1));
+      node.on(Node.EventType.TOUCH_CANCEL, () => {
+        node.setScale(1, 1, 1);
+        label.color = originalColor;
+      });
     }
     
     return label;
