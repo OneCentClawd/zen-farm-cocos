@@ -801,24 +801,24 @@ export class ZenFarmGame extends Component {
     
     const popup = this.popupManager.show('RemoveConfirm', {
       title: '⚠️ 确认挖除',
-      height: 0.35,
+      height: 0.32,
     });
     
-    const hintLabel = PopupManager.createLabel(popup, 'Hint', '挖除后无法恢复！', 26);
-    hintLabel.node.setPosition(0, 30, 0);
+    const hintLabel = PopupManager.createLabel(popup, 'Hint', '挖除后无法恢复！', 24);
+    hintLabel.node.setPosition(0, 15, 0);
     
     // 确认按钮（危险操作用红色）
-    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 28, () => {
+    const confirmBtn = PopupManager.createButton(popup, 'Confirm', '✅ 确认挖除', 26, () => {
       this.doRemovePlant();
       this.popupManager?.close();
     }, 'danger');
-    confirmBtn.node.setPosition(0, -30, 0);
+    confirmBtn.node.setPosition(0, -40, 0);
     
     // 取消按钮（灰色）
-    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 26, () => {
+    const cancelBtn = PopupManager.createButton(popup, 'Cancel', '❌ 取消', 24, () => {
       this.popupManager?.close();
     }, 'secondary');
-    cancelBtn.node.setPosition(0, -95, 0);
+    cancelBtn.node.setPosition(0, -100, 0);
   }
   
   /**
