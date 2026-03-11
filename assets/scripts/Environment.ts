@@ -2,6 +2,8 @@
  * 环境系统 - 天气 API + 土壤湿度计算
  */
 
+import { httpGet } from './Platform';
+
 /**
  * 天气数据
  */
@@ -59,13 +61,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto`;
   
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error('天气 API 错误:', response.status);
-      return null;
-    }
-    
-    const data = await response.json();
+    const data = await httpGet(url);
     const current = data.current;
     
     return {
@@ -97,10 +93,7 @@ export async function fetchWeatherHistory(
   const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&daily=temperature_2m_mean,precipitation_sum,weather_code,wind_speed_10m_max&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
   
   try {
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    
-    const data = await response.json();
+    const data = await httpGet(url);
     const daily = data.daily;
     
     const result: WeatherData[] = [];

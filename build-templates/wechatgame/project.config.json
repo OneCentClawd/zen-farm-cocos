@@ -1,0 +1,18 @@
+{
+  "appid": "wxb94bbd6acccec202",
+  "projectname": "禅境农场",
+  "description": "佛系种地，在真实天气中种植虚拟作物",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "game",
+  "libVersion": "3.3.0",
+  "srcMiniprogramRoot": "./",
+  "packOptions": {
+    "ignore": []
+  }
+}
