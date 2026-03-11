@@ -169,7 +169,7 @@ export class ZenFarmGame extends Component {
     // 去掉背景，保持透明
     
     // 标题（顶部居中）
-    this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 36);
+    this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 42);
     this.plotLabel.node.setPosition(0, halfH - 45 - topSafe, 0);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
@@ -177,26 +177,26 @@ export class ZenFarmGame extends Component {
     }
     
     // 展开/收起按钮（标题右边的三角形）
-    this.expandLabel = this.createLabel('Expand', '▲', 24);
+    this.expandLabel = this.createLabel('Expand', '▲', 28);
     this.expandLabel.node.setPosition(160, halfH - 45 - topSafe, 0);
     this.expandLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
     const expandTransform = this.expandLabel.node.getComponent(UITransform);
     if (expandTransform) expandTransform.setContentSize(50, 50);
     
     // 天气信息（地块下方）- 包含温度、风速、阳光、降雨
-    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 24);
+    this.weatherLabel = this.createLabel('Weather', '🌤️ 加载中...', 28);
     this.weatherLabel.node.setPosition(0, halfH - 85 - topSafe, 0);
     
     // 土壤湿度（天气下方）
-    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 24);
+    this.soilLabel = this.createLabel('Soil', '💧 土壤: --%', 28);
     this.soilLabel.node.setPosition(0, halfH - 115 - topSafe, 0);
     
     // 植物阶段信息（土壤下方）
-    this.stageLabel = this.createLabel('Stage', '🌱 空地', 24);
+    this.stageLabel = this.createLabel('Stage', '🌱 空地', 28);
     this.stageLabel.node.setPosition(0, halfH - 145 - topSafe, 0);
     
     // 植物状态/健康（阶段下方）
-    this.statusLabel = this.createLabel('Status', '等待播种', 24);
+    this.statusLabel = this.createLabel('Status', '等待播种', 28);
     this.statusLabel.node.setPosition(0, halfH - 175 - topSafe, 0);
     
     // ========== 中央植物区 ==========
@@ -229,7 +229,7 @@ export class ZenFarmGame extends Component {
     const btnGap = 55;
     
     // 种植/挖除按钮
-    this.actionLabel = this.createLabel('Action', '🌱 种植', 32);
+    this.actionLabel = this.createLabel('Action', '🌱 种植', 36);
     this.actionLabel.node.setPosition(btnX, btnY, 0);
     this.actionLabel.node.on(Node.EventType.TOUCH_END, this.onPlantTap, this);
     const actionTransform = this.actionLabel.node.getComponent(UITransform);
@@ -237,7 +237,7 @@ export class ZenFarmGame extends Component {
     
     // 浇水按钮
     btnY -= btnGap;
-    this.waterLabel = this.createLabel('Water', '💧 浇水', 32);
+    this.waterLabel = this.createLabel('Water', '💧 浇水', 36);
     this.waterLabel.node.setPosition(btnX, btnY, 0);
     this.waterLabel.node.on(Node.EventType.TOUCH_END, this.onWaterTap, this);
     const waterTransform = this.waterLabel.node.getComponent(UITransform);
@@ -245,7 +245,7 @@ export class ZenFarmGame extends Component {
     
     // 设施按钮（在收获上面）
     btnY -= btnGap;
-    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 32);
+    this.facilityLabel = this.createLabel('Facility', '🏠 设施', 36);
     this.facilityLabel.node.setPosition(btnX, btnY, 0);
     this.facilityLabel.node.on(Node.EventType.TOUCH_END, this.showFacilityMenu, this);
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
@@ -253,14 +253,14 @@ export class ZenFarmGame extends Component {
     
     // 收获按钮
     btnY -= btnGap;
-    this.harvestLabel = this.createLabel('Harvest', '🌾 收获', 32);
+    this.harvestLabel = this.createLabel('Harvest', '🌾 收获', 36);
     this.harvestLabel.node.setPosition(btnX, btnY, 0);
     this.harvestLabel.node.on(Node.EventType.TOUCH_END, this.onHarvestTap, this);
     const harvestTransform = this.harvestLabel.node.getComponent(UITransform);
     if (harvestTransform) harvestTransform.setContentSize(150, 50);
     
     // 地块切换按钮（左上角，多地块时显示）
-    this.plotSwitchLabel = this.createLabel('PlotSwitch', '◀ ▶', 28);
+    this.plotSwitchLabel = this.createLabel('PlotSwitch', '◀ ▶', 32);
     this.plotSwitchLabel.node.setPosition(-halfW + 60, halfH - 45 - topSafe, 0);
     this.plotSwitchLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
     const plotSwitchTransform = this.plotSwitchLabel.node.getComponent(UITransform);
@@ -268,7 +268,7 @@ export class ZenFarmGame extends Component {
     this.plotSwitchLabel.node.active = false;  // 默认隐藏，updateUI 里根据地块数量显示
     
     // ========== 智能提示（状态栏下方） ==========
-    this.tipLabel = this.createLabel('Tip', '', 26);
+    this.tipLabel = this.createLabel('Tip', '', 30);
     this.tipLabel.node.setPosition(0, halfH - 210 - topSafe, 0);  // statusLabel 下方
     this.tipLabel.color = new Color(255, 220, 150, 255);  // 暖黄色
     this.tipLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
