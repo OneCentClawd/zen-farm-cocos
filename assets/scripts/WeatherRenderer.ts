@@ -158,15 +158,9 @@ export class WeatherRenderer extends Component {
         checkDone();
       });
       
-      // 加载白天天空
-      resources.load('textures/weather/sky_day', ImageAsset, (err, imageAsset) => {
-        if (err) {
-          console.warn('加载 sky_day 失败:', err);
-        } else if (imageAsset) {
-          this.skyDaySprite = SpriteFrame.createWithImage(imageAsset);
-        }
-        checkDone();
-      });
+      // 白天天空用渐变，不需要素材
+      // sky_day 已移除，直接跳过
+      checkDone();
       
       // 加载夜晚天空
       resources.load('textures/weather/sky_night', ImageAsset, (err, imageAsset) => {
