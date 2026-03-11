@@ -38,10 +38,10 @@ export class ZenFarmGame extends Component {
   private facilityLabel: Label | null = null;    // 设施按钮
   private stageLabel: Label | null = null;       // 阶段信息
   private tipLabel: Label | null = null;         // 智能提示
+  private plotSwitchLabel: Label | null = null;  // 地块切换按钮
   
   // 状态栏展开/收起
   private statusBarExpanded: boolean = true;
-  private lastPlotTapTime: number = 0;  // 双击检测
   
   // 种植选择
   private pendingPlantType: PlantType | null = null;
@@ -245,6 +245,14 @@ export class ZenFarmGame extends Component {
     const harvestTransform = this.harvestLabel.node.getComponent(UITransform);
     if (harvestTransform) harvestTransform.setContentSize(150, 50);
     
+    // 地块切换按钮（左上角，多地块时显示）
+    this.plotSwitchLabel = this.createLabel('PlotSwitch', '◀ ▶', 28);
+    this.plotSwitchLabel.node.setPosition(-halfW + 60, halfH - 45, 0);
+    this.plotSwitchLabel.node.on(Node.EventType.TOUCH_END, this.cyclePlot, this);
+    const plotSwitchTransform = this.plotSwitchLabel.node.getComponent(UITransform);
+    if (plotSwitchTransform) plotSwitchTransform.setContentSize(80, 50);
+    this.plotSwitchLabel.node.active = false;  // 默认隐藏，updateUI 里根据地块数量显示
+    
     // ========== 智能提示（状态栏下方） ==========
     this.tipLabel = this.createLabel('Tip', '', 26);
     this.tipLabel.node.setPosition(0, halfH - 210, 0);  // statusLabel 下方
@@ -420,13 +428,18 @@ export class ZenFarmGame extends Component {
     const plot = this.gameData.plots[this.selectedPlot];
     if (!plot) return;
     
-    // 地块 - 只有多个地块时显示切换箭头
-    if (this.plotLabel) {
-      if (this.gameData.plots.length > 1) {
-        this.plotLabel.string = `◀ 地块 ${this.selectedPlot + 1}/${this.gameData.plots.length} ▶`;
-      } else {
-        this.plotLabel.string = `🌱 我的小菜园`;
+    // 地块切换按钮（多地块时显示）
+    const hasMultiplePlots = this.gameData.plots.length > 1;
+    if (this.plotSwitchLabel) {
+      this.plotSwitchLabel.node.active = hasMultiplePlots;
+      if (hasMultiplePlots) {
+        this.plotSwitchLabel.string = `◀ ${this.selectedPlot + 1}/${this.gameData.plots.length} ▶`;
       }
+    }
+    
+    // 标题始终显示我的小菜园
+    if (this.plotLabel) {
+      this.plotLabel.string = `🌱 我的小菜园`;
     }
     
     // 植物
@@ -661,20 +674,10 @@ export class ZenFarmGame extends Component {
   }
   
   /**
-   * 标题点击：单击切换地块，双击展开/收起状态栏
+   * 标题点击：展开/收起状态栏
    */
   private onPlotLabelTap() {
-    const now = Date.now();
-    const timeDiff = now - this.lastPlotTapTime;
-    this.lastPlotTapTime = now;
-    
-    if (timeDiff < 300) {
-      // 双击：切换状态栏
-      this.toggleStatusBar();
-    } else {
-      // 单击：切换地块
-      this.cyclePlot();
-    }
+    this.toggleStatusBar();
   }
   
   /**
