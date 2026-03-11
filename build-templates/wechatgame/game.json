@@ -11,5 +11,11 @@
       "desc": "获取您的位置以提供真实天气数据"
     }
   },
-  "requiredPrivateInfos": ["getLocation"]
+  "requiredPrivateInfos": ["getLocation"],
+  "subpackages": [
+    {
+      "name": "resources",
+      "root": "subpackages/resources/"
+    }
+  ]
 }
