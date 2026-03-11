@@ -242,11 +242,11 @@ export class ZenFarmGame extends Component {
     
     // ========== 智能提示（状态栏下方） ==========
     this.tipLabel = this.createLabel('Tip', '', 24);
-    this.tipLabel.node.setPosition(0, this.screenHeight / 2 - 240, 0);  // statusLabel 下方
+    this.tipLabel.node.setPosition(0, halfH - 240, 0);  // statusLabel(-205) 下方
     this.tipLabel.color = new Color(255, 220, 150, 255);  // 暖黄色
     this.tipLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
     const tipTransform = this.tipLabel.node.getComponent(UITransform);
-    if (tipTransform) tipTransform.setContentSize(this.screenWidth - 40, 40);
+    if (tipTransform) tipTransform.setContentSize(screenSize.width - 40, 40);
     
     // ========== 滑动切换地块 ==========
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
