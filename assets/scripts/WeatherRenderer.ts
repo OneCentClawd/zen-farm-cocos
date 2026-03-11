@@ -350,19 +350,34 @@ export class WeatherRenderer extends Component {
     if (!this.skyNode) return;
     
     const hour = this.currentHour;
-    const isNight = hour < 5 || hour >= 20;  // 20点后为夜晚
     
-    // 优先用素材
-    if (this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
+    // 判断是否在过渡时段（需要渐变效果）
+    const isTransition = (hour >= 5 && hour < 8) ||   // 黎明/日出
+                         (hour >= 16 && hour < 20);    // 傍晚/日落/黄昏
+    
+    // 过渡时段用 Graphics 绘制渐变，其他时段可以用素材
+    if (!isTransition && this.skySprite && (this.skyDaySprite || this.skyNightSprite)) {
+      const isNight = hour < 5 || hour >= 20;
       if (isNight && this.skyNightSprite) {
         this.skySprite.spriteFrame = this.skyNightSprite;
+        // 隐藏 Graphics
+        const g = this.skyNode.getComponent(Graphics);
+        if (g) g.clear();
+        return;
       } else if (!isNight && this.skyDaySprite) {
         this.skySprite.spriteFrame = this.skyDaySprite;
+        const g = this.skyNode.getComponent(Graphics);
+        if (g) g.clear();
+        return;
       }
-      return;  // 用素材时不需要 Graphics 绘制
     }
     
-    // 备用：用 Graphics 绘制渐变
+    // 隐藏素材，用 Graphics 绘制渐变
+    if (this.skySprite) {
+      this.skySprite.spriteFrame = null;
+    }
+    
+    // 用 Graphics 绘制渐变
     let g = this.skyNode.getComponent(Graphics);
     if (!g) {
       g = this.skyNode.addComponent(Graphics);
