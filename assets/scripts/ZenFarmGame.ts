@@ -170,7 +170,7 @@ export class ZenFarmGame extends Component {
     
     // 展开/收起按钮（标题右边的三角形）
     this.expandLabel = this.createLabel('Expand', '▲', 24);
-    this.expandLabel.node.setPosition(130, halfH - 45, 0);
+    this.expandLabel.node.setPosition(160, halfH - 45, 0);
     this.expandLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
     const expandTransform = this.expandLabel.node.getComponent(UITransform);
     if (expandTransform) expandTransform.setContentSize(50, 50);
