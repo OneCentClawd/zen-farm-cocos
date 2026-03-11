@@ -41,6 +41,7 @@ export class ZenFarmGame extends Component {
   
   // 状态栏展开/收起
   private statusBarExpanded: boolean = true;
+  private lastPlotTapTime: number = 0;  // 双击检测
   
   // 种植选择
   private pendingPlantType: PlantType | null = null;
@@ -158,10 +159,11 @@ export class ZenFarmGame extends Component {
     topBarTransform.setContentSize(screenSize.width, 160);
     // 去掉背景，保持透明
     
-    // 地块信息（顶部居中，点击切换状态栏展开/收起）
+    // 地块信息（顶部居中）
+    // 单击：切换地块  双击：展开/收起状态栏
     this.plotLabel = this.createLabel('Plot', '🌱 我的小菜园', 36);
     this.plotLabel.node.setPosition(0, halfH - 45, 0);
-    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.toggleStatusBar, this);
+    this.plotLabel.node.on(Node.EventType.TOUCH_END, this.onPlotLabelTap, this);
     const plotTransform = this.plotLabel.node.getComponent(UITransform);
     if (plotTransform) {
       plotTransform.setContentSize(500, 60);
@@ -659,10 +661,26 @@ export class ZenFarmGame extends Component {
   }
   
   /**
+   * 标题点击：单击切换地块，双击展开/收起状态栏
+   */
+  private onPlotLabelTap() {
+    const now = Date.now();
+    const timeDiff = now - this.lastPlotTapTime;
+    this.lastPlotTapTime = now;
+    
+    if (timeDiff < 300) {
+      // 双击：切换状态栏
+      this.toggleStatusBar();
+    } else {
+      // 单击：切换地块
+      this.cyclePlot();
+    }
+  }
+  
   /**
    * 切换状态栏展开/收起
    */
-  toggleStatusBar() {
+  private toggleStatusBar() {
     this.statusBarExpanded = !this.statusBarExpanded;
     
     // 这些标签在收起时隐藏
