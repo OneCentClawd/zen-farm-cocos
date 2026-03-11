@@ -629,8 +629,23 @@ export class ZenFarmGame extends Component {
       return problems.join(' · ');
     }
     
-    // 一切正常
-    return '✨ 状态良好';
+    // 一切正常 - 根据进度显示鼓励文案
+    const progress = Math.round(plant.growthProgress * 100);
+    if (progress < 5) {
+      return '🌱 种子刚刚播下~';
+    } else if (progress < 15) {
+      return '🌱 正在发芽，耐心等待~';
+    } else if (progress < 30) {
+      return '🌿 小苗在努力生长中~';
+    } else if (progress < 50) {
+      return '🪴 长势不错，继续保持~';
+    } else if (progress < 70) {
+      return '🌳 茁壮成长中~';
+    } else if (progress < 90) {
+      return '✨ 快要成熟了，再等等~';
+    } else {
+      return '🌸 即将成熟，准备收获吧！';
+    }
   }
   
   /**
