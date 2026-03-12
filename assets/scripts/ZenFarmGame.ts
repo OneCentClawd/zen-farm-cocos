@@ -157,9 +157,10 @@ export class ZenFarmGame extends Component {
     this.weatherRenderer.init(this.node);  // 不需要传 skyHeight，铺满整个屏幕
     
     // ========== 粒子效果（雨、雪、浇水） ==========
-    const particleNode = new Node('ParticleEffects');
-    this.particleEffects = particleNode.addComponent(ParticleEffects);
-    this.particleEffects.init(this.node);
+    // TODO: 暂时关闭，Feature Cropping 需要保留 2D Particle
+    // const particleNode = new Node('ParticleEffects');
+    // this.particleEffects = particleNode.addComponent(ParticleEffects);
+    // this.particleEffects.init(this.node);
     
     // ========== 顶部安全区 ==========
     const topSafe = getTopSafeArea();  // 微信胶囊按钮高度
