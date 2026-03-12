@@ -340,14 +340,25 @@ export class ParticleEffects extends Component {
     // 风速转换为水平重力分量（风速 km/h -> 像素偏移）
     const windForce = windSpeed * 8;  // 风越大，水平偏移越大
     
+    // 风吹偏移补偿：风往右吹时，发射区域往左扩展
+    const windOffset = -windForce * 3;  // 反向补偿
+    
     if (this.rainEmitter) {
-      // 雨滴受风影响较大
+      // 雨滴受风影响
       this.rainEmitter.gravity = new Vec2(windForce, -1000);
+      // 发射位置往风的反方向偏移
+      this.rainEmitter.node.setPosition(windOffset, this.screenHeight / 2 + 50, 0);
+      // 加大发射区域
+      this.rainEmitter.posVar = new Vec2(this.screenWidth / 2 + Math.abs(windForce) * 2, 0);
     }
     
     if (this.snowEmitter) {
       // 雪花受风影响更大（更轻）
       this.snowEmitter.gravity = new Vec2(windForce * 1.5, -80);
+      // 发射位置往风的反方向偏移更多（因为雪飘得久）
+      this.snowEmitter.node.setPosition(windOffset * 1.5, this.screenHeight / 2 + 50, 0);
+      // 加大发射区域
+      this.snowEmitter.posVar = new Vec2(this.screenWidth / 2 + Math.abs(windForce) * 3, 0);
     }
   }
   
