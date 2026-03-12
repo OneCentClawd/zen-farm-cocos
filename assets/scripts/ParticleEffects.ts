@@ -295,30 +295,30 @@ export class ParticleEffects extends Component {
     }
     
     // 溅落配置（一次性爆发）
-    emitter.totalParticles = 30;
-    emitter.duration = 0.1;  // 短暂爆发
-    emitter.emissionRate = 300;
-    emitter.life = 0.5;
+    emitter.totalParticles = 50;
+    emitter.duration = 0.15;  // 短暂爆发
+    emitter.emissionRate = 400;
+    emitter.life = 0.6;
     emitter.lifeVar = 0.2;
     
     // 向四周扩散
-    emitter.posVar = new Vec2(10, 5);
-    emitter.gravity = new Vec2(0, -500);
+    emitter.posVar = new Vec2(20, 10);
+    emitter.gravity = new Vec2(0, -600);
     
     // 向上喷溅
-    emitter.speed = 150;
-    emitter.speedVar = 50;
+    emitter.speed = 200;
+    emitter.speedVar = 80;
     emitter.angle = 90;
-    emitter.angleVar = 45;
+    emitter.angleVar = 60;
     
     // 水滴颜色
     emitter.startColor = new Color(100, 180, 255, 220);
     emitter.endColor = new Color(150, 200, 255, 0);
     
-    // 大小
-    emitter.startSize = 12;
-    emitter.startSizeVar = 4;
-    emitter.endSize = 4;
+    // 大小（调大）
+    emitter.startSize = 24;
+    emitter.startSizeVar = 8;
+    emitter.endSize = 8;
     
     // 播放后销毁
     emitter.autoRemoveOnFinish = true;
