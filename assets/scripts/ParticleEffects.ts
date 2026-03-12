@@ -461,7 +461,7 @@ export class ParticleEffects extends Component {
       // 中雨: 63-64 或 82-84
       if ((weatherCode >= 63 && weatherCode <= 64) || (weatherCode >= 82 && weatherCode <= 84)) intensity = 0.8;
       // 大雨: 65-67 或 85-99
-      if (weatherCode >= 65 || weatherCode >= 85) intensity = 1;
+      if ((weatherCode >= 65 && weatherCode <= 67) || weatherCode >= 85) intensity = 1;
       this.startRain(intensity);
     }
   }
