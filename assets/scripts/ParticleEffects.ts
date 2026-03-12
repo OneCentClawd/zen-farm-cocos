@@ -8,7 +8,7 @@
  */
 
 import { 
-  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view, Graphics
+  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view
 } from 'cc';
 
 const { ccclass, property } = _decorator;
@@ -208,67 +208,54 @@ export class ParticleEffects extends Component {
   }
   
   /**
-   * 播放浇水溅落效果（用简单动画代替粒子）
+   * 播放浇水溅落效果
    */
   playWaterSplash(x: number, y: number) {
     console.log(`💧 播放浇水特效 at (${x}, ${y})`);
     
-    // 创建多个小水滴
-    for (let i = 0; i < 8; i++) {
-      const dropNode = new Node(`WaterDrop_${i}`);
-      dropNode.setParent(this.node);
-      dropNode.layer = this.node.layer;
-      dropNode.setPosition(x, y, 0);
-      
-      const transform = dropNode.addComponent(UITransform);
-      transform.setContentSize(10, 10);
-      
-      // 用 Graphics 画一个圆形水滴
-      const g = dropNode.addComponent(Graphics);
-      g.fillColor = new Color(100, 180, 255, 200);
-      g.circle(0, 0, 5);
-      g.fill();
-      
-      // 随机方向飞出
-      const angle = (i / 8) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-      const speed = 100 + Math.random() * 100;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed + 50;  // 向上偏移
-      
-      // 动画：飞出 + 下落 + 消失
-      let elapsed = 0;
-      const duration = 0.5;
-      const gravity = -400;
-      
-      const update = (dt: number) => {
-        elapsed += dt;
-        if (elapsed >= duration) {
-          dropNode.destroy();
-          return;
-        }
-        
-        const t = elapsed;
-        const newX = x + vx * t;
-        const newY = y + vy * t + 0.5 * gravity * t * t;
-        dropNode.setPosition(newX, newY, 0);
-        
-        // 渐隐
-        const alpha = 1 - elapsed / duration;
-        g.fillColor = new Color(100, 180, 255, Math.floor(200 * alpha));
-        g.clear();
-        g.circle(0, 0, 5 * (1 - elapsed / duration * 0.5));
-        g.fill();
-      };
-      
-      // 用 schedule 执行动画
-      this.schedule(update, 0);
-      
-      // 超时销毁
-      this.scheduleOnce(() => {
-        this.unschedule(update);
-        if (dropNode.isValid) dropNode.destroy();
-      }, duration + 0.1);
+    const splashNode = new Node('WaterSplash');
+    splashNode.setParent(this.node);
+    splashNode.layer = this.node.layer;
+    splashNode.setPosition(x, y, 0);
+    
+    const transform = splashNode.addComponent(UITransform);
+    transform.setContentSize(50, 50);
+    
+    const emitter = splashNode.addComponent(ParticleSystem2D);
+    if (!emitter) {
+      console.warn('⚠️ 浇水粒子创建失败');
+      splashNode.destroy();
+      return;
     }
+    
+    // 溅落配置（一次性爆发）
+    emitter.totalParticles = 30;
+    emitter.duration = 0.1;  // 短暂爆发
+    emitter.emissionRate = 300;
+    emitter.life = 0.5;
+    emitter.lifeVar = 0.2;
+    
+    // 向四周扩散
+    emitter.posVar = new Vec2(10, 5);
+    emitter.gravity = new Vec2(0, -500);
+    
+    // 向上喷溅
+    emitter.speed = 150;
+    emitter.speedVar = 50;
+    emitter.angle = 90;
+    emitter.angleVar = 45;
+    
+    // 水滴颜色
+    emitter.startColor = new Color(100, 180, 255, 220);
+    emitter.endColor = new Color(150, 200, 255, 0);
+    
+    // 大小
+    emitter.startSize = 8;
+    emitter.startSizeVar = 3;
+    emitter.endSize = 2;
+    
+    // 播放后销毁
+    emitter.autoRemoveOnFinish = true;
   }
   
   // 上次的天气代码，避免重复触发
