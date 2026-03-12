@@ -201,6 +201,8 @@ export class ParticleEffects extends Component {
    * 播放浇水溅落效果
    */
   playWaterSplash(x: number, y: number) {
+    console.log(`💧 播放浇水特效 at (${x}, ${y})`);
+    
     const splashNode = new Node('WaterSplash');
     splashNode.setParent(this.node);
     splashNode.layer = this.node.layer;
@@ -210,6 +212,11 @@ export class ParticleEffects extends Component {
     transform.setContentSize(50, 50);
     
     const emitter = splashNode.addComponent(ParticleSystem2D);
+    if (!emitter) {
+      console.warn('⚠️ 浇水粒子创建失败');
+      splashNode.destroy();
+      return;
+    }
     
     // 溅落配置（一次性爆发）
     emitter.totalParticles = 30;
