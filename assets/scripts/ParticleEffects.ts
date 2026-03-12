@@ -19,11 +19,13 @@ export class ParticleEffects extends Component {
   
   private rainEmitter: ParticleSystem2D | null = null;
   private snowEmitter: ParticleSystem2D | null = null;
+  private groundSplashEmitter: ParticleSystem2D | null = null;  // 地面飞溅
   private waterDropFrame: SpriteFrame | null = null;
   private snowflakeFrame: SpriteFrame | null = null;
   private screenWidth: number = 0;
   private screenHeight: number = 0;
   private currentWindSpeed: number = 0;  // 当前风速 km/h
+  private groundY: number = 0;  // 地面 Y 坐标
   
   /**
    * 初始化粒子系统
@@ -32,6 +34,10 @@ export class ParticleEffects extends Component {
     const screenSize = view.getVisibleSize();
     this.screenWidth = screenSize.width;
     this.screenHeight = screenSize.height;
+    
+    // 计算地面 Y 坐标（土地顶部）
+    const halfH = screenSize.height / 2;
+    this.groundY = -halfH + screenSize.height / 3;
     
     this.node.setParent(parent);
     this.node.layer = parent.layer;
@@ -54,6 +60,9 @@ export class ParticleEffects extends Component {
       
       // 创建雪花发射器
       this.createSnowEmitter();
+      
+      // 创建地面飞溅发射器
+      this.createGroundSplashEmitter();
       
       console.log(`🎆 粒子系统初始化完成: rain=${!!this.rainEmitter}, snow=${!!this.snowEmitter}`);
     } catch (e) {
@@ -116,35 +125,35 @@ export class ParticleEffects extends Component {
     }
     this.rainEmitter = emitter;
     
-    // 雨滴配置（更清晰，更长寿命落到地面）
-    this.rainEmitter.totalParticles = 200;
+    // 雨滴配置（更大更清晰）
+    this.rainEmitter.totalParticles = 250;
     this.rainEmitter.duration = -1;  // 持续发射
-    this.rainEmitter.emissionRate = 100;
-    this.rainEmitter.life = 2.0;  // 更长寿命，确保落到地面
+    this.rainEmitter.emissionRate = 120;
+    this.rainEmitter.life = 2.5;  // 更长寿命，确保落到地面
     this.rainEmitter.lifeVar = 0.5;
     
     // 发射区域（屏幕顶部横向）
     this.rainEmitter.posVar = new Vec2(this.screenWidth / 2, 0);
     
-    // 重力向下（更强）
-    this.rainEmitter.gravity = new Vec2(0, -1000);
+    // 重力向下
+    this.rainEmitter.gravity = new Vec2(0, -800);
     
     // 初始速度
-    this.rainEmitter.speed = 500;
-    this.rainEmitter.speedVar = 150;
+    this.rainEmitter.speed = 400;
+    this.rainEmitter.speedVar = 100;
     
     // 发射角度（向下）
     this.rainEmitter.angle = 270;
-    this.rainEmitter.angleVar = 3;
+    this.rainEmitter.angleVar = 5;
     
-    // 颜色（更清晰的蓝色水滴）
-    this.rainEmitter.startColor = new Color(150, 200, 255, 255);
-    this.rainEmitter.endColor = new Color(100, 180, 255, 180);
+    // 颜色（清晰的蓝色水滴）
+    this.rainEmitter.startColor = new Color(120, 180, 255, 255);
+    this.rainEmitter.endColor = new Color(80, 160, 255, 220);
     
-    // 大小（稍大一点更清晰）
-    this.rainEmitter.startSize = 12;
-    this.rainEmitter.startSizeVar = 4;
-    this.rainEmitter.endSize = 6;
+    // 大小（更大更清晰）
+    this.rainEmitter.startSize = 24;
+    this.rainEmitter.startSizeVar = 8;
+    this.rainEmitter.endSize = 16;
     
     // 默认停止
     this.rainEmitter.resetSystem();
@@ -170,35 +179,35 @@ export class ParticleEffects extends Component {
     }
     this.snowEmitter = emitter;
     
-    // 雪花配置（更清晰，更长寿命）
-    this.snowEmitter.totalParticles = 150;
+    // 雪花配置（更大更清晰）
+    this.snowEmitter.totalParticles = 200;
     this.snowEmitter.duration = -1;
-    this.snowEmitter.emissionRate = 40;
-    this.snowEmitter.life = 6;  // 更长寿命，慢慢飘落
+    this.snowEmitter.emissionRate = 50;
+    this.snowEmitter.life = 8;  // 更长寿命，慢慢飘落
     this.snowEmitter.lifeVar = 2;
     
     // 发射区域
     this.snowEmitter.posVar = new Vec2(this.screenWidth / 2, 0);
     
     // 轻微重力
-    this.snowEmitter.gravity = new Vec2(0, -80);
+    this.snowEmitter.gravity = new Vec2(0, -60);
     
     // 慢速飘落
-    this.snowEmitter.speed = 50;
-    this.snowEmitter.speedVar = 30;
+    this.snowEmitter.speed = 40;
+    this.snowEmitter.speedVar = 20;
     
     // 发射角度（向下，但有摇摆）
     this.snowEmitter.angle = 270;
-    this.snowEmitter.angleVar = 20;
+    this.snowEmitter.angleVar = 25;
     
-    // 颜色（更清晰的白色雪花）
+    // 颜色（清晰的白色雪花）
     this.snowEmitter.startColor = new Color(255, 255, 255, 255);
-    this.snowEmitter.endColor = new Color(255, 255, 255, 100);
+    this.snowEmitter.endColor = new Color(240, 250, 255, 150);
     
     // 大小（更大更清晰）
-    this.snowEmitter.startSize = 16;
-    this.snowEmitter.startSizeVar = 6;
-    this.snowEmitter.endSize = 10;
+    this.snowEmitter.startSize = 32;
+    this.snowEmitter.startSizeVar = 10;
+    this.snowEmitter.endSize = 20;
     
     // 旋转
     this.snowEmitter.startSpin = 0;
@@ -209,6 +218,52 @@ export class ParticleEffects extends Component {
     // 默认停止
     this.snowEmitter.resetSystem();
     snowNode.active = false;
+  }
+  
+  /**
+   * 创建地面飞溅粒子发射器
+   */
+  private createGroundSplashEmitter() {
+    const splashNode = new Node('GroundSplash');
+    splashNode.setParent(this.node);
+    splashNode.layer = this.node.layer;
+    splashNode.setPosition(0, this.groundY, 0);
+    
+    const transform = splashNode.addComponent(UITransform);
+    transform.setContentSize(this.screenWidth, 50);
+    
+    const emitter = splashNode.addComponent(ParticleSystem2D);
+    if (!emitter) return;
+    
+    this.groundSplashEmitter = emitter;
+    
+    // 地面飞溅配置
+    this.groundSplashEmitter.totalParticles = 100;
+    this.groundSplashEmitter.duration = -1;
+    this.groundSplashEmitter.emissionRate = 0;  // 由 startRain 控制
+    this.groundSplashEmitter.life = 0.3;
+    this.groundSplashEmitter.lifeVar = 0.1;
+    
+    // 发射区域（整个地面宽度）
+    this.groundSplashEmitter.posVar = new Vec2(this.screenWidth / 2, 0);
+    
+    // 向上溅起
+    this.groundSplashEmitter.gravity = new Vec2(0, -200);
+    this.groundSplashEmitter.speed = 80;
+    this.groundSplashEmitter.speedVar = 40;
+    this.groundSplashEmitter.angle = 90;
+    this.groundSplashEmitter.angleVar = 60;
+    
+    // 小水花
+    this.groundSplashEmitter.startColor = new Color(150, 200, 255, 200);
+    this.groundSplashEmitter.endColor = new Color(180, 220, 255, 0);
+    this.groundSplashEmitter.startSize = 8;
+    this.groundSplashEmitter.startSizeVar = 4;
+    this.groundSplashEmitter.endSize = 2;
+    
+    // 默认停止
+    this.groundSplashEmitter.resetSystem();
+    splashNode.active = false;
   }
   
   /**
@@ -226,9 +281,16 @@ export class ParticleEffects extends Component {
     }
     
     console.log(`🌧️ 开始下雨，强度: ${intensity}`);
-    this.rainEmitter.emissionRate = 40 + intensity * 60;  // 40-100
+    this.rainEmitter.emissionRate = 40 + intensity * 80;  // 40-120
     this.rainEmitter.node.active = true;
     this.rainEmitter.resetSystem();
+    
+    // 启动地面飞溅
+    if (this.groundSplashEmitter) {
+      this.groundSplashEmitter.emissionRate = 30 + intensity * 50;  // 30-80
+      this.groundSplashEmitter.node.active = true;
+      this.groundSplashEmitter.resetSystem();
+    }
   }
   
   /**
@@ -238,6 +300,12 @@ export class ParticleEffects extends Component {
     if (!this.rainEmitter) return;
     this.rainEmitter.stopSystem();
     this.rainEmitter.node.active = false;
+    
+    // 停止地面飞溅
+    if (this.groundSplashEmitter) {
+      this.groundSplashEmitter.stopSystem();
+      this.groundSplashEmitter.node.active = false;
+    }
   }
   
   /**
