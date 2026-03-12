@@ -8,7 +8,8 @@
  */
 
 import { 
-  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view
+  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view,
+  resources, SpriteFrame, ImageAsset, Texture2D
 } from 'cc';
 
 const { ccclass, property } = _decorator;
@@ -18,6 +19,8 @@ export class ParticleEffects extends Component {
   
   private rainEmitter: ParticleSystem2D | null = null;
   private snowEmitter: ParticleSystem2D | null = null;
+  private waterDropFrame: SpriteFrame | null = null;
+  private snowflakeFrame: SpriteFrame | null = null;
   private screenWidth: number = 0;
   private screenHeight: number = 0;
   
@@ -32,6 +35,18 @@ export class ParticleEffects extends Component {
     this.node.setParent(parent);
     this.node.layer = parent.layer;
     
+    // 加载水滴纹理
+    this.loadTexture('textures/weather/water_drop', (frame) => {
+      this.waterDropFrame = frame;
+      console.log('💧 水滴纹理加载成功');
+    });
+    
+    // 加载雪花纹理
+    this.loadTexture('textures/weather/snowflake', (frame) => {
+      this.snowflakeFrame = frame;
+      console.log('❄️ 雪花纹理加载成功');
+    });
+    
     try {
       // 创建雨滴发射器
       this.createRainEmitter();
@@ -43,6 +58,42 @@ export class ParticleEffects extends Component {
     } catch (e) {
       console.warn('⚠️ 粒子系统初始化失败，可能未启用 Particle System 2D 模块', e);
     }
+  }
+  
+  /**
+   * 加载纹理辅助方法
+   */
+  private loadTexture(path: string, callback: (frame: SpriteFrame) => void) {
+    // 先尝试加载 SpriteFrame
+    resources.load(path + '/spriteFrame', SpriteFrame, (err, spriteFrame) => {
+      if (!err && spriteFrame) {
+        callback(spriteFrame);
+        return;
+      }
+      
+      // 再尝试加载 Texture2D
+      resources.load(path + '/texture', Texture2D, (err2, texture) => {
+        if (!err2 && texture) {
+          const frame = new SpriteFrame();
+          frame.texture = texture;
+          callback(frame);
+          return;
+        }
+        
+        // 最后尝试 ImageAsset
+        resources.load(path, ImageAsset, (err3, imageAsset) => {
+          if (!err3 && imageAsset) {
+            const tex = new Texture2D();
+            tex.image = imageAsset;
+            const frame = new SpriteFrame();
+            frame.texture = tex;
+            callback(frame);
+          } else {
+            console.warn(`⚠️ 无法加载纹理: ${path}`, err3);
+          }
+        });
+      });
+    });
   }
   
   /**
@@ -168,6 +219,11 @@ export class ParticleEffects extends Component {
       return;
     }
     
+    // 设置水滴纹理
+    if (this.waterDropFrame) {
+      this.rainEmitter.spriteFrame = this.waterDropFrame;
+    }
+    
     console.log(`🌧️ 开始下雨，强度: ${intensity}`);
     this.rainEmitter.emissionRate = 40 + intensity * 60;  // 40-100
     this.rainEmitter.node.active = true;
@@ -190,6 +246,11 @@ export class ParticleEffects extends Component {
     if (!this.snowEmitter) {
       console.warn('❄️ snowEmitter 不存在');
       return;
+    }
+    
+    // 设置雪花纹理
+    if (this.snowflakeFrame) {
+      this.snowEmitter.spriteFrame = this.snowflakeFrame;
     }
     
     console.log(`❄️ 开始下雪，强度: ${intensity}`);
@@ -226,6 +287,11 @@ export class ParticleEffects extends Component {
       console.warn('⚠️ 浇水粒子创建失败');
       splashNode.destroy();
       return;
+    }
+    
+    // 设置粒子纹理
+    if (this.waterDropFrame) {
+      emitter.spriteFrame = this.waterDropFrame;
     }
     
     // 溅落配置（一次性爆发）
