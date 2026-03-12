@@ -321,6 +321,12 @@ export class ParticleEffects extends Component {
     emitter.startSizeVar = 12;
     emitter.endSize = 12;
     
+    // 旋转（跟随运动方向）
+    emitter.startSpin = -90;  // 初始朝上
+    emitter.startSpinVar = 180;  // 随机初始角度
+    emitter.endSpin = 180;  // 旋转到朝下
+    emitter.endSpinVar = 90;
+    
     // 播放后销毁
     emitter.autoRemoveOnFinish = true;
     
