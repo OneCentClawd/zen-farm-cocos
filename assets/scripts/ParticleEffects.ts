@@ -38,6 +38,8 @@ export class ParticleEffects extends Component {
       
       // 创建雪花发射器
       this.createSnowEmitter();
+      
+      console.log(`🎆 粒子系统初始化完成: rain=${!!this.rainEmitter}, snow=${!!this.snowEmitter}`);
     } catch (e) {
       console.warn('⚠️ 粒子系统初始化失败，可能未启用 Particle System 2D 模块', e);
     }
@@ -161,8 +163,12 @@ export class ParticleEffects extends Component {
    * 开始下雨
    */
   startRain(intensity: number = 1) {
-    if (!this.rainEmitter) return;
+    if (!this.rainEmitter) {
+      console.warn('🌧️ rainEmitter 不存在');
+      return;
+    }
     
+    console.log(`🌧️ 开始下雨，强度: ${intensity}`);
     this.rainEmitter.emissionRate = 40 + intensity * 60;  // 40-100
     this.rainEmitter.node.active = true;
     this.rainEmitter.resetSystem();
@@ -181,8 +187,12 @@ export class ParticleEffects extends Component {
    * 开始下雪
    */
   startSnow(intensity: number = 1) {
-    if (!this.snowEmitter) return;
+    if (!this.snowEmitter) {
+      console.warn('❄️ snowEmitter 不存在');
+      return;
+    }
     
+    console.log(`❄️ 开始下雪，强度: ${intensity}`);
     this.snowEmitter.emissionRate = 15 + intensity * 25;  // 15-40
     this.snowEmitter.node.active = true;
     this.snowEmitter.resetSystem();
