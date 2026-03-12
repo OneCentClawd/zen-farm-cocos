@@ -20,6 +20,7 @@ export class ParticleEffects extends Component {
   private rainEmitter: ParticleSystem2D | null = null;
   private snowEmitter: ParticleSystem2D | null = null;
   private waterDropFrame: SpriteFrame | null = null;
+  private snowflakeFrame: SpriteFrame | null = null;
   private screenWidth: number = 0;
   private screenHeight: number = 0;
   
@@ -38,7 +39,6 @@ export class ParticleEffects extends Component {
     resources.load('textures/weather/water_drop/spriteFrame', SpriteFrame, (err, spriteFrame) => {
       if (err) {
         console.warn('⚠️ 水滴纹理加载失败，尝试从 ImageAsset 加载', err);
-        // 尝试直接加载图片
         resources.load('textures/weather/water_drop', ImageAsset, (err2, imageAsset) => {
           if (!err2 && imageAsset) {
             const texture = new Texture2D();
@@ -51,6 +51,25 @@ export class ParticleEffects extends Component {
       } else {
         this.waterDropFrame = spriteFrame;
         console.log('💧 水滴纹理加载成功');
+      }
+    });
+    
+    // 加载雪花纹理
+    resources.load('textures/weather/snowflake/spriteFrame', SpriteFrame, (err, spriteFrame) => {
+      if (err) {
+        console.warn('⚠️ 雪花纹理加载失败，尝试从 ImageAsset 加载', err);
+        resources.load('textures/weather/snowflake', ImageAsset, (err2, imageAsset) => {
+          if (!err2 && imageAsset) {
+            const texture = new Texture2D();
+            texture.image = imageAsset;
+            this.snowflakeFrame = new SpriteFrame();
+            this.snowflakeFrame.texture = texture;
+            console.log('❄️ 雪花纹理从 ImageAsset 加载成功');
+          }
+        });
+      } else {
+        this.snowflakeFrame = spriteFrame;
+        console.log('❄️ 雪花纹理加载成功');
       }
     });
     
@@ -190,6 +209,11 @@ export class ParticleEffects extends Component {
       return;
     }
     
+    // 设置水滴纹理
+    if (this.waterDropFrame) {
+      this.rainEmitter.spriteFrame = this.waterDropFrame;
+    }
+    
     console.log(`🌧️ 开始下雨，强度: ${intensity}`);
     this.rainEmitter.emissionRate = 40 + intensity * 60;  // 40-100
     this.rainEmitter.node.active = true;
@@ -212,6 +236,11 @@ export class ParticleEffects extends Component {
     if (!this.snowEmitter) {
       console.warn('❄️ snowEmitter 不存在');
       return;
+    }
+    
+    // 设置雪花纹理
+    if (this.snowflakeFrame) {
+      this.snowEmitter.spriteFrame = this.snowflakeFrame;
     }
     
     console.log(`❄️ 开始下雪，强度: ${intensity}`);
