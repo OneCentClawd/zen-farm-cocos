@@ -8,7 +8,8 @@
  */
 
 import { 
-  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view
+  _decorator, Component, Node, ParticleSystem2D, Color, Vec2, UITransform, view,
+  resources, SpriteFrame, ImageAsset, Texture2D
 } from 'cc';
 
 const { ccclass, property } = _decorator;
@@ -18,6 +19,7 @@ export class ParticleEffects extends Component {
   
   private rainEmitter: ParticleSystem2D | null = null;
   private snowEmitter: ParticleSystem2D | null = null;
+  private waterDropFrame: SpriteFrame | null = null;
   private screenWidth: number = 0;
   private screenHeight: number = 0;
   
@@ -31,6 +33,26 @@ export class ParticleEffects extends Component {
     
     this.node.setParent(parent);
     this.node.layer = parent.layer;
+    
+    // 加载水滴纹理
+    resources.load('textures/weather/water_drop/spriteFrame', SpriteFrame, (err, spriteFrame) => {
+      if (err) {
+        console.warn('⚠️ 水滴纹理加载失败，尝试从 ImageAsset 加载', err);
+        // 尝试直接加载图片
+        resources.load('textures/weather/water_drop', ImageAsset, (err2, imageAsset) => {
+          if (!err2 && imageAsset) {
+            const texture = new Texture2D();
+            texture.image = imageAsset;
+            this.waterDropFrame = new SpriteFrame();
+            this.waterDropFrame.texture = texture;
+            console.log('💧 水滴纹理从 ImageAsset 加载成功');
+          }
+        });
+      } else {
+        this.waterDropFrame = spriteFrame;
+        console.log('💧 水滴纹理加载成功');
+      }
+    });
     
     try {
       // 创建雨滴发射器
@@ -228,6 +250,11 @@ export class ParticleEffects extends Component {
       return;
     }
     
+    // 设置粒子纹理
+    if (this.waterDropFrame) {
+      emitter.spriteFrame = this.waterDropFrame;
+    }
+    
     // 溅落配置（一次性爆发）
     emitter.totalParticles = 30;
     emitter.duration = 0.1;  // 短暂爆发
@@ -250,12 +277,15 @@ export class ParticleEffects extends Component {
     emitter.endColor = new Color(150, 200, 255, 0);
     
     // 大小
-    emitter.startSize = 8;
-    emitter.startSizeVar = 3;
-    emitter.endSize = 2;
+    emitter.startSize = 12;
+    emitter.startSizeVar = 4;
+    emitter.endSize = 4;
     
     // 播放后销毁
     emitter.autoRemoveOnFinish = true;
+    
+    // 启动粒子系统
+    emitter.resetSystem();
   }
   
   // 上次的天气代码，避免重复触发
