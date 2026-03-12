@@ -36,41 +36,15 @@ export class ParticleEffects extends Component {
     this.node.layer = parent.layer;
     
     // 加载水滴纹理
-    resources.load('textures/weather/water_drop/spriteFrame', SpriteFrame, (err, spriteFrame) => {
-      if (err) {
-        console.warn('⚠️ 水滴纹理加载失败，尝试从 ImageAsset 加载', err);
-        resources.load('textures/weather/water_drop', ImageAsset, (err2, imageAsset) => {
-          if (!err2 && imageAsset) {
-            const texture = new Texture2D();
-            texture.image = imageAsset;
-            this.waterDropFrame = new SpriteFrame();
-            this.waterDropFrame.texture = texture;
-            console.log('💧 水滴纹理从 ImageAsset 加载成功');
-          }
-        });
-      } else {
-        this.waterDropFrame = spriteFrame;
-        console.log('💧 水滴纹理加载成功');
-      }
+    this.loadTexture('textures/weather/water_drop', (frame) => {
+      this.waterDropFrame = frame;
+      console.log('💧 水滴纹理加载成功');
     });
     
     // 加载雪花纹理
-    resources.load('textures/weather/snowflake/spriteFrame', SpriteFrame, (err, spriteFrame) => {
-      if (err) {
-        console.warn('⚠️ 雪花纹理加载失败，尝试从 ImageAsset 加载', err);
-        resources.load('textures/weather/snowflake', ImageAsset, (err2, imageAsset) => {
-          if (!err2 && imageAsset) {
-            const texture = new Texture2D();
-            texture.image = imageAsset;
-            this.snowflakeFrame = new SpriteFrame();
-            this.snowflakeFrame.texture = texture;
-            console.log('❄️ 雪花纹理从 ImageAsset 加载成功');
-          }
-        });
-      } else {
-        this.snowflakeFrame = spriteFrame;
-        console.log('❄️ 雪花纹理加载成功');
-      }
+    this.loadTexture('textures/weather/snowflake', (frame) => {
+      this.snowflakeFrame = frame;
+      console.log('❄️ 雪花纹理加载成功');
     });
     
     try {
@@ -84,6 +58,42 @@ export class ParticleEffects extends Component {
     } catch (e) {
       console.warn('⚠️ 粒子系统初始化失败，可能未启用 Particle System 2D 模块', e);
     }
+  }
+  
+  /**
+   * 加载纹理辅助方法
+   */
+  private loadTexture(path: string, callback: (frame: SpriteFrame) => void) {
+    // 先尝试加载 SpriteFrame
+    resources.load(path + '/spriteFrame', SpriteFrame, (err, spriteFrame) => {
+      if (!err && spriteFrame) {
+        callback(spriteFrame);
+        return;
+      }
+      
+      // 再尝试加载 Texture2D
+      resources.load(path + '/texture', Texture2D, (err2, texture) => {
+        if (!err2 && texture) {
+          const frame = new SpriteFrame();
+          frame.texture = texture;
+          callback(frame);
+          return;
+        }
+        
+        // 最后尝试 ImageAsset
+        resources.load(path, ImageAsset, (err3, imageAsset) => {
+          if (!err3 && imageAsset) {
+            const tex = new Texture2D();
+            tex.image = imageAsset;
+            const frame = new SpriteFrame();
+            frame.texture = tex;
+            callback(frame);
+          } else {
+            console.warn(`⚠️ 无法加载纹理: ${path}`, err3);
+          }
+        });
+      });
+    });
   }
   
   /**
