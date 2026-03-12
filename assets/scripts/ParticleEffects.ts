@@ -23,6 +23,7 @@ export class ParticleEffects extends Component {
   private snowflakeFrame: SpriteFrame | null = null;
   private screenWidth: number = 0;
   private screenHeight: number = 0;
+  private currentWindSpeed: number = 0;  // 当前风速 km/h
   
   /**
    * 初始化粒子系统
@@ -115,35 +116,35 @@ export class ParticleEffects extends Component {
     }
     this.rainEmitter = emitter;
     
-    // 雨滴配置
-    this.rainEmitter.totalParticles = 150;
+    // 雨滴配置（更清晰，更长寿命落到地面）
+    this.rainEmitter.totalParticles = 200;
     this.rainEmitter.duration = -1;  // 持续发射
-    this.rainEmitter.emissionRate = 80;
-    this.rainEmitter.life = 1.2;
-    this.rainEmitter.lifeVar = 0.3;
+    this.rainEmitter.emissionRate = 100;
+    this.rainEmitter.life = 2.0;  // 更长寿命，确保落到地面
+    this.rainEmitter.lifeVar = 0.5;
     
     // 发射区域（屏幕顶部横向）
     this.rainEmitter.posVar = new Vec2(this.screenWidth / 2, 0);
     
-    // 重力向下
-    this.rainEmitter.gravity = new Vec2(0, -800);
+    // 重力向下（更强）
+    this.rainEmitter.gravity = new Vec2(0, -1000);
     
     // 初始速度
-    this.rainEmitter.speed = 400;
-    this.rainEmitter.speedVar = 100;
+    this.rainEmitter.speed = 500;
+    this.rainEmitter.speedVar = 150;
     
     // 发射角度（向下）
     this.rainEmitter.angle = 270;
-    this.rainEmitter.angleVar = 5;
+    this.rainEmitter.angleVar = 3;
     
-    // 颜色（浅蓝色水滴）
-    this.rainEmitter.startColor = new Color(180, 210, 255, 200);
-    this.rainEmitter.endColor = new Color(150, 190, 255, 100);
+    // 颜色（更清晰的蓝色水滴）
+    this.rainEmitter.startColor = new Color(150, 200, 255, 255);
+    this.rainEmitter.endColor = new Color(100, 180, 255, 180);
     
-    // 大小
-    this.rainEmitter.startSize = 8;
-    this.rainEmitter.startSizeVar = 3;
-    this.rainEmitter.endSize = 4;
+    // 大小（稍大一点更清晰）
+    this.rainEmitter.startSize = 12;
+    this.rainEmitter.startSizeVar = 4;
+    this.rainEmitter.endSize = 6;
     
     // 默认停止
     this.rainEmitter.resetSystem();
@@ -169,35 +170,35 @@ export class ParticleEffects extends Component {
     }
     this.snowEmitter = emitter;
     
-    // 雪花配置
-    this.snowEmitter.totalParticles = 100;
+    // 雪花配置（更清晰，更长寿命）
+    this.snowEmitter.totalParticles = 150;
     this.snowEmitter.duration = -1;
-    this.snowEmitter.emissionRate = 30;
-    this.snowEmitter.life = 4;
-    this.snowEmitter.lifeVar = 1;
+    this.snowEmitter.emissionRate = 40;
+    this.snowEmitter.life = 6;  // 更长寿命，慢慢飘落
+    this.snowEmitter.lifeVar = 2;
     
     // 发射区域
     this.snowEmitter.posVar = new Vec2(this.screenWidth / 2, 0);
     
     // 轻微重力
-    this.snowEmitter.gravity = new Vec2(0, -50);
+    this.snowEmitter.gravity = new Vec2(0, -80);
     
     // 慢速飘落
-    this.snowEmitter.speed = 30;
-    this.snowEmitter.speedVar = 20;
+    this.snowEmitter.speed = 50;
+    this.snowEmitter.speedVar = 30;
     
     // 发射角度（向下，但有摇摆）
     this.snowEmitter.angle = 270;
-    this.snowEmitter.angleVar = 30;
+    this.snowEmitter.angleVar = 20;
     
-    // 颜色（白色雪花）
-    this.snowEmitter.startColor = new Color(255, 255, 255, 230);
-    this.snowEmitter.endColor = new Color(255, 255, 255, 50);
+    // 颜色（更清晰的白色雪花）
+    this.snowEmitter.startColor = new Color(255, 255, 255, 255);
+    this.snowEmitter.endColor = new Color(255, 255, 255, 100);
     
-    // 大小
-    this.snowEmitter.startSize = 10;
-    this.snowEmitter.startSizeVar = 5;
-    this.snowEmitter.endSize = 6;
+    // 大小（更大更清晰）
+    this.snowEmitter.startSize = 16;
+    this.snowEmitter.startSizeVar = 6;
+    this.snowEmitter.endSize = 10;
     
     // 旋转
     this.snowEmitter.startSpin = 0;
@@ -329,6 +330,26 @@ export class ParticleEffects extends Component {
   
   // 上次的天气代码，避免重复触发
   private lastWeatherCode: number = -1;
+  
+  /**
+   * 更新风速（影响雨雪飘动方向）
+   */
+  updateWindSpeed(windSpeed: number) {
+    this.currentWindSpeed = windSpeed;
+    
+    // 风速转换为水平重力分量（风速 km/h -> 像素偏移）
+    const windForce = windSpeed * 8;  // 风越大，水平偏移越大
+    
+    if (this.rainEmitter) {
+      // 雨滴受风影响较大
+      this.rainEmitter.gravity = new Vec2(windForce, -1000);
+    }
+    
+    if (this.snowEmitter) {
+      // 雪花受风影响更大（更轻）
+      this.snowEmitter.gravity = new Vec2(windForce * 1.5, -80);
+    }
+  }
   
   /**
    * 根据天气代码更新粒子效果

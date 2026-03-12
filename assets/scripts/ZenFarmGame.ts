@@ -467,6 +467,7 @@ export class ZenFarmGame extends Component {
       // 更新粒子效果（雨/雪）
       if (this.particleEffects) {
         this.particleEffects.updateWeatherEffect(this.weather.weatherCode);
+        this.particleEffects.updateWindSpeed(this.weather.windSpeed);
       }
     }
   }
