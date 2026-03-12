@@ -32,11 +32,15 @@ export class ParticleEffects extends Component {
     this.node.setParent(parent);
     this.node.layer = parent.layer;
     
-    // 创建雨滴发射器
-    this.createRainEmitter();
-    
-    // 创建雪花发射器
-    this.createSnowEmitter();
+    try {
+      // 创建雨滴发射器
+      this.createRainEmitter();
+      
+      // 创建雪花发射器
+      this.createSnowEmitter();
+    } catch (e) {
+      console.warn('⚠️ 粒子系统初始化失败，可能未启用 Particle System 2D 模块', e);
+    }
   }
   
   /**
@@ -51,7 +55,12 @@ export class ParticleEffects extends Component {
     const transform = rainNode.addComponent(UITransform);
     transform.setContentSize(this.screenWidth, 100);
     
-    this.rainEmitter = rainNode.addComponent(ParticleSystem2D);
+    const emitter = rainNode.addComponent(ParticleSystem2D);
+    if (!emitter) {
+      console.warn('⚠️ ParticleSystem2D 组件不可用');
+      return;
+    }
+    this.rainEmitter = emitter;
     
     // 雨滴配置
     this.rainEmitter.totalParticles = 150;
@@ -100,7 +109,12 @@ export class ParticleEffects extends Component {
     const transform = snowNode.addComponent(UITransform);
     transform.setContentSize(this.screenWidth, 100);
     
-    this.snowEmitter = snowNode.addComponent(ParticleSystem2D);
+    const emitter = snowNode.addComponent(ParticleSystem2D);
+    if (!emitter) {
+      console.warn('⚠️ ParticleSystem2D 组件不可用');
+      return;
+    }
+    this.snowEmitter = emitter;
     
     // 雪花配置
     this.snowEmitter.totalParticles = 100;
