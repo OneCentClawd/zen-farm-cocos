@@ -11,11 +11,5 @@
       "desc": "获取您的大致位置以提供当地天气数据"
     }
   },
-  "requiredPrivateInfos": ["getFuzzyLocation"],
-  "subpackages": [
-    {
-      "name": "resources",
-      "root": "subpackages/resources/"
-    }
-  ]
+  "requiredPrivateInfos": ["getFuzzyLocation"]
 }
