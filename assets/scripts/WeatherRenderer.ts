@@ -13,6 +13,7 @@ import {
   Sprite, SpriteFrame, Vec3, tween, view, resources, ImageAsset
 } from 'cc';
 import { WeatherData } from './Environment';
+import { getTopSafeArea } from './Platform';
 
 const { ccclass, property } = _decorator;
 
@@ -484,7 +485,8 @@ export class WeatherRenderer extends Component {
     
     const hour = this.currentHour;
     const halfW = this.screenWidth / 2;
-    const topY = this.screenHeight / 2 - 40;  // 天空顶部，再高一点
+    const topSafe = getTopSafeArea();  // 微信胶囊安全区
+    const topY = this.screenHeight / 2 - 80 - topSafe;  // 避开胶囊和状态栏
     const bottomY = this.screenHeight / 6;     // 地平线在屏幕中部偏下
     
     // 太阳：6:00 升起，18:00 落下
