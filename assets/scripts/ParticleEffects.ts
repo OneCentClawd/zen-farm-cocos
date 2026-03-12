@@ -227,10 +227,17 @@ export class ParticleEffects extends Component {
     emitter.autoRemoveOnFinish = true;
   }
   
+  // 上次的天气代码，避免重复触发
+  private lastWeatherCode: number = -1;
+  
   /**
    * 根据天气代码更新粒子效果
    */
   updateWeatherEffect(weatherCode: number) {
+    // 天气没变就不重置
+    if (weatherCode === this.lastWeatherCode) return;
+    this.lastWeatherCode = weatherCode;
+    
     // 停止所有效果
     this.stopRain();
     this.stopSnow();
@@ -245,8 +252,10 @@ export class ParticleEffects extends Component {
     // 51-67, 80-99: 雨
     if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 99)) {
       let intensity = 0.5;
-      if (weatherCode >= 63 || weatherCode >= 82) intensity = 0.8;
-      if (weatherCode >= 65 || weatherCode >= 95) intensity = 1;
+      // 中雨: 63-64 或 82-84
+      if ((weatherCode >= 63 && weatherCode <= 64) || (weatherCode >= 82 && weatherCode <= 84)) intensity = 0.8;
+      // 大雨: 65-67 或 85-99
+      if (weatherCode >= 65 || weatherCode >= 85) intensity = 1;
       this.startRain(intensity);
     }
   }
