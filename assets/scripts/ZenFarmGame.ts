@@ -1158,12 +1158,12 @@ export class ZenFarmGame extends Component {
     const plot = this.gameData.plots[this.selectedPlot];
     this.gameData.plots[this.selectedPlot] = waterPlot(plot);
     
-    // 播放浇水溅落粒子效果（在屏幕中下部）
+    // 播放浇水溅落粒子效果（土壤上端往下10像素）
     if (this.particleEffects) {
       const screenSize = view.getVisibleSize();
-      // 土地在下1/3，特效放在土地上方一点
-      const splashY = -screenSize.height / 6;  // 屏幕中心往下 1/6
-      this.particleEffects.playWaterSplash(0, splashY);
+      const halfH = screenSize.height / 2;
+      const groundTop = -halfH + screenSize.height / 3;  // 土地顶部
+      this.particleEffects.playWaterSplash(0, groundTop - 10);
     }
     
     console.log('💧 浇水了！');
