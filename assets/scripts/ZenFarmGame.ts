@@ -17,6 +17,7 @@ import { getTopSafeArea } from './Platform';
 import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
 import { WeatherRenderer } from './WeatherRenderer';
 import { SoilRenderer } from './SoilRenderer';
+import { ParticleEffects } from './ParticleEffects';
 
 const { ccclass, property } = _decorator;
 
@@ -30,6 +31,7 @@ export class ZenFarmGame extends Component {
   private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
   private plantNode: Node | null = null;  // 植物渲染节点
   private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
+  private particleEffects: ParticleEffects | null = null;  // 粒子效果
   private soilRenderer: SoilRenderer | null = null;  // 土壤渲染器
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
@@ -153,6 +155,11 @@ export class ZenFarmGame extends Component {
     const weatherNode = new Node('WeatherRenderer');
     this.weatherRenderer = weatherNode.addComponent(WeatherRenderer);
     this.weatherRenderer.init(this.node);  // 不需要传 skyHeight，铺满整个屏幕
+    
+    // ========== 粒子效果（雨、雪、浇水） ==========
+    const particleNode = new Node('ParticleEffects');
+    this.particleEffects = particleNode.addComponent(ParticleEffects);
+    this.particleEffects.init(this.node);
     
     // ========== 顶部安全区 ==========
     const topSafe = getTopSafeArea();  // 微信胶囊按钮高度
@@ -429,6 +436,11 @@ export class ZenFarmGame extends Component {
       // 更新天气渲染器
       if (this.weatherRenderer) {
         this.weatherRenderer.updateWeather(this.weather);
+      }
+      
+      // 更新粒子效果（雨/雪）
+      if (this.particleEffects) {
+        this.particleEffects.updateWeatherEffect(this.weather.weatherCode);
       }
     }
   }
@@ -1145,6 +1157,12 @@ export class ZenFarmGame extends Component {
     
     const plot = this.gameData.plots[this.selectedPlot];
     this.gameData.plots[this.selectedPlot] = waterPlot(plot);
+    
+    // 播放浇水溅落粒子效果
+    if (this.particleEffects && this.plantNode) {
+      const plantPos = this.plantNode.getPosition();
+      this.particleEffects.playWaterSplash(plantPos.x, plantPos.y - 50);
+    }
     
     console.log('💧 浇水了！');
     this.updateUI();
