@@ -684,7 +684,7 @@ export class WeatherRenderer extends Component {
     return {
       x: -this.screenWidth / 2 + Math.random() * this.screenWidth,
       y: this.screenHeight / 2 + Math.random() * 100,
-      speed: 400 + Math.random() * 300,
+      speed: 150 + Math.random() * 150,  // 慢一点的雨
       length: 15 + Math.random() * 20
     };
   }

@@ -258,32 +258,6 @@ export class ZenFarmGame extends Component {
     const facilityTransform = this.facilityLabel.node.getComponent(UITransform);
     if (facilityTransform) facilityTransform.setContentSize(150, 50);
     
-    // 测试下雨按钮
-    btnY -= btnGap;
-    const rainTestLabel = this.createLabel('RainTest', '🌧️ 下雨', 40);
-    rainTestLabel.node.setPosition(btnX, btnY, 0);
-    rainTestLabel.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.particleEffects) {
-        this.particleEffects.startRain(1);
-        console.log('🌧️ 测试下雨');
-      }
-    }, this);
-    const rainTestTransform = rainTestLabel.node.getComponent(UITransform);
-    if (rainTestTransform) rainTestTransform.setContentSize(150, 50);
-    
-    // 测试下雪按钮
-    btnY -= btnGap;
-    const snowTestLabel = this.createLabel('SnowTest', '❄️ 下雪', 40);
-    snowTestLabel.node.setPosition(btnX, btnY, 0);
-    snowTestLabel.node.on(Node.EventType.TOUCH_END, () => {
-      if (this.particleEffects) {
-        this.particleEffects.startSnow(1);
-        console.log('❄️ 测试下雪');
-      }
-    }, this);
-    const snowTestTransform = snowTestLabel.node.getComponent(UITransform);
-    if (snowTestTransform) snowTestTransform.setContentSize(150, 50);
-    
     // 收获按钮
     btnY -= btnGap;
     this.harvestLabel = this.createLabel('Harvest', '🌾 收获', 40);
