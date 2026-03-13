@@ -13,6 +13,8 @@ const WEATHER_CACHE_KEY = 'zen_farm_weather_cache';
  */
 export function saveGame(data: GameSaveData): void {
   try {
+    // 更新保存时间戳
+    data.lastOnlineAt = Date.now();
     const json = JSON.stringify(data);
     sys.localStorage.setItem(SAVE_KEY, json);
     console.log('💾 游戏已保存');
