@@ -2001,4 +2001,20 @@ export class ProceduralPlantRenderer extends Component {
     const x = Math.sin(seed * 12.9898) * 43758.5453;
     return x - Math.floor(x);
   }
+  
+  /**
+   * 获取植物渲染高度（用于遮雨棚等设施定位）
+   */
+  getPlantHeight(plant: PlantData): number {
+    if (!plant) return 0;
+    
+    const traits = this.getPlantTraits(plant.type, plant.growthProgress);
+    const stemHeight = traits.height * 3;
+    
+    // 加上花的高度
+    const hasFlower = ['flowering', 'fruiting', 'ripe', 'withering'].includes(plant.stage);
+    const flowerHeight = hasFlower ? 30 : 0;
+    
+    return stemHeight + flowerHeight + 20;
+  }
 }

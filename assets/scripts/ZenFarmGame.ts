@@ -18,6 +18,7 @@ import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
 import { WeatherRenderer } from './WeatherRenderer';
 import { SoilRenderer } from './SoilRenderer';
 import { ParticleEffects } from './ParticleEffects';
+import { FacilityRenderer } from './FacilityRenderer';
 
 const { ccclass, property } = _decorator;
 
@@ -33,6 +34,7 @@ export class ZenFarmGame extends Component {
   private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
   private particleEffects: ParticleEffects | null = null;  // 粒子效果
   private soilRenderer: SoilRenderer | null = null;  // 土壤渲染器
+  private facilityRenderer: FacilityRenderer | null = null;  // 设施渲染器
   private statusLabel: Label | null = null;
   private soilLabel: Label | null = null;
   private actionLabel: Label | null = null;      // 种植/挖除按钮
@@ -62,6 +64,7 @@ export class ZenFarmGame extends Component {
   private weather: WeatherData | null = null;
   private selectedPlot: number = 0;
   private touchStartX: number = 0;  // 滑动起点
+  private groundY: number = 0;  // 地面 Y 坐标
   
   // 自动保存
   private saveTimer: number = 0;
@@ -215,6 +218,13 @@ export class ZenFarmGame extends Component {
     const soilNode = new Node('SoilRenderer');
     this.soilRenderer = soilNode.addComponent(SoilRenderer);
     this.soilRenderer.init(this.node, screenSize.width, groundHeight, groundCenterY);
+    
+    // ========== 设施渲染器（遮雨棚、除湿器） ==========
+    this.facilityRenderer = new FacilityRenderer(this.node);
+    this.facilityRenderer.node.setPosition(0, 0, 0);
+    
+    // 保存地面坐标供设施渲染使用
+    this.groundY = groundCenterY + groundHeight / 2;
     
     // 植物 emoji（备用，空地时显示）
     this.plantEmoji = this.createLabel('PlantEmoji', '🕳️', 120);
@@ -1321,6 +1331,28 @@ export class ZenFarmGame extends Component {
     // 每帧更新土壤渲染器（水波纹动画）
     if (this.soilRenderer) {
       this.soilRenderer.update(dt);
+    }
+    
+    // 每帧更新设施渲染器（遮雨棚摇晃、风扇旋转）
+    if (this.facilityRenderer && this.gameData) {
+      this.facilityRenderer.update(dt);
+      
+      const plot = this.gameData.plots[this.selectedPlot];
+      if (plot) {
+        // 获取植物高度
+        let plantHeight = 50;
+        if (plot.plant && this.plantRenderer) {
+          plantHeight = this.plantRenderer.getPlantHeight(plot.plant);
+        }
+        
+        this.facilityRenderer.render(
+          plot.hasShelter || false,
+          plot.hasDehumidifier || false,
+          0,
+          this.groundY,
+          plantHeight
+        );
+      }
     }
     
     // 每帧更新植物渲染（动画效果）
