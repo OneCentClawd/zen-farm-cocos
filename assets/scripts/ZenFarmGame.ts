@@ -14,7 +14,7 @@ import { saveGame, loadOrCreateGame } from './Storage';
 import { getCurrentStage, getPlantEmoji, getHealthEmoji } from './Plant';
 import { PopupManager } from './PopupManager';
 import { getTopSafeArea } from './Platform';
-import { ProceduralPlantRenderer } from './ProceduralPlantRenderer';
+import { LSystemPlantRenderer } from './LSystemPlantRenderer';
 import { WeatherRenderer } from './WeatherRenderer';
 import { SoilRenderer } from './SoilRenderer';
 import { ParticleEffects } from './ParticleEffects';
@@ -30,7 +30,7 @@ export class ZenFarmGame extends Component {
   private plotLabel: Label | null = null;
   private plantEmoji: Label | null = null;
   private testLabel: Label | null = null;          // 测试成熟度按钮
-  private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
+  private plantRenderer: LSystemPlantRenderer | null = null;  // L-System 植物渲染器
   private plantNode: Node | null = null;  // 植物渲染节点
   private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
   private particleEffects: ParticleEffects | null = null;  // 粒子效果
@@ -238,7 +238,7 @@ export class ZenFarmGame extends Component {
     this.plantNode.setPosition(0, this.groundY, 0);  // 植物从土壤顶部长出（y=0 对应地面）
     const plantTransform = this.plantNode.addComponent(UITransform);
     plantTransform.setContentSize(300, 400);
-    this.plantRenderer = this.plantNode.addComponent(ProceduralPlantRenderer);
+    this.plantRenderer = this.plantNode.addComponent(LSystemPlantRenderer);
     this.plantNode.active = false;  // 初始隐藏
     
     // ========== 操作区（靠右纵向排列）==========
