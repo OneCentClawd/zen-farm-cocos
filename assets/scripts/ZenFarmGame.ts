@@ -29,6 +29,7 @@ export class ZenFarmGame extends Component {
   private weatherLabel: Label | null = null;
   private plotLabel: Label | null = null;
   private plantEmoji: Label | null = null;
+  private testLabel: Label | null = null;          // 测试成熟度按钮
   private plantRenderer: ProceduralPlantRenderer | null = null;  // 程序化植物渲染器
   private plantNode: Node | null = null;  // 植物渲染节点
   private weatherRenderer: WeatherRenderer | null = null;  // 天气渲染器
@@ -296,6 +297,13 @@ export class ZenFarmGame extends Component {
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
     this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
     this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+    
+    // ========== 测试成熟度按钮（左下角） ==========
+    this.testLabel = this.createLabel('Test', '🌱 +10%', 36);
+    this.testLabel.node.setPosition(-halfW + 70, -halfH + 50, 0);
+    this.testLabel.node.on(Node.EventType.TOUCH_END, this.onTestTap, this);
+    const testTransform = this.testLabel.node.getComponent(UITransform);
+    if (testTransform) testTransform.setContentSize(120, 50);
     
     console.log('✅ UI 创建完成');
   }
@@ -886,6 +894,19 @@ export class ZenFarmGame extends Component {
     // 只有成熟且未死亡的植物才能收获
     if (plot?.plant && plot.plant.growthProgress >= 1.0 && plot.plant.healthState !== HealthState.DEAD) {
       this.doHarvest();
+    }
+  }
+  
+  /**
+   * 测试按钮 - 增加 10% 成熟度
+   */
+  onTestTap() {
+    if (!this.gameData) return;
+    const plot = this.gameData.plots[this.selectedPlot];
+    if (plot?.plant) {
+      plot.plant.growthProgress = Math.min(1, plot.plant.growthProgress + 0.1);
+      this.updateUI();
+      saveGame(this.gameData);
     }
   }
   
