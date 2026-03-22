@@ -503,14 +503,17 @@ export class ProceduralPlantRenderer extends Component {
   }
   
   /**
-   * 画叶子
+   * 画叶子（幸运草）
    */
   private drawLeaves(stemHeight: number, leafCount: number, tilt: number, progress: number) {
-    if (leafCount <= 0) return;
+    // 幸运草叶子数量限制为 3-4 片（茎上的叶子）
+    const maxLeaves = 4;
+    const actualCount = Math.min(leafCount, maxLeaves);
+    if (actualCount <= 0) return;
     
     const g = this.graphics!;
     
-    for (let i = 0; i < leafCount; i++) {
+    for (let i = 0; i < actualCount; i++) {
       // 叶子位置（沿茎秆分布）
       const t = (i + 1) / (leafCount + 1);
       const leafY = stemHeight * t;
@@ -812,8 +815,9 @@ export class ProceduralPlantRenderer extends Component {
     g.quadraticCurveTo(endX * 0.5, stemHeight * 0.5, endX, stemHeight);
     g.stroke();
     
-    // 叶子（心形大叶，交替排列）
-    const leafCount = Math.floor(2 + stemProgress * traits.leafCount);
+    // 叶子（心形大叶，交替排列）- 限制最多 6 片
+    const rawLeafCount = Math.floor(2 + stemProgress * traits.leafCount);
+    const leafCount = Math.min(rawLeafCount, 6);
     for (let i = 0; i < leafCount; i++) {
       const t = (i + 1) / (leafCount + 1);
       const leafY = stemHeight * t;
@@ -891,8 +895,8 @@ export class ProceduralPlantRenderer extends Component {
     g.quadraticCurveTo(endX * 0.4, stemHeight * 0.5, endX, endY);
     g.stroke();
     
-    // 叶子
-    const leafCount = traits.leafCount;
+    // 叶子 - 限制最多 8 片
+    const leafCount = Math.min(traits.leafCount, 8);
     for (let i = 0; i < leafCount; i++) {
       const t = (i + 1) / (leafCount + 1);
       const leafY = stemHeight * t;
