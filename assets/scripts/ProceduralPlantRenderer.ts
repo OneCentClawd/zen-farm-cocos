@@ -22,6 +22,9 @@ export class ProceduralPlantRenderer extends Component {
   // 动画时间（用于落樱等动态效果）
   private animTime: number = 0;
   
+  // 当前植物的唯一种子（用于生成独一无二的形态）
+  private plantSeed: number = 0;
+  
   // 通用颜色配置
   private stemColor = new Color(76, 153, 76);      // 茎秆绿
   private leafColor = new Color(60, 179, 113);     // 叶子绿
@@ -58,6 +61,9 @@ export class ProceduralPlantRenderer extends Component {
     
     // 更新动画时间
     this.animTime += deltaTime;
+    
+    // 设置植物唯一种子（用于生成独一无二的形态）
+    this.plantSeed = this.hashString(plant.id);
     
     this.graphics.clear();
     
@@ -2000,10 +2006,25 @@ export class ProceduralPlantRenderer extends Component {
   
   /**
    * 确定性伪随机数生成器（相同种子 = 相同结果）
+   * 结合植物唯一种子，让每棵植物形态独一无二
    */
   private seededRandom(seed: number): number {
-    const x = Math.sin(seed * 12.9898) * 43758.5453;
+    const combinedSeed = seed + this.plantSeed;
+    const x = Math.sin(combinedSeed * 12.9898) * 43758.5453;
     return x - Math.floor(x);
+  }
+  
+  /**
+   * 字符串哈希函数（把 plant.id 转成数字）
+   */
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;  // Convert to 32bit integer
+    }
+    return Math.abs(hash);
   }
   
   /**
