@@ -229,13 +229,13 @@ export class ZenFarmGame extends Component {
     
     // 植物 emoji（备用，空地时显示）
     this.plantEmoji = this.createLabel('PlantEmoji', '🕳️', 120);
-    this.plantEmoji.node.setPosition(0, groundCenterY + 60, 0);
+    this.plantEmoji.node.setPosition(0, this.groundY + 60, 0);
     
     // 程序化植物渲染节点
     this.plantNode = new Node('PlantRenderer');
     this.plantNode.layer = this.node.layer;
     this.plantNode.setParent(this.node);
-    this.plantNode.setPosition(0, groundCenterY + 150, 0);  // 植物从泥土上方长出
+    this.plantNode.setPosition(0, this.groundY, 0);  // 植物从土壤顶部长出（y=0 对应地面）
     const plantTransform = this.plantNode.addComponent(UITransform);
     plantTransform.setContentSize(300, 400);
     this.plantRenderer = this.plantNode.addComponent(ProceduralPlantRenderer);
