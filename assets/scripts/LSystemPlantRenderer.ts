@@ -791,44 +791,54 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画三叶草球状花（由很多小花组成）
+   * 画三叶草球状花（由很多小花组成，围绕中心排列）
    */
   private drawCloverFlower(g: Graphics, x: number, y: number, size: number) {
     const baseColor = this.flowerColor;
-    const petalCount = 25;  // 很多小花瓣
     
-    // 画一个毛茸茸的球状花序
-    for (let i = 0; i < petalCount; i++) {
-      // 随机分布在球形上
-      const theta = (i / petalCount) * Math.PI * 2 + (i % 3) * 0.3;
-      const phi = (i / petalCount) * Math.PI * 0.8 + 0.2;
-      
-      const r = size * 0.4;
-      const px = x + Math.cos(theta) * Math.sin(phi) * r;
-      const py = y + Math.cos(phi) * r * 0.7;  // 压扁一点
-      
-      // 小花瓣（椭圆形，向外辐射）
-      const petalSize = size * 0.15;
-      
-      // 阴影
-      g.fillColor = new Color(
-        Math.max(0, baseColor.r - 40),
-        Math.max(0, baseColor.g - 40),
-        Math.max(0, baseColor.b - 40),
-        200
-      );
-      g.ellipse(px + 1, py - 1, petalSize, petalSize * 0.6);
-      g.fill();
-      
-      // 小花瓣
-      g.fillColor = baseColor;
-      g.ellipse(px, py, petalSize, petalSize * 0.6);
-      g.fill();
+    // 多层花瓣，从外到内画（这样内层会覆盖外层边缘）
+    const layers = [
+      { count: 12, radius: size * 0.35, petalSize: size * 0.12 },  // 外层
+      { count: 8, radius: size * 0.2, petalSize: size * 0.1 },     // 中层
+      { count: 5, radius: size * 0.08, petalSize: size * 0.08 },   // 内层
+    ];
+    
+    for (const layer of layers) {
+      for (let i = 0; i < layer.count; i++) {
+        const angle = (i / layer.count) * Math.PI * 2;
+        const px = x + Math.cos(angle) * layer.radius;
+        const py = y + Math.sin(angle) * layer.radius;
+        
+        // 阴影
+        g.fillColor = new Color(
+          Math.max(0, baseColor.r - 40),
+          Math.max(0, baseColor.g - 40),
+          Math.max(0, baseColor.b - 40),
+          180
+        );
+        g.ellipse(px + 1, py - 1, layer.petalSize, layer.petalSize * 0.7);
+        g.fill();
+        
+        // 小花瓣
+        g.fillColor = baseColor;
+        g.ellipse(px, py, layer.petalSize, layer.petalSize * 0.7);
+        g.fill();
+        
+        // 小高光
+        g.fillColor = new Color(255, 255, 255, 80);
+        g.ellipse(px - layer.petalSize * 0.2, py + layer.petalSize * 0.2, layer.petalSize * 0.3, layer.petalSize * 0.2);
+        g.fill();
+      }
     }
     
+    // 中心点
+    g.fillColor = new Color(255, 240, 200);
+    g.circle(x, y, size * 0.05);
+    g.fill();
+    
     // 顶部高光
-    g.fillColor = new Color(255, 255, 255, 60);
-    g.circle(x, y + size * 0.15, size * 0.2);
+    g.fillColor = new Color(255, 255, 255, 50);
+    g.circle(x - size * 0.1, y + size * 0.1, size * 0.15);
     g.fill();
   }
   
