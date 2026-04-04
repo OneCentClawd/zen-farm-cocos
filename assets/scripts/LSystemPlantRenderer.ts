@@ -557,9 +557,10 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画心形叶
+   * 画心形叶（带叶脉）
    */
   private drawHeartLeaf(g: Graphics, x: number, y: number, size: number) {
+    // 叶片填充
     g.moveTo(x, y + size * 0.3);
     g.bezierCurveTo(
       x - size * 0.5, y + size * 0.6,
@@ -572,6 +573,34 @@ export class LSystemPlantRenderer extends Component {
       x, y + size * 0.3
     );
     g.fill();
+    
+    // 叶脉（经络）
+    const veinColor = new Color(40, 120, 40);  // 深绿色叶脉
+    g.strokeColor = veinColor;
+    g.lineWidth = Math.max(1, size * 0.03);
+    
+    // 主脉
+    g.moveTo(x, y + size * 0.25);
+    g.lineTo(x, y - size * 0.05);
+    g.stroke();
+    
+    // 侧脉（左边）
+    g.moveTo(x, y + size * 0.15);
+    g.lineTo(x - size * 0.25, y + size * 0.25);
+    g.stroke();
+    
+    g.moveTo(x, y + size * 0.05);
+    g.lineTo(x - size * 0.2, y + size * 0.1);
+    g.stroke();
+    
+    // 侧脉（右边）
+    g.moveTo(x, y + size * 0.15);
+    g.lineTo(x + size * 0.25, y + size * 0.25);
+    g.stroke();
+    
+    g.moveTo(x, y + size * 0.05);
+    g.lineTo(x + size * 0.2, y + size * 0.1);
+    g.stroke();
   }
   
   /**
@@ -589,6 +618,26 @@ export class LSystemPlantRenderer extends Component {
     // 右叶
     g.ellipse(x + size * 0.35, y + size * 0.15, size * 0.25, size * 0.35);
     g.fill();
+    
+    // 叶脉
+    const veinColor = new Color(40, 120, 40);
+    g.strokeColor = veinColor;
+    g.lineWidth = Math.max(1, size * 0.02);
+    
+    // 中间叶主脉
+    g.moveTo(x, y + size * 0.5);
+    g.lineTo(x, y + size * 0.15);
+    g.stroke();
+    
+    // 左叶主脉
+    g.moveTo(x - size * 0.35, y + size * 0.35);
+    g.lineTo(x - size * 0.35, y);
+    g.stroke();
+    
+    // 右叶主脉
+    g.moveTo(x + size * 0.35, y + size * 0.35);
+    g.lineTo(x + size * 0.35, y);
+    g.stroke();
   }
   
   /**
