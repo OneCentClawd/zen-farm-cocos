@@ -544,7 +544,7 @@ export class LSystemPlantRenderer extends Component {
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
     const leafSize = size * 0.8;  // 叶子大小
-    const stemLength = 8;  // 叶柄长度（固定短距离，让叶子紧贴茎）
+    const stemLength = 20;  // 叶柄长度
     
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
