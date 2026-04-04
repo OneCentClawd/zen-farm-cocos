@@ -543,8 +543,8 @@ export class LSystemPlantRenderer extends Component {
     // 随机决定是三叶草还是四叶草
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
-    const leafSize = size * 0.8;  // 叶子大小
-    const stemLength = 45;  // 叶柄长度
+    const leafSize = size * 0.5;  // 叶子缩小，防止重叠
+    const stemLength = 50;  // 叶柄稍长，拉开距离
     
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
@@ -619,13 +619,13 @@ export class LSystemPlantRenderer extends Component {
       };
     };
     
-    // 叶片关键点（相对于中心）
-    const p0 = rotate(x, y + size * 0.3);  // 底部尖端
-    const c1 = rotate(x - size * 0.5, y + size * 0.6);
-    const c2 = rotate(x - size * 0.5, y - size * 0.2);
-    const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
-    const c3 = rotate(x + size * 0.5, y - size * 0.2);
-    const c4 = rotate(x + size * 0.5, y + size * 0.6);
+    // 叶片关键点（更像爱心的形状）
+    const p0 = rotate(x, y + size * 0.45);  // 底部尖端（更尖）
+    const c1 = rotate(x - size * 0.55, y + size * 0.45);  // 左下控制点
+    const c2 = rotate(x - size * 0.55, y - size * 0.1);   // 左上控制点
+    const p1 = rotate(x, y + size * 0.1);  // 顶部凹陷（更深）
+    const c3 = rotate(x + size * 0.55, y - size * 0.1);   // 右上控制点
+    const c4 = rotate(x + size * 0.55, y + size * 0.45);  // 右下控制点
     
     // 3D效果：先画阴影（偏移 + 深色）
     const shadowOffset = size * 0.05;
