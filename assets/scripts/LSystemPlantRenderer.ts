@@ -543,8 +543,8 @@ export class LSystemPlantRenderer extends Component {
     // 随机决定是三叶草还是四叶草
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
-    const leafSize = size * 0.5;  // 叶子缩小，防止重叠
-    const stemLength = 50;  // 叶柄稍长，拉开距离
+    const leafSize = size * 0.9;  // 叶子放大，更像真实幸运草
+    const stemLength = 55;  // 叶柄稍长，防止叶子重叠
     
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
