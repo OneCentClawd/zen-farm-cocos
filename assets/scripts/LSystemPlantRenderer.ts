@@ -622,7 +622,7 @@ export class LSystemPlantRenderer extends Component {
         
       case PlantType.CLOVER:
       default:
-        this.drawSimpleFlower(g, x, y, size * 0.5, 4);
+        this.drawSimpleFlower(g, x, y, size * 5, 4);  // 放大 10 倍
         break;
     }
   }
