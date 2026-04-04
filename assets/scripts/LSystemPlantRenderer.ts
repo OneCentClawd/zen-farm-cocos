@@ -542,7 +542,7 @@ export class LSystemPlantRenderer extends Component {
     // 随机决定是三叶草还是四叶草
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
-    const leafSize = size * 0.4;  // 叶子大小
+    const leafSize = size * 0.8;  // 叶子大小（放大一倍）
     const stemLength = leafSize * 0.5;  // 叶柄长度
     
     for (let i = 0; i < leafCount; i++) {
@@ -763,7 +763,7 @@ export class LSystemPlantRenderer extends Component {
         
       case PlantType.CLOVER:
       default:
-        this.drawSimpleFlower(g, x, y, size * 5, 4);  // 放大 10 倍
+        this.drawSimpleFlower(g, x, y, size * 10, 4);  // 放大 20 倍
         break;
     }
   }
