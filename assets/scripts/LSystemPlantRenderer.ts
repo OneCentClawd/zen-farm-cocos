@@ -245,15 +245,16 @@ export class LSystemPlantRenderer extends Component {
     const g = this.graphics!;
     const progress = plant.growthProgress;
     
-    // 根系配置 - 加粗
+    // 根系配置 - 控制深度，不超出画面
     const config: LSystemConfig = {
       ...ROOT_LSYSTEM,
-      initialLength: 10 + progress * 15,
-      initialWidth: 4 + progress * 4,  // 加粗：4~8
+      initialLength: 8 + progress * 10,   // 缩短：8~18
+      initialWidth: 4 + progress * 4,     // 粗度：4~8
+      lengthFactor: 0.5,                  // 每级缩短更快
     };
     
     const lsystem = new LSystem(config);
-    const iterations = Math.min(4, Math.floor(progress * 5));
+    const iterations = Math.min(3, Math.floor(progress * 4));  // 最多3次迭代
     lsystem.generate(iterations, this.plantSeed);
     
     // 渲染（向下生长，所以起始角度是 -90）
