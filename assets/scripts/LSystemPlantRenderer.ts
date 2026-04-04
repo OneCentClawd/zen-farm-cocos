@@ -746,24 +746,12 @@ export class LSystemPlantRenderer extends Component {
     const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
     const center = rotate(x, y);
     
-    // 边缘描边颜色（深绿色）
-    const edgeColor = new Color(30, 80, 30);
-    
     g.fillColor = this.leafColor;
     
     if (side === 'left') {
       const c1 = rotate(x - size * 0.5, y + size * 0.6);
       const c2 = rotate(x - size * 0.5, y - size * 0.2);
       
-      // 先画边缘描边
-      g.strokeColor = edgeColor;
-      g.lineWidth = Math.max(1, size * 0.02);
-      g.moveTo(p0.x, p0.y);
-      g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
-      g.stroke();
-      
-      // 再填充主体
-      g.fillColor = this.leafColor;
       g.moveTo(p0.x, p0.y);
       g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
       g.lineTo(center.x, center.y);
@@ -785,15 +773,6 @@ export class LSystemPlantRenderer extends Component {
       const c3 = rotate(x + size * 0.5, y - size * 0.2);
       const c4 = rotate(x + size * 0.5, y + size * 0.6);
       
-      // 先画边缘描边
-      g.strokeColor = edgeColor;
-      g.lineWidth = Math.max(1, size * 0.02);
-      g.moveTo(p1.x, p1.y);
-      g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
-      g.stroke();
-      
-      // 再填充主体
-      g.fillColor = this.leafColor;
       g.moveTo(p1.x, p1.y);
       g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
       g.lineTo(center.x, center.y);
