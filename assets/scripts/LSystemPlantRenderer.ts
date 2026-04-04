@@ -536,20 +536,32 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画幸运草顶端（三片或四片叶子围成一圈）
+   * 画幸运草顶端（三片或四片叶子围成一圈，连在茎上）
    */
   private drawCloverTop(g: Graphics, x: number, y: number, size: number) {
     // 随机决定是三叶草还是四叶草
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
+    const leafSize = size * 0.4;  // 叶子大小
+    const stemLength = leafSize * 0.4;  // 叶柄长度（短一点，让叶子靠近茎）
     
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
-      const leafX = x + Math.cos(angle) * size * 0.3;
-      const leafY = y + Math.sin(angle) * size * 0.3;
       
+      // 叶柄终点（叶子位置）
+      const leafX = x + Math.cos(angle) * stemLength;
+      const leafY = y + Math.sin(angle) * stemLength;
+      
+      // 画叶柄（从茎顶端到叶子）
+      g.strokeColor = this.stemColor;
+      g.lineWidth = 2;
+      g.moveTo(x, y);
+      g.lineTo(leafX, leafY);
+      g.stroke();
+      
+      // 画叶子
       g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, leafX, leafY, size * 0.5);
+      this.drawHeartLeaf(g, leafX, leafY, leafSize);
     }
   }
   
