@@ -688,9 +688,9 @@ export class LSystemPlantRenderer extends Component {
     const flowerProgress = Math.min(1, (progress - 0.6) / 0.3);
     const size = 15 + flowerProgress * 20;
     
-    // 幸运草的花画在茎顶端（叶子中心上方）
+    // 幸运草的花画在茎顶端（叶子中心上方，距离拉开）
     if (plant.type === PlantType.CLOVER) {
-      this.drawFlower(g, topNode.x, topNode.y + 15, size, plant.type);
+      this.drawFlower(g, topNode.x, topNode.y + 40, size, plant.type);
     } else {
       this.drawFlower(g, topNode.x, topNode.y, size, plant.type);
     }
