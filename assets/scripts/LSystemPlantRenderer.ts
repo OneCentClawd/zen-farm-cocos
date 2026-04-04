@@ -619,13 +619,13 @@ export class LSystemPlantRenderer extends Component {
       };
     };
     
-    // 叶片关键点（更像爱心的形状）
-    const p0 = rotate(x, y + size * 0.45);  // 底部尖端（更尖）
-    const c1 = rotate(x - size * 0.55, y + size * 0.45);  // 左下控制点
-    const c2 = rotate(x - size * 0.55, y - size * 0.1);   // 左上控制点
-    const p1 = rotate(x, y + size * 0.1);  // 顶部凹陷（更深）
-    const c3 = rotate(x + size * 0.55, y - size * 0.1);   // 右上控制点
-    const c4 = rotate(x + size * 0.55, y + size * 0.45);  // 右下控制点
+    // 叶片关键点（相对于中心）
+    const p0 = rotate(x, y + size * 0.3);  // 底部尖端
+    const c1 = rotate(x - size * 0.5, y + size * 0.6);
+    const c2 = rotate(x - size * 0.5, y - size * 0.2);
+    const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
+    const c3 = rotate(x + size * 0.5, y - size * 0.2);
+    const c4 = rotate(x + size * 0.5, y + size * 0.6);
     
     // 3D效果：先画阴影（偏移 + 深色）
     const shadowOffset = size * 0.05;
