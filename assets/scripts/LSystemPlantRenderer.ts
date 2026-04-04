@@ -573,32 +573,54 @@ export class LSystemPlantRenderer extends Component {
       g.stroke();
     }
     
-    // 交错层叠效果：顺时针方向，每片叶子的右边盖住下一片的左边
-    // 通过给每片叶子加一个顺时针的旋转偏移来实现
-    // 画的顺序决定了谁在上面
+    // 真正的交错层叠：A盖B、B盖C、C盖A
+    // 把每片叶子分成左半和右半，交替绘制
+    // 三叶草(0=上, 1=左下, 2=右下)：
+    //   - 0的右半 盖住 2的左半
+    //   - 2的右半 盖住 1的左半  
+    //   - 1的右半 盖住 0的左半
+    // 绘制顺序：0左 → 2左 → 1左 → 0右 → 2右 → 1右
+    // 简化：0左 → 2全 → 1全 → 0右（只拆分0）
     
-    // 先画被盖的叶子（底层），后画盖住别人的叶子（顶层）
-    // 三叶草：叶子0(上)的右边 盖住 叶子2(右下)的左边
-    //         叶子2的右边 盖住 叶子1(左下)的左边
-    //         叶子1的右边 盖住 叶子0的左边
-    // 所以需要把每片叶子的两半分开画
+    // 更简单的方案：按照交错顺序画，让每片只被一片盖住
+    // 顺序：1(左下) → 0(上) → 2(右下)
+    // 这样：上盖左下，右下盖上，但右下不盖左下...还是不对
     
-    // 简化方案：画叶子顺序 0 → 2 → 1，加上叶子位置向顺时针方向偏移
-    const rotateOffset = 0.25;  // 整体顺时针偏移
+    // 真正方案：三片叶子各画两次，第一轮画底层，第二轮画顶层
+    // 或者：稍微调整每片叶子的旋转角度，让它们自然交错
     
-    const drawOrderThree = [0, 2, 1];  // 上 → 右下 → 左下（左下在最上层）
-    const drawOrderFour = [0, 3, 2, 1];  // 四叶草
+    // 使用旋转偏移 + 正确顺序
+    // 每片叶子向自己的顺时针方向多旋转一点，露出被盖的边
     
-    const drawOrder = leafCount === 3 ? drawOrderThree : drawOrderFour;
-    
-    for (const i of drawOrder) {
-      // 重新计算位置，加上顺时针偏移
-      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2 + rotateOffset;
-      const leafX = x + Math.cos(angle) * stemLength;
-      const leafY = y + Math.sin(angle) * stemLength;
+    if (leafCount === 3) {
+      // 三叶草交错绘制
+      const indices = [0, 1, 2];  // 上、左下、右下
       
-      g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle - Math.PI / 2);
+      // 第一轮：画每片叶子的"被盖住"部分（左半边）
+      for (const i of [0, 2, 1]) {
+        const pos = leafPositions[i];
+        g.fillColor = this.leafColor;
+        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
+      }
+      
+      // 第二轮：画每片叶子的"盖住别人"部分（右半边）
+      for (const i of [0, 2, 1]) {
+        const pos = leafPositions[i];
+        g.fillColor = this.leafColor;
+        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
+      }
+    } else {
+      // 四叶草类似处理
+      for (const i of [0, 3, 2, 1]) {
+        const pos = leafPositions[i];
+        g.fillColor = this.leafColor;
+        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
+      }
+      for (const i of [0, 3, 2, 1]) {
+        const pos = leafPositions[i];
+        g.fillColor = this.leafColor;
+        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
+      }
     }
   }
   
@@ -727,6 +749,71 @@ export class LSystemPlantRenderer extends Component {
     g.moveTo(v9.x, v9.y);
     g.lineTo(v10.x, v10.y);
     g.stroke();
+  }
+  
+  /**
+   * 画心形叶的一半（用于交错效果）
+   */
+  private drawHeartLeafHalf(g: Graphics, x: number, y: number, size: number, rotation: number, side: 'left' | 'right') {
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    
+    const rotate = (px: number, py: number) => {
+      const dx = px - x;
+      const dy = py - y;
+      return {
+        x: x + dx * cos - dy * sin,
+        y: y + dx * sin + dy * cos
+      };
+    };
+    
+    const p0 = rotate(x, y + size * 0.3);  // 底部尖端
+    const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
+    const center = rotate(x, y);
+    
+    if (side === 'left') {
+      // 左半边：从尖端到凹陷的左侧曲线
+      const c1 = rotate(x - size * 0.5, y + size * 0.6);
+      const c2 = rotate(x - size * 0.5, y - size * 0.2);
+      
+      // 阴影
+      const shadowOffset = size * 0.05;
+      g.fillColor = new Color(30, 80, 30, 180);
+      g.moveTo(p0.x + shadowOffset, p0.y - shadowOffset);
+      g.bezierCurveTo(c1.x + shadowOffset, c1.y - shadowOffset, c2.x + shadowOffset, c2.y - shadowOffset, p1.x + shadowOffset, p1.y - shadowOffset);
+      g.lineTo(center.x + shadowOffset, center.y - shadowOffset);
+      g.lineTo(p0.x + shadowOffset, p0.y - shadowOffset);
+      g.fill();
+      
+      // 主体
+      g.fillColor = this.leafColor;
+      g.moveTo(p0.x, p0.y);
+      g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
+      g.lineTo(center.x, center.y);
+      g.lineTo(p0.x, p0.y);
+      g.fill();
+    } else {
+      // 右半边：从凹陷到尖端的右侧曲线
+      const c3 = rotate(x + size * 0.5, y - size * 0.2);
+      const c4 = rotate(x + size * 0.5, y + size * 0.6);
+      
+      // 阴影
+      const shadowOffset = size * 0.05;
+      g.fillColor = new Color(30, 80, 30, 180);
+      g.moveTo(p1.x + shadowOffset, p1.y - shadowOffset);
+      g.bezierCurveTo(c3.x + shadowOffset, c3.y - shadowOffset, c4.x + shadowOffset, c4.y - shadowOffset, p0.x + shadowOffset, p0.y - shadowOffset);
+      g.lineTo(center.x + shadowOffset, center.y - shadowOffset);
+      g.lineTo(p1.x + shadowOffset, p1.y - shadowOffset);
+      g.fill();
+      
+      // 主体
+      g.fillColor = this.leafColor;
+      g.moveTo(p1.x, p1.y);
+      g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
+      g.lineTo(center.x, center.y);
+      g.lineTo(p1.x, p1.y);
+      g.fill();
+    }
   }
   
   /**
