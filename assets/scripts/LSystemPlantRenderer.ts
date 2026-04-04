@@ -688,9 +688,19 @@ export class LSystemPlantRenderer extends Component {
     const flowerProgress = Math.min(1, (progress - 0.6) / 0.3);
     const size = 15 + flowerProgress * 20;
     
-    // 幸运草的花画在茎顶端（叶子中心上方，距离拉开）
+    // 幸运草特殊处理：从叶子中间伸出花茎，花在最顶端
     if (plant.type === PlantType.CLOVER) {
-      this.drawFlower(g, topNode.x, topNode.y + 40, size, plant.type);
+      const flowerStemHeight = 35;  // 花茎长度
+      
+      // 画花茎（从叶子中心往上）
+      g.strokeColor = this.stemColor;
+      g.lineWidth = 3;
+      g.moveTo(topNode.x, topNode.y);
+      g.lineTo(topNode.x, topNode.y + flowerStemHeight);
+      g.stroke();
+      
+      // 画花（在花茎顶端）
+      this.drawFlower(g, topNode.x, topNode.y + flowerStemHeight + size * 2, size, plant.type);
     } else {
       this.drawFlower(g, topNode.x, topNode.y, size, plant.type);
     }
