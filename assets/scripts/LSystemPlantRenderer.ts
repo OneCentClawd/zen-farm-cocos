@@ -598,7 +598,15 @@ export class LSystemPlantRenderer extends Component {
     const flowerProgress = Math.min(1, (progress - 0.6) / 0.3);
     const size = 15 + flowerProgress * 20;
     
-    this.drawFlower(g, topNode.x, topNode.y, size, plant.type);
+    // 幸运草的花画在叶子旁边（稍微偏上一点）
+    if (plant.type === PlantType.CLOVER) {
+      const leafNodes = this.nodes.filter(n => n.type === 'leaf').slice(0, 2);
+      for (const node of leafNodes) {
+        this.drawFlower(g, node.x, node.y + 10, size, plant.type);
+      }
+    } else {
+      this.drawFlower(g, topNode.x, topNode.y, size, plant.type);
+    }
   }
   
   /**
