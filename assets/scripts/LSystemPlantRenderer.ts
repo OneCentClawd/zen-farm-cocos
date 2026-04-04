@@ -785,9 +785,51 @@ export class LSystemPlantRenderer extends Component {
         
       case PlantType.CLOVER:
       default:
-        this.drawSimpleFlower(g, x, y, size * 10, 4);  // 放大 20 倍
+        this.drawCloverFlower(g, x, y, size * 8);  // 三叶草球状花
         break;
     }
+  }
+  
+  /**
+   * 画三叶草球状花（由很多小花组成）
+   */
+  private drawCloverFlower(g: Graphics, x: number, y: number, size: number) {
+    const baseColor = this.flowerColor;
+    const petalCount = 25;  // 很多小花瓣
+    
+    // 画一个毛茸茸的球状花序
+    for (let i = 0; i < petalCount; i++) {
+      // 随机分布在球形上
+      const theta = (i / petalCount) * Math.PI * 2 + (i % 3) * 0.3;
+      const phi = (i / petalCount) * Math.PI * 0.8 + 0.2;
+      
+      const r = size * 0.4;
+      const px = x + Math.cos(theta) * Math.sin(phi) * r;
+      const py = y + Math.cos(phi) * r * 0.7;  // 压扁一点
+      
+      // 小花瓣（椭圆形，向外辐射）
+      const petalSize = size * 0.15;
+      
+      // 阴影
+      g.fillColor = new Color(
+        Math.max(0, baseColor.r - 40),
+        Math.max(0, baseColor.g - 40),
+        Math.max(0, baseColor.b - 40),
+        200
+      );
+      g.ellipse(px + 1, py - 1, petalSize, petalSize * 0.6);
+      g.fill();
+      
+      // 小花瓣
+      g.fillColor = baseColor;
+      g.ellipse(px, py, petalSize, petalSize * 0.6);
+      g.fill();
+    }
+    
+    // 顶部高光
+    g.fillColor = new Color(255, 255, 255, 60);
+    g.circle(x, y + size * 0.15, size * 0.2);
+    g.fill();
   }
   
   /**
