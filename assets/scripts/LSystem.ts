@@ -277,10 +277,10 @@ export const ROOT_LSYSTEM: LSystemConfig = {
   rules: [
     { symbol: 'F', replacement: 'F[+F]F[-F]F' },
   ],
-  angle: 25,
-  lengthFactor: 0.7,
+  angle: 45,              // 增大角度，让根系更横向扩散
+  lengthFactor: 0.6,      // 每次迭代长度缩短更多，控制深度
   widthFactor: 0.8,
-  initialLength: 20,
+  initialLength: 15,      // 初始长度减小
   initialWidth: 3,
   lengthVariance: 0.2,
   angleVariance: 0.3,
