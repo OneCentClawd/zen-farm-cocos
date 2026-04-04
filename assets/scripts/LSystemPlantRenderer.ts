@@ -508,7 +508,21 @@ export class LSystemPlantRenderer extends Component {
     const progress = plant.growthProgress;
     const wiltLevel = plant.wiltLevel || 0;
     
-    // 限制叶子数量
+    // 幸运草特殊处理：叶子画在茎顶端
+    if (plant.type === PlantType.CLOVER) {
+      const flowerNodes = this.nodes.filter(n => n.type === 'flower');
+      if (flowerNodes.length > 0) {
+        // 找到最高点
+        const topNode = flowerNodes.reduce((a, b) => a.y > b.y ? a : b);
+        const size = (12 + progress * 15);
+        const droop = wiltLevel * 15;
+        // 在顶端画三叶草叶子
+        this.drawCloverTop(g, topNode.x, topNode.y - droop, size * 18);
+      }
+      return;
+    }
+    
+    // 其他植物：叶子画在分支位置
     const maxLeaves = this.getMaxLeaves(plant.type);
     const leafNodes = this.nodes.filter(n => n.type === 'leaf').slice(0, maxLeaves);
     
@@ -518,6 +532,24 @@ export class LSystemPlantRenderer extends Component {
       const droop = wiltLevel * 15;
       
       this.drawLeaf(g, node.x, node.y - droop, size, node.angle, plant.type);
+    }
+  }
+  
+  /**
+   * 画幸运草顶端（三片或四片叶子围成一圈）
+   */
+  private drawCloverTop(g: Graphics, x: number, y: number, size: number) {
+    // 随机决定是三叶草还是四叶草
+    const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
+    const leafCount = isFourLeaf ? 4 : 3;
+    
+    for (let i = 0; i < leafCount; i++) {
+      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
+      const leafX = x + Math.cos(angle) * size * 0.3;
+      const leafY = y + Math.sin(angle) * size * 0.3;
+      
+      g.fillColor = this.leafColor;
+      this.drawHeartLeaf(g, leafX, leafY, size * 0.5);
     }
   }
   
@@ -656,12 +688,9 @@ export class LSystemPlantRenderer extends Component {
     const flowerProgress = Math.min(1, (progress - 0.6) / 0.3);
     const size = 15 + flowerProgress * 20;
     
-    // 幸运草的花画在叶子旁边（稍微偏上一点）
+    // 幸运草的花画在茎顶端（叶子中心上方）
     if (plant.type === PlantType.CLOVER) {
-      const leafNodes = this.nodes.filter(n => n.type === 'leaf').slice(0, 2);
-      for (const node of leafNodes) {
-        this.drawFlower(g, node.x, node.y + 10, size, plant.type);
-      }
+      this.drawFlower(g, topNode.x, topNode.y + 15, size, plant.type);
     } else {
       this.drawFlower(g, topNode.x, topNode.y, size, plant.type);
     }
