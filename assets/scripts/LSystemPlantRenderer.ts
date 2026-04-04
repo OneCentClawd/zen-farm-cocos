@@ -236,11 +236,11 @@ export class LSystemPlantRenderer extends Component {
     const g = this.graphics!;
     const progress = plant.growthProgress;
     
-    // 根系配置
+    // 根系配置 - 加粗
     const config: LSystemConfig = {
       ...ROOT_LSYSTEM,
       initialLength: 10 + progress * 15,
-      initialWidth: 1.5 + progress * 1.5,
+      initialWidth: 4 + progress * 4,  // 加粗：4~8
     };
     
     const lsystem = new LSystem(config);
@@ -287,8 +287,8 @@ export class LSystemPlantRenderer extends Component {
       case PlantType.CLOVER:
       default:
         config = { ...CLOVER_STEM_LSYSTEM };
-        config.initialLength = 25 + progress * 50;  // 放大：25~75
-        config.initialWidth = 4 + progress * 4;     // 放大：4~8
+        config.initialLength = 15 + progress * 30;  // 高度恢复：15~45
+        config.initialWidth = 6 + progress * 6;     // 茎更粗：6~12
         config.angle = 25;                          // 角度小一点，更自然
         maxIterations = 3;
         break;
@@ -520,8 +520,8 @@ export class LSystemPlantRenderer extends Component {
     
     switch (plantType) {
       case PlantType.CLOVER:
-        // 心形叶（三叶草）- 放大 1.8 倍
-        this.drawHeartLeaf(g, x, y, size * 1.8);
+        // 心形叶（三叶草）- 放大 18 倍
+        this.drawHeartLeaf(g, x, y, size * 18);
         break;
         
       case PlantType.SUNFLOWER:
