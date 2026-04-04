@@ -580,16 +580,16 @@ export class LSystemPlantRenderer extends Component {
       this.drawHeartLeafShadow(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2);
     }
     
-    // 第2步：交错画左半和右半主体
-    // 先画所有左半
-    for (const i of drawOrder) {
-      const pos = leafPositions[i];
-      this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
-    }
-    // 再画所有右半
+    // 第2步：交错画右半和左半主体（先右后左，反转盖住顺序）
+    // 先画所有右半
     for (const i of drawOrder) {
       const pos = leafPositions[i];
       this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
+    }
+    // 再画所有左半
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
+      this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
     }
     
     // 第3步：画所有叶脉（在最上层）
