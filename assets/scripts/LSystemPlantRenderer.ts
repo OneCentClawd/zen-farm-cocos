@@ -602,7 +602,7 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画心形叶（带叶脉），支持旋转
+   * 画心形叶（带叶脉和3D效果），支持旋转
    */
   private drawHeartLeaf(g: Graphics, x: number, y: number, size: number, rotation: number = 0) {
     // 保存当前变换
@@ -627,10 +627,31 @@ export class LSystemPlantRenderer extends Component {
     const c3 = rotate(x + size * 0.5, y - size * 0.2);
     const c4 = rotate(x + size * 0.5, y + size * 0.6);
     
-    // 叶片填充
+    // 3D效果：先画阴影（偏移 + 深色）
+    const shadowOffset = size * 0.05;
+    g.fillColor = new Color(30, 80, 30, 180);  // 深绿色阴影
+    g.moveTo(p0.x + shadowOffset, p0.y - shadowOffset);
+    g.bezierCurveTo(c1.x + shadowOffset, c1.y - shadowOffset, c2.x + shadowOffset, c2.y - shadowOffset, p1.x + shadowOffset, p1.y - shadowOffset);
+    g.bezierCurveTo(c3.x + shadowOffset, c3.y - shadowOffset, c4.x + shadowOffset, c4.y - shadowOffset, p0.x + shadowOffset, p0.y - shadowOffset);
+    g.fill();
+    
+    // 叶片主体填充
+    g.fillColor = this.leafColor;
     g.moveTo(p0.x, p0.y);
     g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
     g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
+    g.fill();
+    
+    // 3D效果：高光（左上角偏亮）
+    const highlightColor = new Color(120, 200, 120, 100);
+    g.fillColor = highlightColor;
+    const h0 = rotate(x - size * 0.15, y + size * 0.1);
+    const hc1 = rotate(x - size * 0.35, y + size * 0.3);
+    const hc2 = rotate(x - size * 0.3, y - size * 0.05);
+    const h1 = rotate(x - size * 0.05, y);
+    g.moveTo(h0.x, h0.y);
+    g.bezierCurveTo(hc1.x, hc1.y, hc2.x, hc2.y, h1.x, h1.y);
+    g.bezierCurveTo(h1.x, h1.y + size * 0.05, h0.x, h0.y + size * 0.05, h0.x, h0.y);
     g.fill();
     
     // 叶脉（经络）
@@ -813,21 +834,52 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画简单花朵
+   * 画简单花朵（带3D效果）
    */
   private drawSimpleFlower(g: Graphics, x: number, y: number, size: number, petalCount: number) {
+    // 获取基础花色
+    const baseColor = this.flowerColor;
+    
     for (let i = 0; i < petalCount; i++) {
       const angle = (i / petalCount) * Math.PI * 2;
       const px = x + Math.cos(angle) * size * 0.3;
       const py = y + Math.sin(angle) * size * 0.3;
       
+      // 3D效果：阴影
+      const shadowOffset = size * 0.03;
+      g.fillColor = new Color(
+        Math.max(0, baseColor.r - 60),
+        Math.max(0, baseColor.g - 60),
+        Math.max(0, baseColor.b - 60),
+        180
+      );
+      g.ellipse(px + shadowOffset, py - shadowOffset, size * 0.2, size * 0.12);
+      g.fill();
+      
+      // 花瓣主体
+      g.fillColor = baseColor;
       g.ellipse(px, py, size * 0.2, size * 0.12);
       g.fill();
+      
+      // 3D效果：高光
+      g.fillColor = new Color(255, 255, 255, 80);
+      g.ellipse(px - size * 0.05, py + size * 0.02, size * 0.08, size * 0.05);
+      g.fill();
     }
+    
+    // 花心阴影
+    g.fillColor = new Color(200, 160, 100);
+    g.circle(x + size * 0.02, y - size * 0.02, size * 0.1);
+    g.fill();
     
     // 花心
     g.fillColor = new Color(255, 220, 150);
     g.circle(x, y, size * 0.1);
+    g.fill();
+    
+    // 花心高光
+    g.fillColor = new Color(255, 255, 200, 150);
+    g.circle(x - size * 0.03, y + size * 0.03, size * 0.04);
     g.fill();
   }
   
