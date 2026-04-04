@@ -297,7 +297,7 @@ export class LSystemPlantRenderer extends Component {
       default:
         config = { ...CLOVER_STEM_LSYSTEM };
         config.initialLength = 15 + progress * 30;  // 高度恢复：15~45
-        config.initialWidth = 6 + progress * 6;     // 茎更粗：6~12
+        config.initialWidth = 10 + progress * 8;    // 茎更粗：10~18
         config.angle = 25;                          // 角度小一点，更自然
         maxIterations = 3;
         break;
