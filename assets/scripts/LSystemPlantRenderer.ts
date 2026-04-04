@@ -834,7 +834,7 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画简单花朵（带3D效果）
+   * 画简单花朵（带3D效果，更自然的花瓣）
    */
   private drawSimpleFlower(g: Graphics, x: number, y: number, size: number, petalCount: number) {
     // 获取基础花色
@@ -842,47 +842,93 @@ export class LSystemPlantRenderer extends Component {
     
     for (let i = 0; i < petalCount; i++) {
       const angle = (i / petalCount) * Math.PI * 2;
-      const px = x + Math.cos(angle) * size * 0.3;
-      const py = y + Math.sin(angle) * size * 0.3;
+      // 花瓣从花心向外延伸
+      const petalLength = size * 0.5;  // 花瓣更长
+      const petalWidth = size * 0.25;   // 花瓣更宽
+      const px = x + Math.cos(angle) * petalLength * 0.5;
+      const py = y + Math.sin(angle) * petalLength * 0.5;
+      
+      // 计算花瓣旋转
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
       
       // 3D效果：阴影
       const shadowOffset = size * 0.03;
       g.fillColor = new Color(
-        Math.max(0, baseColor.r - 60),
-        Math.max(0, baseColor.g - 60),
-        Math.max(0, baseColor.b - 60),
-        180
+        Math.max(0, baseColor.r - 50),
+        Math.max(0, baseColor.g - 50),
+        Math.max(0, baseColor.b - 50),
+        150
       );
-      g.ellipse(px + shadowOffset, py - shadowOffset, size * 0.2, size * 0.12);
-      g.fill();
+      this.drawPetal(g, px + shadowOffset, py - shadowOffset, petalLength, petalWidth, angle);
       
-      // 花瓣主体
+      // 花瓣主体（渐变效果：外边缘稍深）
       g.fillColor = baseColor;
-      g.ellipse(px, py, size * 0.2, size * 0.12);
-      g.fill();
+      this.drawPetal(g, px, py, petalLength, petalWidth, angle);
       
-      // 3D效果：高光
-      g.fillColor = new Color(255, 255, 255, 80);
-      g.ellipse(px - size * 0.05, py + size * 0.02, size * 0.08, size * 0.05);
-      g.fill();
+      // 3D效果：花瓣内侧高光
+      g.fillColor = new Color(255, 255, 255, 60);
+      this.drawPetal(g, px - cos * size * 0.05, py - sin * size * 0.05, petalLength * 0.5, petalWidth * 0.5, angle);
     }
     
     // 花心阴影
-    g.fillColor = new Color(200, 160, 100);
-    g.circle(x + size * 0.02, y - size * 0.02, size * 0.1);
+    g.fillColor = new Color(180, 140, 80);
+    g.circle(x + size * 0.02, y - size * 0.02, size * 0.12);
     g.fill();
     
     // 花心
-    g.fillColor = new Color(255, 220, 150);
-    g.circle(x, y, size * 0.1);
+    g.fillColor = new Color(255, 220, 100);
+    g.circle(x, y, size * 0.12);
     g.fill();
     
+    // 花心纹理（小点点）
+    g.fillColor = new Color(220, 180, 60);
+    for (let i = 0; i < 5; i++) {
+      const dotAngle = (i / 5) * Math.PI * 2;
+      const dotX = x + Math.cos(dotAngle) * size * 0.05;
+      const dotY = y + Math.sin(dotAngle) * size * 0.05;
+      g.circle(dotX, dotY, size * 0.02);
+      g.fill();
+    }
+    
     // 花心高光
-    g.fillColor = new Color(255, 255, 200, 150);
-    g.circle(x - size * 0.03, y + size * 0.03, size * 0.04);
+    g.fillColor = new Color(255, 255, 200, 180);
+    g.circle(x - size * 0.04, y + size * 0.04, size * 0.04);
     g.fill();
   }
   
+  /**
+   * 画单个花瓣（水滴形）
+   */
+  private drawPetal(g: Graphics, x: number, y: number, length: number, width: number, angle: number) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    // 花瓣尖端
+    const tipX = x + cos * length;
+    const tipY = y + sin * length;
+    
+    // 花瓣两侧
+    const perpCos = Math.cos(angle + Math.PI / 2);
+    const perpSin = Math.sin(angle + Math.PI / 2);
+    
+    const side1X = x + perpCos * width * 0.5;
+    const side1Y = y + perpSin * width * 0.5;
+    const side2X = x - perpCos * width * 0.5;
+    const side2Y = y - perpSin * width * 0.5;
+    
+    // 控制点（让花瓣饱满）
+    const ctrl1X = x + cos * length * 0.6 + perpCos * width * 0.6;
+    const ctrl1Y = y + sin * length * 0.6 + perpSin * width * 0.6;
+    const ctrl2X = x + cos * length * 0.6 - perpCos * width * 0.6;
+    const ctrl2Y = y + sin * length * 0.6 - perpSin * width * 0.6;
+    
+    g.moveTo(x, y);
+    g.bezierCurveTo(ctrl1X, ctrl1Y, ctrl1X, ctrl1Y, tipX, tipY);
+    g.bezierCurveTo(ctrl2X, ctrl2Y, ctrl2X, ctrl2Y, x, y);
+    g.fill();
+  }
+
   /**
    * 渲染果实
    */
