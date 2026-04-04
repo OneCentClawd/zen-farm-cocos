@@ -573,19 +573,32 @@ export class LSystemPlantRenderer extends Component {
       g.stroke();
     }
     
-    // 交错顺序画叶子（形成一个盖一个的效果）
-    // 后画的盖住先画的，所以要反过来
-    let drawOrder: number[];
-    if (leafCount === 3) {
-      drawOrder = [0, 2, 1];  // 上 → 右下 → 左下（左下盖右下，右下盖上）
-    } else {
-      drawOrder = [1, 0, 3, 2];  // 左 → 上 → 右 → 下（循环盖住）
-    }
+    // 交错层叠效果：顺时针方向，每片叶子的右边盖住下一片的左边
+    // 通过给每片叶子加一个顺时针的旋转偏移来实现
+    // 画的顺序决定了谁在上面
+    
+    // 先画被盖的叶子（底层），后画盖住别人的叶子（顶层）
+    // 三叶草：叶子0(上)的右边 盖住 叶子2(右下)的左边
+    //         叶子2的右边 盖住 叶子1(左下)的左边
+    //         叶子1的右边 盖住 叶子0的左边
+    // 所以需要把每片叶子的两半分开画
+    
+    // 简化方案：画叶子顺序 0 → 2 → 1，加上叶子位置向顺时针方向偏移
+    const rotateOffset = 0.25;  // 整体顺时针偏移
+    
+    const drawOrderThree = [0, 2, 1];  // 上 → 右下 → 左下（左下在最上层）
+    const drawOrderFour = [0, 3, 2, 1];  // 四叶草
+    
+    const drawOrder = leafCount === 3 ? drawOrderThree : drawOrderFour;
     
     for (const i of drawOrder) {
-      const pos = leafPositions[i];
+      // 重新计算位置，加上顺时针偏移
+      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2 + rotateOffset;
+      const leafX = x + Math.cos(angle) * stemLength;
+      const leafY = y + Math.sin(angle) * stemLength;
+      
       g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2);
+      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle - Math.PI / 2);
     }
   }
   
