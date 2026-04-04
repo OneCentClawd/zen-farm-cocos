@@ -546,8 +546,10 @@ export class LSystemPlantRenderer extends Component {
     const leafSize = size * 0.9;  // 叶子放大，更像真实幸运草
     const stemLength = 55;  // 叶柄稍长，防止叶子重叠
     
-    for (let i = 0; i < leafCount; i++) {
-      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
+    // 从下方开始画，这样上方的叶子会盖住下方的
+    // 绘制顺序：下 → 左/右 → 上（上面的最后画，所以在最上层）
+    for (let i = leafCount - 1; i >= 0; i--) {
+      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始计算角度
       
       // 叶柄终点（叶子位置）
       const leafX = x + Math.cos(angle) * stemLength;
