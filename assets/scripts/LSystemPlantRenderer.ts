@@ -508,7 +508,7 @@ export class LSystemPlantRenderer extends Component {
     const progress = plant.growthProgress;
     const wiltLevel = plant.wiltLevel || 0;
     
-    // 幸运草特殊处理：叶子画在茎顶端
+    // 幸运草特殊处理：叶子画在茎上、花的下方
     if (plant.type === PlantType.CLOVER) {
       const flowerNodes = this.nodes.filter(n => n.type === 'flower');
       if (flowerNodes.length > 0) {
@@ -516,8 +516,9 @@ export class LSystemPlantRenderer extends Component {
         const topNode = flowerNodes.reduce((a, b) => a.y > b.y ? a : b);
         const size = (12 + progress * 15);
         const droop = wiltLevel * 15;
-        // 在顶端画三叶草叶子
-        this.drawCloverTop(g, topNode.x, topNode.y - droop, size * 18);
+        // 叶子画在茎顶端下方一点（不被花遮挡）
+        const leafY = topNode.y - 20 - droop;  // 比茎顶端低 20
+        this.drawCloverTop(g, topNode.x, leafY, size * 18);
       }
       return;
     }
