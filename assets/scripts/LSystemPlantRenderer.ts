@@ -546,17 +546,11 @@ export class LSystemPlantRenderer extends Component {
     const leafSize = size * 0.9;  // 叶子放大，更像真实幸运草
     const stemLength = 55;  // 叶柄稍长，防止叶子重叠
     
-    // 交错层叠效果：先画所有叶柄，再按特定顺序画叶子
-    // 三叶草顺序：0(上) → 2(右下) → 1(左下)，形成风车效果
-    // 四叶草顺序：0 → 2 → 1 → 3
-    
-    const angles: number[] = [];
     const leafPositions: {x: number, y: number, angle: number}[] = [];
     
     // 计算所有叶子位置
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;
-      angles.push(angle);
       leafPositions.push({
         x: x + Math.cos(angle) * stemLength,
         y: y + Math.sin(angle) * stemLength,
@@ -573,54 +567,35 @@ export class LSystemPlantRenderer extends Component {
       g.stroke();
     }
     
-    // 真正的交错层叠：A盖B、B盖C、C盖A
-    // 把每片叶子分成左半和右半，交替绘制
-    // 三叶草(0=上, 1=左下, 2=右下)：
-    //   - 0的右半 盖住 2的左半
-    //   - 2的右半 盖住 1的左半  
-    //   - 1的右半 盖住 0的左半
-    // 绘制顺序：0左 → 2左 → 1左 → 0右 → 2右 → 1右
-    // 简化：0左 → 2全 → 1全 → 0右（只拆分0）
+    // 交错层叠绘制：
+    // 1. 先画所有叶子的完整阴影
+    // 2. 再分层画左半和右半主体
+    // 3. 最后画所有叶脉
     
-    // 更简单的方案：按照交错顺序画，让每片只被一片盖住
-    // 顺序：1(左下) → 0(上) → 2(右下)
-    // 这样：上盖左下，右下盖上，但右下不盖左下...还是不对
+    const drawOrder = leafCount === 3 ? [0, 2, 1] : [0, 3, 2, 1];
     
-    // 真正方案：三片叶子各画两次，第一轮画底层，第二轮画顶层
-    // 或者：稍微调整每片叶子的旋转角度，让它们自然交错
+    // 第1步：画所有阴影（一次性，不分半）
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
+      this.drawHeartLeafShadow(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2);
+    }
     
-    // 使用旋转偏移 + 正确顺序
-    // 每片叶子向自己的顺时针方向多旋转一点，露出被盖的边
+    // 第2步：交错画左半和右半主体
+    // 先画所有左半
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
+      this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
+    }
+    // 再画所有右半
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
+      this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
+    }
     
-    if (leafCount === 3) {
-      // 三叶草交错绘制
-      const indices = [0, 1, 2];  // 上、左下、右下
-      
-      // 第一轮：画每片叶子的"被盖住"部分（左半边）
-      for (const i of [0, 2, 1]) {
-        const pos = leafPositions[i];
-        g.fillColor = this.leafColor;
-        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
-      }
-      
-      // 第二轮：画每片叶子的"盖住别人"部分（右半边）
-      for (const i of [0, 2, 1]) {
-        const pos = leafPositions[i];
-        g.fillColor = this.leafColor;
-        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
-      }
-    } else {
-      // 四叶草类似处理
-      for (const i of [0, 3, 2, 1]) {
-        const pos = leafPositions[i];
-        g.fillColor = this.leafColor;
-        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'left');
-      }
-      for (const i of [0, 3, 2, 1]) {
-        const pos = leafPositions[i];
-        g.fillColor = this.leafColor;
-        this.drawHeartLeafHalf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2, 'right');
-      }
+    // 第3步：画所有叶脉（在最上层）
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
+      this.drawHeartLeafVeins(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2);
     }
   }
   
@@ -752,7 +727,7 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画心形叶的一半（用于交错效果）
+   * 画心形叶的一半（用于交错效果，只画主体不画阴影）
    */
   private drawHeartLeafHalf(g: Graphics, x: number, y: number, size: number, rotation: number, side: 'left' | 'right') {
     const cos = Math.cos(rotation);
@@ -771,49 +746,124 @@ export class LSystemPlantRenderer extends Component {
     const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
     const center = rotate(x, y);
     
+    g.fillColor = this.leafColor;
+    
     if (side === 'left') {
-      // 左半边：从尖端到凹陷的左侧曲线
       const c1 = rotate(x - size * 0.5, y + size * 0.6);
       const c2 = rotate(x - size * 0.5, y - size * 0.2);
       
-      // 阴影
-      const shadowOffset = size * 0.05;
-      g.fillColor = new Color(30, 80, 30, 180);
-      g.moveTo(p0.x + shadowOffset, p0.y - shadowOffset);
-      g.bezierCurveTo(c1.x + shadowOffset, c1.y - shadowOffset, c2.x + shadowOffset, c2.y - shadowOffset, p1.x + shadowOffset, p1.y - shadowOffset);
-      g.lineTo(center.x + shadowOffset, center.y - shadowOffset);
-      g.lineTo(p0.x + shadowOffset, p0.y - shadowOffset);
-      g.fill();
-      
-      // 主体
-      g.fillColor = this.leafColor;
       g.moveTo(p0.x, p0.y);
       g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
       g.lineTo(center.x, center.y);
       g.lineTo(p0.x, p0.y);
       g.fill();
+      
+      // 高光（左半边）
+      const highlightColor = new Color(120, 200, 120, 100);
+      g.fillColor = highlightColor;
+      const h0 = rotate(x - size * 0.15, y + size * 0.1);
+      const hc1 = rotate(x - size * 0.35, y + size * 0.3);
+      const hc2 = rotate(x - size * 0.3, y - size * 0.05);
+      const h1 = rotate(x - size * 0.05, y);
+      g.moveTo(h0.x, h0.y);
+      g.bezierCurveTo(hc1.x, hc1.y, hc2.x, hc2.y, h1.x, h1.y);
+      g.bezierCurveTo(h1.x, h1.y + size * 0.05, h0.x, h0.y + size * 0.05, h0.x, h0.y);
+      g.fill();
     } else {
-      // 右半边：从凹陷到尖端的右侧曲线
       const c3 = rotate(x + size * 0.5, y - size * 0.2);
       const c4 = rotate(x + size * 0.5, y + size * 0.6);
       
-      // 阴影
-      const shadowOffset = size * 0.05;
-      g.fillColor = new Color(30, 80, 30, 180);
-      g.moveTo(p1.x + shadowOffset, p1.y - shadowOffset);
-      g.bezierCurveTo(c3.x + shadowOffset, c3.y - shadowOffset, c4.x + shadowOffset, c4.y - shadowOffset, p0.x + shadowOffset, p0.y - shadowOffset);
-      g.lineTo(center.x + shadowOffset, center.y - shadowOffset);
-      g.lineTo(p1.x + shadowOffset, p1.y - shadowOffset);
-      g.fill();
-      
-      // 主体
-      g.fillColor = this.leafColor;
       g.moveTo(p1.x, p1.y);
       g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
       g.lineTo(center.x, center.y);
       g.lineTo(p1.x, p1.y);
       g.fill();
     }
+  }
+  
+  /**
+   * 画心形叶的阴影
+   */
+  private drawHeartLeafShadow(g: Graphics, x: number, y: number, size: number, rotation: number) {
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    
+    const rotate = (px: number, py: number) => {
+      const dx = px - x;
+      const dy = py - y;
+      return {
+        x: x + dx * cos - dy * sin,
+        y: y + dx * sin + dy * cos
+      };
+    };
+    
+    const p0 = rotate(x, y + size * 0.3);
+    const c1 = rotate(x - size * 0.5, y + size * 0.6);
+    const c2 = rotate(x - size * 0.5, y - size * 0.2);
+    const p1 = rotate(x, y - size * 0.1);
+    const c3 = rotate(x + size * 0.5, y - size * 0.2);
+    const c4 = rotate(x + size * 0.5, y + size * 0.6);
+    
+    const shadowOffset = size * 0.05;
+    g.fillColor = new Color(30, 80, 30, 180);
+    g.moveTo(p0.x + shadowOffset, p0.y - shadowOffset);
+    g.bezierCurveTo(c1.x + shadowOffset, c1.y - shadowOffset, c2.x + shadowOffset, c2.y - shadowOffset, p1.x + shadowOffset, p1.y - shadowOffset);
+    g.bezierCurveTo(c3.x + shadowOffset, c3.y - shadowOffset, c4.x + shadowOffset, c4.y - shadowOffset, p0.x + shadowOffset, p0.y - shadowOffset);
+    g.fill();
+  }
+  
+  /**
+   * 画心形叶的叶脉
+   */
+  private drawHeartLeafVeins(g: Graphics, x: number, y: number, size: number, rotation: number) {
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    
+    const rotate = (px: number, py: number) => {
+      const dx = px - x;
+      const dy = py - y;
+      return {
+        x: x + dx * cos - dy * sin,
+        y: y + dx * sin + dy * cos
+      };
+    };
+    
+    const veinColor = new Color(40, 120, 40);
+    g.strokeColor = veinColor;
+    g.lineWidth = Math.max(1, size * 0.03);
+    
+    // 主脉
+    const v1 = rotate(x, y + size * 0.25);
+    const v2 = rotate(x, y - size * 0.05);
+    g.moveTo(v1.x, v1.y);
+    g.lineTo(v2.x, v2.y);
+    g.stroke();
+    
+    // 侧脉（左边）
+    const v3 = rotate(x, y + size * 0.15);
+    const v4 = rotate(x - size * 0.25, y + size * 0.25);
+    g.moveTo(v3.x, v3.y);
+    g.lineTo(v4.x, v4.y);
+    g.stroke();
+    
+    const v5 = rotate(x, y + size * 0.05);
+    const v6 = rotate(x - size * 0.2, y + size * 0.1);
+    g.moveTo(v5.x, v5.y);
+    g.lineTo(v6.x, v6.y);
+    g.stroke();
+    
+    // 侧脉（右边）
+    const v7 = rotate(x, y + size * 0.15);
+    const v8 = rotate(x + size * 0.25, y + size * 0.25);
+    g.moveTo(v7.x, v7.y);
+    g.lineTo(v8.x, v8.y);
+    g.stroke();
+    
+    const v9 = rotate(x, y + size * 0.05);
+    const v10 = rotate(x + size * 0.2, y + size * 0.1);
+    g.moveTo(v9.x, v9.y);
+    g.lineTo(v10.x, v10.y);
+    g.stroke();
   }
   
   /**
