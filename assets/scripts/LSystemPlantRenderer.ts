@@ -574,11 +574,12 @@ export class LSystemPlantRenderer extends Component {
     }
     
     // 交错顺序画叶子（形成一个盖一个的效果）
+    // 后画的盖住先画的，所以要反过来
     let drawOrder: number[];
     if (leafCount === 3) {
-      drawOrder = [1, 2, 0];  // 左下 → 右下 → 上（上盖右下，右下盖左下）
+      drawOrder = [0, 2, 1];  // 上 → 右下 → 左下（左下盖右下，右下盖上）
     } else {
-      drawOrder = [2, 3, 0, 1];  // 下 → 右 → 上 → 左（循环盖住）
+      drawOrder = [1, 0, 3, 2];  // 左 → 上 → 右 → 下（循环盖住）
     }
     
     for (const i of drawOrder) {
