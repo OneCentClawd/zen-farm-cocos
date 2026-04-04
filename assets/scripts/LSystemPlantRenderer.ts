@@ -287,8 +287,9 @@ export class LSystemPlantRenderer extends Component {
       case PlantType.CLOVER:
       default:
         config = { ...CLOVER_STEM_LSYSTEM };
-        config.initialLength = 12 + progress * 25;
-        config.initialWidth = 2 + progress * 1.5;
+        config.initialLength = 25 + progress * 50;  // 放大：25~75
+        config.initialWidth = 4 + progress * 4;     // 放大：4~8
+        config.angle = 25;                          // 角度小一点，更自然
         maxIterations = 3;
         break;
     }
@@ -519,8 +520,8 @@ export class LSystemPlantRenderer extends Component {
     
     switch (plantType) {
       case PlantType.CLOVER:
-        // 心形叶（三叶草）
-        this.drawHeartLeaf(g, x, y, size);
+        // 心形叶（三叶草）- 放大 1.8 倍
+        this.drawHeartLeaf(g, x, y, size * 1.8);
         break;
         
       case PlantType.SUNFLOWER:
