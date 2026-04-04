@@ -139,6 +139,15 @@ export class LSystemPlantRenderer extends Component {
       case PlantType.SAKURA:
         this.flowerColor = new Color(255, 200, 200);
         break;
+      case PlantType.CLOVER:
+        // 幸运草花色随机：白色或粉色
+        const cloverRand = this.seededRandom(this.plantSeed + 999);
+        if (cloverRand > 0.5) {
+          this.flowerColor = new Color(255, 255, 255);  // 白色
+        } else {
+          this.flowerColor = new Color(255, 180, 200);  // 粉色
+        }
+        break;
       default:
         this.flowerColor = new Color(255, 255, 255);
     }
