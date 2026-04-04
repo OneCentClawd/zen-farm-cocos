@@ -543,7 +543,7 @@ export class LSystemPlantRenderer extends Component {
     const isFourLeaf = this.seededRandom(this.plantSeed + 888) > 0.9;  // 10% 概率四叶草
     const leafCount = isFourLeaf ? 4 : 3;
     const leafSize = size * 0.4;  // 叶子大小
-    const stemLength = leafSize * 0.4;  // 叶柄长度（短一点，让叶子靠近茎）
+    const stemLength = leafSize * 0.5;  // 叶柄长度
     
     for (let i = 0; i < leafCount; i++) {
       const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始
@@ -559,9 +559,9 @@ export class LSystemPlantRenderer extends Component {
       g.lineTo(leafX, leafY);
       g.stroke();
       
-      // 画叶子
+      // 画叶子（尖端朝外，旋转角度 = angle + 90°，让心形尖端指向外侧）
       g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, leafX, leafY, leafSize);
+      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle + Math.PI / 2);
     }
   }
   
@@ -601,21 +601,35 @@ export class LSystemPlantRenderer extends Component {
   }
   
   /**
-   * 画心形叶（带叶脉）
+   * 画心形叶（带叶脉），支持旋转
    */
-  private drawHeartLeaf(g: Graphics, x: number, y: number, size: number) {
+  private drawHeartLeaf(g: Graphics, x: number, y: number, size: number, rotation: number = 0) {
+    // 保存当前变换
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    
+    // 辅助函数：旋转坐标
+    const rotate = (px: number, py: number) => {
+      const dx = px - x;
+      const dy = py - y;
+      return {
+        x: x + dx * cos - dy * sin,
+        y: y + dx * sin + dy * cos
+      };
+    };
+    
+    // 叶片关键点（相对于中心）
+    const p0 = rotate(x, y + size * 0.3);  // 底部尖端
+    const c1 = rotate(x - size * 0.5, y + size * 0.6);
+    const c2 = rotate(x - size * 0.5, y - size * 0.2);
+    const p1 = rotate(x, y - size * 0.1);  // 顶部凹陷
+    const c3 = rotate(x + size * 0.5, y - size * 0.2);
+    const c4 = rotate(x + size * 0.5, y + size * 0.6);
+    
     // 叶片填充
-    g.moveTo(x, y + size * 0.3);
-    g.bezierCurveTo(
-      x - size * 0.5, y + size * 0.6,
-      x - size * 0.5, y - size * 0.2,
-      x, y - size * 0.1
-    );
-    g.bezierCurveTo(
-      x + size * 0.5, y - size * 0.2,
-      x + size * 0.5, y + size * 0.6,
-      x, y + size * 0.3
-    );
+    g.moveTo(p0.x, p0.y);
+    g.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y);
+    g.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, p0.x, p0.y);
     g.fill();
     
     // 叶脉（经络）
@@ -624,26 +638,36 @@ export class LSystemPlantRenderer extends Component {
     g.lineWidth = Math.max(1, size * 0.03);
     
     // 主脉
-    g.moveTo(x, y + size * 0.25);
-    g.lineTo(x, y - size * 0.05);
+    const v1 = rotate(x, y + size * 0.25);
+    const v2 = rotate(x, y - size * 0.05);
+    g.moveTo(v1.x, v1.y);
+    g.lineTo(v2.x, v2.y);
     g.stroke();
     
     // 侧脉（左边）
-    g.moveTo(x, y + size * 0.15);
-    g.lineTo(x - size * 0.25, y + size * 0.25);
+    const v3 = rotate(x, y + size * 0.15);
+    const v4 = rotate(x - size * 0.25, y + size * 0.25);
+    g.moveTo(v3.x, v3.y);
+    g.lineTo(v4.x, v4.y);
     g.stroke();
     
-    g.moveTo(x, y + size * 0.05);
-    g.lineTo(x - size * 0.2, y + size * 0.1);
+    const v5 = rotate(x, y + size * 0.05);
+    const v6 = rotate(x - size * 0.2, y + size * 0.1);
+    g.moveTo(v5.x, v5.y);
+    g.lineTo(v6.x, v6.y);
     g.stroke();
     
     // 侧脉（右边）
-    g.moveTo(x, y + size * 0.15);
-    g.lineTo(x + size * 0.25, y + size * 0.25);
+    const v7 = rotate(x, y + size * 0.15);
+    const v8 = rotate(x + size * 0.25, y + size * 0.25);
+    g.moveTo(v7.x, v7.y);
+    g.lineTo(v8.x, v8.y);
     g.stroke();
     
-    g.moveTo(x, y + size * 0.05);
-    g.lineTo(x + size * 0.2, y + size * 0.1);
+    const v9 = rotate(x, y + size * 0.05);
+    const v10 = rotate(x + size * 0.2, y + size * 0.1);
+    g.moveTo(v9.x, v9.y);
+    g.lineTo(v10.x, v10.y);
     g.stroke();
   }
   
