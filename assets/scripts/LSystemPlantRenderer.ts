@@ -559,9 +559,9 @@ export class LSystemPlantRenderer extends Component {
       g.lineTo(leafX, leafY);
       g.stroke();
       
-      // 画叶子（尖端朝外，旋转角度 = angle + 90°，让心形尖端指向外侧）
+      // 画叶子（凹陷朝外，尖端指向中心，旋转角度 = angle - 90°）
       g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle + Math.PI / 2);
+      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle - Math.PI / 2);
     }
   }
   
