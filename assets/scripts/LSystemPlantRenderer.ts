@@ -546,25 +546,45 @@ export class LSystemPlantRenderer extends Component {
     const leafSize = size * 0.9;  // 叶子放大，更像真实幸运草
     const stemLength = 55;  // 叶柄稍长，防止叶子重叠
     
-    // 从下方开始画，这样上方的叶子会盖住下方的
-    // 绘制顺序：下 → 左/右 → 上（上面的最后画，所以在最上层）
-    for (let i = leafCount - 1; i >= 0; i--) {
-      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;  // 从上方开始计算角度
-      
-      // 叶柄终点（叶子位置）
-      const leafX = x + Math.cos(angle) * stemLength;
-      const leafY = y + Math.sin(angle) * stemLength;
-      
-      // 画叶柄（从茎顶端到叶子）
+    // 交错层叠效果：先画所有叶柄，再按特定顺序画叶子
+    // 三叶草顺序：0(上) → 2(右下) → 1(左下)，形成风车效果
+    // 四叶草顺序：0 → 2 → 1 → 3
+    
+    const angles: number[] = [];
+    const leafPositions: {x: number, y: number, angle: number}[] = [];
+    
+    // 计算所有叶子位置
+    for (let i = 0; i < leafCount; i++) {
+      const angle = (i / leafCount) * Math.PI * 2 - Math.PI / 2;
+      angles.push(angle);
+      leafPositions.push({
+        x: x + Math.cos(angle) * stemLength,
+        y: y + Math.sin(angle) * stemLength,
+        angle: angle
+      });
+    }
+    
+    // 先画所有叶柄
+    for (const pos of leafPositions) {
       g.strokeColor = this.stemColor;
       g.lineWidth = 2;
       g.moveTo(x, y);
-      g.lineTo(leafX, leafY);
+      g.lineTo(pos.x, pos.y);
       g.stroke();
-      
-      // 画叶子（凹陷朝外，尖端指向中心，旋转角度 = angle - 90°）
+    }
+    
+    // 交错顺序画叶子（形成一个盖一个的效果）
+    let drawOrder: number[];
+    if (leafCount === 3) {
+      drawOrder = [1, 2, 0];  // 左下 → 右下 → 上（上盖右下，右下盖左下）
+    } else {
+      drawOrder = [2, 3, 0, 1];  // 下 → 右 → 上 → 左（循环盖住）
+    }
+    
+    for (const i of drawOrder) {
+      const pos = leafPositions[i];
       g.fillColor = this.leafColor;
-      this.drawHeartLeaf(g, leafX, leafY, leafSize, angle - Math.PI / 2);
+      this.drawHeartLeaf(g, pos.x, pos.y, leafSize, pos.angle - Math.PI / 2);
     }
   }
   
